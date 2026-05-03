@@ -1,0 +1,1 @@
+-keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.auth.presentation.login.LoginViewModel

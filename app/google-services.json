@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "842598392732",
+    "project_id": "cryptolens-2f8d6",
+    "storage_bucket": "cryptolens-2f8d6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:842598392732:android:8fe2e5164bdfcd2f6ede59",
+        "android_client_info": {
+          "package_name": "com.cryptolens.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4h5TnNGszWKTTRggpIz24NjiB9uTOtBE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

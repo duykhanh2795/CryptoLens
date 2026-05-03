@@ -1,0 +1,28 @@
+package com.cryptolens.app.features.auth.presentation.register;
+
+import dagger.internal.DaggerGenerated;
+import dagger.internal.IdentifierNameString;
+import dagger.internal.KeepFieldType;
+import javax.annotation.processing.Generated;
+
+@IdentifierNameString
+@DaggerGenerated
+@Generated(
+    value = "dagger.internal.codegen.ComponentProcessor",
+    comments = "https://dagger.dev"
+)
+@SuppressWarnings({
+    "unchecked",
+    "rawtypes",
+    "KotlinInternal",
+    "KotlinInternalInJava",
+    "cast",
+    "deprecation",
+    "nullness:initialization.field.uninitialized"
+})
+public final class RegisterViewModel_HiltModules_BindsModule_Binds_LazyMapKey {
+  @KeepFieldType
+  static RegisterViewModel keepFieldType;
+
+  public static String lazyClassKeyName = "com.cryptolens.app.features.auth.presentation.register.RegisterViewModel";
+}
