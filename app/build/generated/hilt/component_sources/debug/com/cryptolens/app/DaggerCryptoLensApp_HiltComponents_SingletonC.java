@@ -11,6 +11,7 @@ import com.cryptolens.app.di.DatabaseModule_ProvideDatabaseFactory;
 import com.cryptolens.app.di.DatabaseModule_ProvideExchangeConnectionDaoFactory;
 import com.cryptolens.app.di.DatabaseModule_ProvidePortfolioAssetDaoFactory;
 import com.cryptolens.app.di.DatabaseModule_ProvideTransactionDaoFactory;
+import com.cryptolens.app.di.DatabaseModule_ProvideWatchlistDaoFactory;
 import com.cryptolens.app.di.NetworkModule_ProvideBinanceApiClientFactory;
 import com.cryptolens.app.di.NetworkModule_ProvideBinanceApiServiceFactory;
 import com.cryptolens.app.di.NetworkModule_ProvideBinanceRetrofitFactory;
@@ -63,6 +64,7 @@ import com.cryptolens.app.features.home.presentation.HomeViewModel_HiltModules_K
 import com.cryptolens.app.features.market.data.remote.BinanceApiService;
 import com.cryptolens.app.features.market.data.remote.BinanceWebSocketManager;
 import com.cryptolens.app.features.market.data.remote.CoinGeckoApiService;
+import com.cryptolens.app.features.market.data.remote.MarketCache;
 import com.cryptolens.app.features.market.data.repository.MarketRepositoryImpl;
 import com.cryptolens.app.features.market.domain.usecase.GetCoinDetailUseCase;
 import com.cryptolens.app.features.market.domain.usecase.GetKlinesUseCase;
@@ -93,6 +95,29 @@ import com.cryptolens.app.features.profile.presentation.ProfileViewModel;
 import com.cryptolens.app.features.profile.presentation.ProfileViewModel_HiltModules;
 import com.cryptolens.app.features.profile.presentation.ProfileViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
 import com.cryptolens.app.features.profile.presentation.ProfileViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
+import com.cryptolens.app.features.settings.data.repository.SettingsRepositoryImpl;
+import com.cryptolens.app.features.settings.domain.usecase.ObserveSettingsUseCase;
+import com.cryptolens.app.features.settings.domain.usecase.SetBiometricLockUseCase;
+import com.cryptolens.app.features.settings.domain.usecase.SetCurrencyUseCase;
+import com.cryptolens.app.features.settings.domain.usecase.SetLanguageUseCase;
+import com.cryptolens.app.features.settings.domain.usecase.SetNotificationsUseCase;
+import com.cryptolens.app.features.settings.domain.usecase.SetPriceFormatUseCase;
+import com.cryptolens.app.features.settings.domain.usecase.SetShowPortfolioValueUseCase;
+import com.cryptolens.app.features.settings.domain.usecase.SetThemeUseCase;
+import com.cryptolens.app.features.settings.presentation.SettingsViewModel;
+import com.cryptolens.app.features.settings.presentation.SettingsViewModel_HiltModules;
+import com.cryptolens.app.features.settings.presentation.SettingsViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
+import com.cryptolens.app.features.settings.presentation.SettingsViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
+import com.cryptolens.app.features.watchlist.data.local.dao.WatchlistDao;
+import com.cryptolens.app.features.watchlist.data.repository.WatchlistRepositoryImpl;
+import com.cryptolens.app.features.watchlist.domain.usecase.ObserveIsWatchlistedUseCase;
+import com.cryptolens.app.features.watchlist.domain.usecase.ObserveWatchlistUseCase;
+import com.cryptolens.app.features.watchlist.domain.usecase.RemoveFromWatchlistUseCase;
+import com.cryptolens.app.features.watchlist.domain.usecase.ToggleWatchlistUseCase;
+import com.cryptolens.app.features.watchlist.presentation.WatchlistViewModel;
+import com.cryptolens.app.features.watchlist.presentation.WatchlistViewModel_HiltModules;
+import com.cryptolens.app.features.watchlist.presentation.WatchlistViewModel_HiltModules_BindsModule_Binds_LazyMapKey;
+import com.cryptolens.app.features.watchlist.presentation.WatchlistViewModel_HiltModules_KeyModule_Provide_LazyMapKey;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import dagger.hilt.android.ActivityRetainedLifecycle;
@@ -457,7 +482,7 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
 
     @Override
     public Map<Class<?>, Boolean> getViewModelKeys() {
-      return LazyClassKeyMap.<Boolean>of(ImmutableMap.<String, Boolean>builderWithExpectedSize(10).put(CoinDetailViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, CoinDetailViewModel_HiltModules.KeyModule.provide()).put(ConnectExchangeViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, ConnectExchangeViewModel_HiltModules.KeyModule.provide()).put(HomeViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, HomeViewModel_HiltModules.KeyModule.provide()).put(LoginViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, LoginViewModel_HiltModules.KeyModule.provide()).put(ManageExchangeViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, ManageExchangeViewModel_HiltModules.KeyModule.provide()).put(MarketListViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, MarketListViewModel_HiltModules.KeyModule.provide()).put(PortfolioViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, PortfolioViewModel_HiltModules.KeyModule.provide()).put(ProfileViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, ProfileViewModel_HiltModules.KeyModule.provide()).put(RegisterViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, RegisterViewModel_HiltModules.KeyModule.provide()).put(SplashViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, SplashViewModel_HiltModules.KeyModule.provide()).build());
+      return LazyClassKeyMap.<Boolean>of(ImmutableMap.<String, Boolean>builderWithExpectedSize(12).put(CoinDetailViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, CoinDetailViewModel_HiltModules.KeyModule.provide()).put(ConnectExchangeViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, ConnectExchangeViewModel_HiltModules.KeyModule.provide()).put(HomeViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, HomeViewModel_HiltModules.KeyModule.provide()).put(LoginViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, LoginViewModel_HiltModules.KeyModule.provide()).put(ManageExchangeViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, ManageExchangeViewModel_HiltModules.KeyModule.provide()).put(MarketListViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, MarketListViewModel_HiltModules.KeyModule.provide()).put(PortfolioViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, PortfolioViewModel_HiltModules.KeyModule.provide()).put(ProfileViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, ProfileViewModel_HiltModules.KeyModule.provide()).put(RegisterViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, RegisterViewModel_HiltModules.KeyModule.provide()).put(SettingsViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, SettingsViewModel_HiltModules.KeyModule.provide()).put(SplashViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, SplashViewModel_HiltModules.KeyModule.provide()).put(WatchlistViewModel_HiltModules_KeyModule_Provide_LazyMapKey.lazyClassKeyName, WatchlistViewModel_HiltModules.KeyModule.provide()).build());
     }
 
     @Override
@@ -503,7 +528,11 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
 
     private Provider<RegisterViewModel> registerViewModelProvider;
 
+    private Provider<SettingsViewModel> settingsViewModelProvider;
+
     private Provider<SplashViewModel> splashViewModelProvider;
+
+    private Provider<WatchlistViewModel> watchlistViewModelProvider;
 
     private ViewModelCImpl(SingletonCImpl singletonCImpl,
         ActivityRetainedCImpl activityRetainedCImpl, SavedStateHandle savedStateHandleParam,
@@ -525,6 +554,14 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
 
     private ObservePriceTickerUseCase observePriceTickerUseCase() {
       return new ObservePriceTickerUseCase(singletonCImpl.marketRepositoryImplProvider.get());
+    }
+
+    private ObserveIsWatchlistedUseCase observeIsWatchlistedUseCase() {
+      return new ObserveIsWatchlistedUseCase(singletonCImpl.watchlistRepositoryImplProvider.get());
+    }
+
+    private ToggleWatchlistUseCase toggleWatchlistUseCase() {
+      return new ToggleWatchlistUseCase(singletonCImpl.watchlistRepositoryImplProvider.get());
     }
 
     private ValidateApiKeyUseCase validateApiKeyUseCase() {
@@ -571,6 +608,10 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
       return new ObserveMultipleTickersUseCase(singletonCImpl.marketRepositoryImplProvider.get());
     }
 
+    private ObserveWatchlistUseCase observeWatchlistUseCase() {
+      return new ObserveWatchlistUseCase(singletonCImpl.watchlistRepositoryImplProvider.get());
+    }
+
     private ObservePortfolioSummaryUseCase observePortfolioSummaryUseCase() {
       return new ObservePortfolioSummaryUseCase(singletonCImpl.portfolioRepositoryImplProvider.get());
     }
@@ -599,6 +640,42 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
       return new RegisterUseCase(singletonCImpl.authRepositoryImplProvider.get());
     }
 
+    private ObserveSettingsUseCase observeSettingsUseCase() {
+      return new ObserveSettingsUseCase(singletonCImpl.settingsRepositoryImplProvider.get());
+    }
+
+    private SetCurrencyUseCase setCurrencyUseCase() {
+      return new SetCurrencyUseCase(singletonCImpl.settingsRepositoryImplProvider.get());
+    }
+
+    private SetThemeUseCase setThemeUseCase() {
+      return new SetThemeUseCase(singletonCImpl.settingsRepositoryImplProvider.get());
+    }
+
+    private SetLanguageUseCase setLanguageUseCase() {
+      return new SetLanguageUseCase(singletonCImpl.settingsRepositoryImplProvider.get());
+    }
+
+    private SetPriceFormatUseCase setPriceFormatUseCase() {
+      return new SetPriceFormatUseCase(singletonCImpl.settingsRepositoryImplProvider.get());
+    }
+
+    private SetShowPortfolioValueUseCase setShowPortfolioValueUseCase() {
+      return new SetShowPortfolioValueUseCase(singletonCImpl.settingsRepositoryImplProvider.get());
+    }
+
+    private SetNotificationsUseCase setNotificationsUseCase() {
+      return new SetNotificationsUseCase(singletonCImpl.settingsRepositoryImplProvider.get());
+    }
+
+    private SetBiometricLockUseCase setBiometricLockUseCase() {
+      return new SetBiometricLockUseCase(singletonCImpl.settingsRepositoryImplProvider.get());
+    }
+
+    private RemoveFromWatchlistUseCase removeFromWatchlistUseCase() {
+      return new RemoveFromWatchlistUseCase(singletonCImpl.watchlistRepositoryImplProvider.get());
+    }
+
     @SuppressWarnings("unchecked")
     private void initialize(final SavedStateHandle savedStateHandleParam,
         final ViewModelLifecycle viewModelLifecycleParam) {
@@ -611,12 +688,14 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
       this.portfolioViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 6);
       this.profileViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 7);
       this.registerViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 8);
-      this.splashViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 9);
+      this.settingsViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 9);
+      this.splashViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 10);
+      this.watchlistViewModelProvider = new SwitchingProvider<>(singletonCImpl, activityRetainedCImpl, viewModelCImpl, 11);
     }
 
     @Override
     public Map<Class<?>, javax.inject.Provider<ViewModel>> getHiltViewModelMap() {
-      return LazyClassKeyMap.<javax.inject.Provider<ViewModel>>of(ImmutableMap.<String, javax.inject.Provider<ViewModel>>builderWithExpectedSize(10).put(CoinDetailViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) coinDetailViewModelProvider)).put(ConnectExchangeViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) connectExchangeViewModelProvider)).put(HomeViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) homeViewModelProvider)).put(LoginViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) loginViewModelProvider)).put(ManageExchangeViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) manageExchangeViewModelProvider)).put(MarketListViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) marketListViewModelProvider)).put(PortfolioViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) portfolioViewModelProvider)).put(ProfileViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) profileViewModelProvider)).put(RegisterViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) registerViewModelProvider)).put(SplashViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) splashViewModelProvider)).build());
+      return LazyClassKeyMap.<javax.inject.Provider<ViewModel>>of(ImmutableMap.<String, javax.inject.Provider<ViewModel>>builderWithExpectedSize(12).put(CoinDetailViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) coinDetailViewModelProvider)).put(ConnectExchangeViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) connectExchangeViewModelProvider)).put(HomeViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) homeViewModelProvider)).put(LoginViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) loginViewModelProvider)).put(ManageExchangeViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) manageExchangeViewModelProvider)).put(MarketListViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) marketListViewModelProvider)).put(PortfolioViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) portfolioViewModelProvider)).put(ProfileViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) profileViewModelProvider)).put(RegisterViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) registerViewModelProvider)).put(SettingsViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) settingsViewModelProvider)).put(SplashViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) splashViewModelProvider)).put(WatchlistViewModel_HiltModules_BindsModule_Binds_LazyMapKey.lazyClassKeyName, ((Provider) watchlistViewModelProvider)).build());
     }
 
     @Override
@@ -646,13 +725,13 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
       public T get() {
         switch (id) {
           case 0: // com.cryptolens.app.features.market.presentation.detail.CoinDetailViewModel 
-          return (T) new CoinDetailViewModel(viewModelCImpl.getCoinDetailUseCase(), viewModelCImpl.getKlinesUseCase(), viewModelCImpl.observePriceTickerUseCase(), viewModelCImpl.savedStateHandle);
+          return (T) new CoinDetailViewModel(viewModelCImpl.getCoinDetailUseCase(), viewModelCImpl.getKlinesUseCase(), viewModelCImpl.observePriceTickerUseCase(), viewModelCImpl.observeIsWatchlistedUseCase(), viewModelCImpl.toggleWatchlistUseCase(), viewModelCImpl.savedStateHandle);
 
           case 1: // com.cryptolens.app.features.exchange.presentation.connect.ConnectExchangeViewModel 
           return (T) new ConnectExchangeViewModel(viewModelCImpl.validateApiKeyUseCase(), viewModelCImpl.saveExchangeConnectionUseCase());
 
           case 2: // com.cryptolens.app.features.home.presentation.HomeViewModel 
-          return (T) new HomeViewModel(viewModelCImpl.getTopCoinsUseCase(), viewModelCImpl.getCurrentUserUseCase());
+          return (T) new HomeViewModel(viewModelCImpl.getTopCoinsUseCase(), viewModelCImpl.getCurrentUserUseCase(), singletonCImpl.marketCacheProvider.get());
 
           case 3: // com.cryptolens.app.features.auth.presentation.login.LoginViewModel 
           return (T) new LoginViewModel(viewModelCImpl.loginUseCase(), viewModelCImpl.resetPasswordUseCase());
@@ -661,7 +740,7 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
           return (T) new ManageExchangeViewModel(viewModelCImpl.observeExchangeConnectionsUseCase(), viewModelCImpl.deleteExchangeConnectionUseCase(), viewModelCImpl.syncExchangeTradesUseCase(), viewModelCImpl.setConnectionActiveUseCase());
 
           case 5: // com.cryptolens.app.features.market.presentation.marketlist.MarketListViewModel 
-          return (T) new MarketListViewModel(viewModelCImpl.getTopCoinsUseCase(), viewModelCImpl.observeMultipleTickersUseCase());
+          return (T) new MarketListViewModel(viewModelCImpl.getTopCoinsUseCase(), viewModelCImpl.observeMultipleTickersUseCase(), viewModelCImpl.observeWatchlistUseCase(), singletonCImpl.marketCacheProvider.get());
 
           case 6: // com.cryptolens.app.features.portfolio.presentation.PortfolioViewModel 
           return (T) new PortfolioViewModel(viewModelCImpl.observePortfolioSummaryUseCase(), viewModelCImpl.observeTransactionsUseCase(), viewModelCImpl.addTransactionUseCase(), viewModelCImpl.deleteTransactionUseCase(), viewModelCImpl.deleteAssetUseCase(), viewModelCImpl.getCurrentUserUseCase());
@@ -672,8 +751,14 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
           case 8: // com.cryptolens.app.features.auth.presentation.register.RegisterViewModel 
           return (T) new RegisterViewModel(viewModelCImpl.registerUseCase());
 
-          case 9: // com.cryptolens.app.features.auth.presentation.splash.SplashViewModel 
+          case 9: // com.cryptolens.app.features.settings.presentation.SettingsViewModel 
+          return (T) new SettingsViewModel(viewModelCImpl.observeSettingsUseCase(), viewModelCImpl.setCurrencyUseCase(), viewModelCImpl.setThemeUseCase(), viewModelCImpl.setLanguageUseCase(), viewModelCImpl.setPriceFormatUseCase(), viewModelCImpl.setShowPortfolioValueUseCase(), viewModelCImpl.setNotificationsUseCase(), viewModelCImpl.setBiometricLockUseCase());
+
+          case 10: // com.cryptolens.app.features.auth.presentation.splash.SplashViewModel 
           return (T) new SplashViewModel(viewModelCImpl.getCurrentUserUseCase());
+
+          case 11: // com.cryptolens.app.features.watchlist.presentation.WatchlistViewModel 
+          return (T) new WatchlistViewModel(viewModelCImpl.observeWatchlistUseCase(), viewModelCImpl.removeFromWatchlistUseCase(), viewModelCImpl.getTopCoinsUseCase(), viewModelCImpl.observeMultipleTickersUseCase(), singletonCImpl.marketCacheProvider.get());
 
           default: throw new AssertionError(id);
         }
@@ -769,9 +854,15 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
 
     private Provider<BinanceWebSocketManager> provideBinanceWsManagerProvider;
 
+    private Provider<MarketCache> marketCacheProvider;
+
     private Provider<MarketRepositoryImpl> marketRepositoryImplProvider;
 
     private Provider<CryptoDatabase> provideDatabaseProvider;
+
+    private Provider<WatchlistDao> provideWatchlistDaoProvider;
+
+    private Provider<WatchlistRepositoryImpl> watchlistRepositoryImplProvider;
 
     private Provider<ExchangeConnectionDao> provideExchangeConnectionDaoProvider;
 
@@ -791,6 +882,8 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
 
     private Provider<PortfolioRepositoryImpl> portfolioRepositoryImplProvider;
 
+    private Provider<SettingsRepositoryImpl> settingsRepositoryImplProvider;
+
     private SingletonCImpl(ApplicationContextModule applicationContextModuleParam) {
       this.applicationContextModule = applicationContextModuleParam;
       initialize(applicationContextModuleParam);
@@ -806,17 +899,21 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
       this.provideBinanceRetrofitProvider = DoubleCheck.provider(new SwitchingProvider<Retrofit>(singletonCImpl, 6));
       this.provideBinanceApiServiceProvider = DoubleCheck.provider(new SwitchingProvider<BinanceApiService>(singletonCImpl, 5));
       this.provideBinanceWsManagerProvider = DoubleCheck.provider(new SwitchingProvider<BinanceWebSocketManager>(singletonCImpl, 7));
+      this.marketCacheProvider = DoubleCheck.provider(new SwitchingProvider<MarketCache>(singletonCImpl, 8));
       this.marketRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<MarketRepositoryImpl>(singletonCImpl, 0));
-      this.provideDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<CryptoDatabase>(singletonCImpl, 10));
-      this.provideExchangeConnectionDaoProvider = DoubleCheck.provider(new SwitchingProvider<ExchangeConnectionDao>(singletonCImpl, 9));
-      this.cryptoManagerProvider = DoubleCheck.provider(new SwitchingProvider<CryptoManager>(singletonCImpl, 11));
-      this.provideBinanceApiClientProvider = DoubleCheck.provider(new SwitchingProvider<BinanceApiClient>(singletonCImpl, 12));
-      this.providePortfolioAssetDaoProvider = DoubleCheck.provider(new SwitchingProvider<PortfolioAssetDao>(singletonCImpl, 13));
-      this.provideTransactionDaoProvider = DoubleCheck.provider(new SwitchingProvider<TransactionDao>(singletonCImpl, 14));
-      this.exchangeRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<ExchangeRepositoryImpl>(singletonCImpl, 8));
-      this.provideSupabaseClientProvider = DoubleCheck.provider(new SwitchingProvider<SupabaseClient>(singletonCImpl, 16));
-      this.authRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<AuthRepositoryImpl>(singletonCImpl, 15));
-      this.portfolioRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<PortfolioRepositoryImpl>(singletonCImpl, 17));
+      this.provideDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<CryptoDatabase>(singletonCImpl, 11));
+      this.provideWatchlistDaoProvider = DoubleCheck.provider(new SwitchingProvider<WatchlistDao>(singletonCImpl, 10));
+      this.watchlistRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<WatchlistRepositoryImpl>(singletonCImpl, 9));
+      this.provideExchangeConnectionDaoProvider = DoubleCheck.provider(new SwitchingProvider<ExchangeConnectionDao>(singletonCImpl, 13));
+      this.cryptoManagerProvider = DoubleCheck.provider(new SwitchingProvider<CryptoManager>(singletonCImpl, 14));
+      this.provideBinanceApiClientProvider = DoubleCheck.provider(new SwitchingProvider<BinanceApiClient>(singletonCImpl, 15));
+      this.providePortfolioAssetDaoProvider = DoubleCheck.provider(new SwitchingProvider<PortfolioAssetDao>(singletonCImpl, 16));
+      this.provideTransactionDaoProvider = DoubleCheck.provider(new SwitchingProvider<TransactionDao>(singletonCImpl, 17));
+      this.exchangeRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<ExchangeRepositoryImpl>(singletonCImpl, 12));
+      this.provideSupabaseClientProvider = DoubleCheck.provider(new SwitchingProvider<SupabaseClient>(singletonCImpl, 19));
+      this.authRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<AuthRepositoryImpl>(singletonCImpl, 18));
+      this.portfolioRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<PortfolioRepositoryImpl>(singletonCImpl, 20));
+      this.settingsRepositoryImplProvider = DoubleCheck.provider(new SwitchingProvider<SettingsRepositoryImpl>(singletonCImpl, 21));
     }
 
     @Override
@@ -853,7 +950,7 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
       public T get() {
         switch (id) {
           case 0: // com.cryptolens.app.features.market.data.repository.MarketRepositoryImpl 
-          return (T) new MarketRepositoryImpl(singletonCImpl.provideCoinGeckoApiServiceProvider.get(), singletonCImpl.provideBinanceApiServiceProvider.get(), singletonCImpl.provideBinanceWsManagerProvider.get());
+          return (T) new MarketRepositoryImpl(singletonCImpl.provideCoinGeckoApiServiceProvider.get(), singletonCImpl.provideBinanceApiServiceProvider.get(), singletonCImpl.provideBinanceWsManagerProvider.get(), singletonCImpl.marketCacheProvider.get());
 
           case 1: // com.cryptolens.app.features.market.data.remote.CoinGeckoApiService 
           return (T) NetworkModule_ProvideCoinGeckoApiServiceFactory.provideCoinGeckoApiService(singletonCImpl.provideCoinGeckoRetrofitProvider.get());
@@ -876,35 +973,47 @@ public final class DaggerCryptoLensApp_HiltComponents_SingletonC {
           case 7: // com.cryptolens.app.features.market.data.remote.BinanceWebSocketManager 
           return (T) NetworkModule_ProvideBinanceWsManagerFactory.provideBinanceWsManager(singletonCImpl.provideOkHttpClientProvider.get(), singletonCImpl.provideJsonProvider.get());
 
-          case 8: // com.cryptolens.app.features.exchange.data.repository.ExchangeRepositoryImpl 
-          return (T) new ExchangeRepositoryImpl(singletonCImpl.provideExchangeConnectionDaoProvider.get(), singletonCImpl.cryptoManagerProvider.get(), singletonCImpl.provideBinanceApiClientProvider.get(), singletonCImpl.providePortfolioAssetDaoProvider.get(), singletonCImpl.provideTransactionDaoProvider.get());
+          case 8: // com.cryptolens.app.features.market.data.remote.MarketCache 
+          return (T) new MarketCache();
 
-          case 9: // com.cryptolens.app.features.exchange.data.local.ExchangeConnectionDao 
-          return (T) DatabaseModule_ProvideExchangeConnectionDaoFactory.provideExchangeConnectionDao(singletonCImpl.provideDatabaseProvider.get());
+          case 9: // com.cryptolens.app.features.watchlist.data.repository.WatchlistRepositoryImpl 
+          return (T) new WatchlistRepositoryImpl(singletonCImpl.provideWatchlistDaoProvider.get());
 
-          case 10: // com.cryptolens.app.core.data.local.CryptoDatabase 
+          case 10: // com.cryptolens.app.features.watchlist.data.local.dao.WatchlistDao 
+          return (T) DatabaseModule_ProvideWatchlistDaoFactory.provideWatchlistDao(singletonCImpl.provideDatabaseProvider.get());
+
+          case 11: // com.cryptolens.app.core.data.local.CryptoDatabase 
           return (T) DatabaseModule_ProvideDatabaseFactory.provideDatabase(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
-          case 11: // com.cryptolens.app.features.exchange.data.local.CryptoManager 
+          case 12: // com.cryptolens.app.features.exchange.data.repository.ExchangeRepositoryImpl 
+          return (T) new ExchangeRepositoryImpl(singletonCImpl.provideExchangeConnectionDaoProvider.get(), singletonCImpl.cryptoManagerProvider.get(), singletonCImpl.provideBinanceApiClientProvider.get(), singletonCImpl.providePortfolioAssetDaoProvider.get(), singletonCImpl.provideTransactionDaoProvider.get());
+
+          case 13: // com.cryptolens.app.features.exchange.data.local.ExchangeConnectionDao 
+          return (T) DatabaseModule_ProvideExchangeConnectionDaoFactory.provideExchangeConnectionDao(singletonCImpl.provideDatabaseProvider.get());
+
+          case 14: // com.cryptolens.app.features.exchange.data.local.CryptoManager 
           return (T) new CryptoManager();
 
-          case 12: // com.cryptolens.app.features.exchange.data.remote.BinanceApiClient 
+          case 15: // com.cryptolens.app.features.exchange.data.remote.BinanceApiClient 
           return (T) NetworkModule_ProvideBinanceApiClientFactory.provideBinanceApiClient(singletonCImpl.provideOkHttpClientProvider.get(), singletonCImpl.provideJsonProvider.get());
 
-          case 13: // com.cryptolens.app.features.portfolio.data.local.dao.PortfolioAssetDao 
+          case 16: // com.cryptolens.app.features.portfolio.data.local.dao.PortfolioAssetDao 
           return (T) DatabaseModule_ProvidePortfolioAssetDaoFactory.providePortfolioAssetDao(singletonCImpl.provideDatabaseProvider.get());
 
-          case 14: // com.cryptolens.app.features.portfolio.data.local.dao.TransactionDao 
+          case 17: // com.cryptolens.app.features.portfolio.data.local.dao.TransactionDao 
           return (T) DatabaseModule_ProvideTransactionDaoFactory.provideTransactionDao(singletonCImpl.provideDatabaseProvider.get());
 
-          case 15: // com.cryptolens.app.features.auth.data.repository.AuthRepositoryImpl 
+          case 18: // com.cryptolens.app.features.auth.data.repository.AuthRepositoryImpl 
           return (T) new AuthRepositoryImpl(singletonCImpl.provideSupabaseClientProvider.get());
 
-          case 16: // io.github.jan.supabase.SupabaseClient 
+          case 19: // io.github.jan.supabase.SupabaseClient 
           return (T) SupabaseModule_ProvideSupabaseClientFactory.provideSupabaseClient();
 
-          case 17: // com.cryptolens.app.features.portfolio.data.repository.PortfolioRepositoryImpl 
+          case 20: // com.cryptolens.app.features.portfolio.data.repository.PortfolioRepositoryImpl 
           return (T) new PortfolioRepositoryImpl(singletonCImpl.providePortfolioAssetDaoProvider.get(), singletonCImpl.provideTransactionDaoProvider.get());
+
+          case 21: // com.cryptolens.app.features.settings.data.repository.SettingsRepositoryImpl 
+          return (T) new SettingsRepositoryImpl(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
           default: throw new AssertionError(id);
         }
