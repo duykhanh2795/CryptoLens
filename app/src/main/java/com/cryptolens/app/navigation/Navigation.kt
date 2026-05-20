@@ -25,6 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.cryptolens.app.features.alerts.presentation.AlertCoinPrefill
 import com.cryptolens.app.features.alerts.presentation.AlertsScreen
+import com.cryptolens.app.features.alerts.domain.model.AlertType
 import com.cryptolens.app.features.ai.presentation.AiAssistantOverlay
 import com.cryptolens.app.features.auth.presentation.login.LoginScreen
 import com.cryptolens.app.features.auth.presentation.register.RegisterScreen
@@ -72,7 +73,7 @@ sealed class Screen(val route: String) {
             "trending_wallet/${Uri.encode(chain)}/${Uri.encode(address)}"
     }
     data object AlertsFromCoin  : Screen(
-        "alerts/create?coinId={coinId}&symbol={symbol}&name={name}&imageUrl={imageUrl}&price={price}"
+        "alerts/create?coinId={coinId}&symbol={symbol}&name={name}&imageUrl={imageUrl}&price={price}&volume={volume}&marketCap={marketCap}&alertType={alertType}"
     ) {
         fun createRoute(
             coinId: String,
@@ -80,12 +81,18 @@ sealed class Screen(val route: String) {
             name: String,
             imageUrl: String,
             price: Double,
+            volume: Double = 0.0,
+            marketCap: Double = 0.0,
+            alertType: AlertType = AlertType.PRICE_LIMIT,
         ): String =
             "alerts/create?coinId=${Uri.encode(coinId)}" +
                 "&symbol=${Uri.encode(symbol)}" +
                 "&name=${Uri.encode(name)}" +
                 "&imageUrl=${Uri.encode(imageUrl)}" +
-                "&price=${Uri.encode(price.toString())}"
+                "&price=${Uri.encode(price.toString())}" +
+                "&volume=${Uri.encode(volume.toString())}" +
+                "&marketCap=${Uri.encode(marketCap.toString())}" +
+                "&alertType=${Uri.encode(alertType.name)}"
     }
     data object CoinDetail      : Screen("coin_detail/{coinId}") {
         fun createRoute(coinId: String) = "coin_detail/$coinId"
@@ -301,9 +308,24 @@ fun CryptoLensNavHost(
                         type = NavType.StringType
                         defaultValue = "0.0"
                     },
+                    navArgument("volume") {
+                        type = NavType.StringType
+                        defaultValue = "0.0"
+                    },
+                    navArgument("marketCap") {
+                        type = NavType.StringType
+                        defaultValue = "0.0"
+                    },
+                    navArgument("alertType") {
+                        type = NavType.StringType
+                        defaultValue = AlertType.PRICE_LIMIT.name
+                    },
                 ),
             ) { entry ->
                 val args = entry.arguments
+                val alertType = runCatching {
+                    AlertType.valueOf(args?.getString("alertType").orEmpty())
+                }.getOrDefault(AlertType.PRICE_LIMIT)
                 AlertsScreen(
                     onNavigateBack = { navController.popBackStack() },
                     prefill = AlertCoinPrefill(
@@ -312,6 +334,9 @@ fun CryptoLensNavHost(
                         name = args?.getString("name").orEmpty(),
                         imageUrl = args?.getString("imageUrl").orEmpty(),
                         currentPrice = args?.getString("price")?.toDoubleOrNull() ?: 0.0,
+                        currentVolume = args?.getString("volume")?.toDoubleOrNull() ?: 0.0,
+                        currentMarketCap = args?.getString("marketCap")?.toDoubleOrNull() ?: 0.0,
+                        alertType = alertType,
                     ),
                 )
             }
@@ -368,14 +393,17 @@ fun CryptoLensNavHost(
             ) {
                 CoinDetailScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onSetAlert = { coin, price ->
+                    onSetAlert = { coin, alertType ->
                         navController.navigate(
                             Screen.AlertsFromCoin.createRoute(
                                 coinId = coin.id,
                                 symbol = coin.symbol,
                                 name = coin.name,
                                 imageUrl = coin.imageUrl,
-                                price = price,
+                                price = coin.currentPrice,
+                                volume = coin.volume24h,
+                                marketCap = coin.marketCap,
+                                alertType = alertType,
                             )
                         )
                     },

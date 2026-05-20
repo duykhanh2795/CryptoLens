@@ -99,8 +99,8 @@ class MarketRepositoryImpl @Inject constructor(
                         volume24h             = md.volume["usd"] ?: 0.0,
                         high24h               = md.high24h["usd"] ?: 0.0,
                         low24h                = md.low24h["usd"] ?: 0.0,
-                        circulatingSupply     = 0.0,
-                        rank                  = 0,
+                        circulatingSupply     = md.circulatingSupply ?: 0.0,
+                        rank                  = dto.marketCapRank ?: 0,
                     ),
                     description  = dto.description.en,
                     homepageUrl  = dto.links.homepage.firstOrNull() ?: "",
@@ -109,6 +109,8 @@ class MarketRepositoryImpl @Inject constructor(
                     allTimeHighDate = md.athDate["usd"] ?: "",
                     allTimeLow      = md.atl["usd"] ?: 0.0,
                     allTimeLowDate  = md.atlDate["usd"] ?: "",
+                    totalSupply     = md.totalSupply ?: 0.0,
+                    maxSupply       = md.maxSupply ?: 0.0,
                 )
             )
         } catch (e: Exception) {

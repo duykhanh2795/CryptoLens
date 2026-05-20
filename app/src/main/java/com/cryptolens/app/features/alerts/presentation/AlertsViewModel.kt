@@ -58,6 +58,9 @@ sealed class AlertsEvent {
         val name: String,
         val imageUrl: String,
         val currentPrice: Double,
+        val currentVolume: Double = 0.0,
+        val currentMarketCap: Double = 0.0,
+        val alertType: AlertType = AlertType.PRICE_LIMIT,
     ) : AlertsEvent()
     data class CoinSelected(val coinId: String) : AlertsEvent()
     data class AlertTypeChanged(val type: AlertType) : AlertsEvent()
@@ -195,12 +198,6 @@ class AlertsViewModel @Inject constructor(
     }
 
     private fun prefillCoin(event: AlertsEvent.PreFillCoin) {
-        val priceText = if (event.currentPrice > 0.0) {
-            event.currentPrice.toBigDecimal().stripTrailingZeros().toPlainString()
-        } else {
-            ""
-        }
-
         _uiState.update {
             it.copy(
                 showCreateSheet = true,
@@ -209,10 +206,18 @@ class AlertsViewModel @Inject constructor(
                 coinName = event.name,
                 coinImageUrl = event.imageUrl,
                 coinCurrentPrice = event.currentPrice,
-                selectedAlertType = AlertType.PRICE_LIMIT,
+                coinCurrentVolume = event.currentVolume,
+                coinCurrentMarketCap = event.currentMarketCap,
+                selectedAlertType = event.alertType,
                 selectedValueType = AlertValueType.NUMBER,
                 selectedFrequency = AlertFrequency.ONE_TIME,
-                targetValueInput = priceText,
+                selectedCondition = AlertCondition.ABOVE,
+                targetValueInput = defaultInputFor(
+                    currentPrice = event.currentPrice,
+                    currentVolume = event.currentVolume,
+                    currentMarketCap = event.currentMarketCap,
+                    type = event.alertType,
+                ),
                 targetValueError = null,
             )
         }

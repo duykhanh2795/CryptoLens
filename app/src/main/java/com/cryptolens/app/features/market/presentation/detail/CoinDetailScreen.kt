@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.cryptolens.app.core.domain.util.formatLargeNumber
 import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.features.alerts.domain.model.AlertType
 import com.cryptolens.app.features.market.domain.model.ChartMarketType
 import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.features.market.domain.model.CoinDetail
@@ -45,6 +46,7 @@ import com.cryptolens.app.features.market.domain.model.Kline
 import com.cryptolens.app.features.market.domain.model.PriceTicker
 import com.cryptolens.app.features.news.domain.model.NewsItem
 import com.cryptolens.app.features.news.presentation.NewsRow
+import com.cryptolens.app.features.portfolio.domain.model.PortfolioAsset
 import com.cryptolens.app.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -55,7 +57,7 @@ import java.util.Locale
 @Composable
 fun CoinDetailScreen(
     onNavigateBack: () -> Unit,
-    onSetAlert: (Coin, Double) -> Unit = { _, _ -> },
+    onSetAlert: (Coin, AlertType) -> Unit = { _, _ -> },
     onSeeAllNews: (String) -> Unit = {},
     onOpenPortfolio: () -> Unit = {},
     viewModel: CoinDetailViewModel = hiltViewModel(),
@@ -105,6 +107,8 @@ fun CoinDetailScreen(
                     isKlinesLoading   = uiState.isKlinesLoading,
                     chartError        = uiState.chartError,
                     isWatchlisted     = uiState.isWatchlisted,
+                    portfolioAsset    = uiState.portfolioAsset,
+                    portfolioTotalValue = uiState.portfolioTotalValue,
                     relatedNews       = uiState.relatedNews,
                     isNewsLoading     = uiState.isNewsLoading,
                     newsError         = uiState.newsError,
@@ -138,11 +142,13 @@ private fun CoinDetailContent(
     isKlinesLoading: Boolean,
     chartError: String?,
     isWatchlisted: Boolean,
+    portfolioAsset: PortfolioAsset?,
+    portfolioTotalValue: Double,
     relatedNews: List<NewsItem>,
     isNewsLoading: Boolean,
     newsError: String?,
     onBack: () -> Unit,
-    onSetAlert: (Coin, Double) -> Unit,
+    onSetAlert: (Coin, AlertType) -> Unit,
     onSeeAllNews: (String) -> Unit,
     onOpenPortfolio: () -> Unit,
     onIntervalChange: (ChartInterval) -> Unit,
@@ -154,6 +160,7 @@ private fun CoinDetailContent(
     val displayPrice = liveTicker?.price ?: coin.currentPrice
     val displayPct   = liveTicker?.priceChangePercent ?: coin.priceChangePercent24h
     val isPositive   = displayPct >= 0
+    val displayCoin   = coin.copy(currentPrice = displayPrice)
 
     Column(modifier = Modifier.fillMaxSize().background(BackgroundDark)) {
         CoinDetailTopBar(
@@ -170,9 +177,9 @@ private fun CoinDetailContent(
                 isPositive   = isPositive,
                 isLive       = liveTicker != null,
             )
-            SetAlertRow(
+            AlertQuickActionsRow(
                 symbol = coin.symbol,
-                onSetAlert = { onSetAlert(coin, displayPrice) },
+                onSetAlert = { alertType -> onSetAlert(displayCoin, alertType) },
             )
             ChartControlsRow(
                 selectedMarketType = selectedMarketType,
@@ -229,6 +236,15 @@ private fun CoinDetailContent(
             HorizontalDivider(color = DividerColor)
             QuickStatsRow(coin = coin)
             HorizontalDivider(color = DividerColor)
+            if (portfolioAsset != null) {
+                YourHoldingsSection(
+                    asset = portfolioAsset,
+                    totalPortfolioValue = portfolioTotalValue,
+                    currentPrice = displayPrice,
+                    onOpenPortfolio = onOpenPortfolio,
+                )
+                HorizontalDivider(color = DividerColor)
+            }
             MarketInfoSection(coin = coin, coinDetail = coinDetail)
             HorizontalDivider(color = DividerColor)
             CoinNewsSection(
@@ -565,33 +581,63 @@ private fun ChartNotice(message: String) {
 }
 
 @Composable
-private fun SetAlertRow(
+private fun AlertQuickActionsRow(
     symbol: String,
-    onSetAlert: () -> Unit,
+    onSetAlert: (AlertType) -> Unit,
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(SurfaceDark)
             .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Track a target for $symbol",
+            text = "Create $symbol alert",
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary,
-            modifier = Modifier.weight(1f),
         )
-        OutlinedButton(
-            onClick = onSetAlert,
-            shape = RoundedCornerShape(8.dp),
-            border = BorderStroke(1.dp, BinanceYellow),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = BinanceYellow),
-        ) {
-            Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Set Alert", fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AlertQuickActionButton(
+                label = "Price",
+                icon = Icons.Default.AttachMoney,
+                onClick = { onSetAlert(AlertType.PRICE_LIMIT) },
+                modifier = Modifier.weight(1f),
+            )
+            AlertQuickActionButton(
+                label = "Volume",
+                icon = Icons.Default.BarChart,
+                onClick = { onSetAlert(AlertType.VOLUME) },
+                modifier = Modifier.weight(1f),
+            )
+            AlertQuickActionButton(
+                label = "M.Cap",
+                icon = Icons.Default.PieChart,
+                onClick = { onSetAlert(AlertType.MARKET_CAP) },
+                modifier = Modifier.weight(1f),
+            )
         }
+    }
+}
+
+@Composable
+private fun AlertQuickActionButton(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.height(40.dp),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, BinanceYellow.copy(alpha = 0.8f)),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = BinanceYellow),
+        contentPadding = PaddingValues(horizontal = 8.dp),
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(label, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1)
     }
 }
 
@@ -814,6 +860,107 @@ private fun StatItem(label: String, value: String, color: Color) {
 // ── Market Info ───────────────────────────────────────────────────────────────
 
 @Composable
+private fun YourHoldingsSection(
+    asset: PortfolioAsset,
+    totalPortfolioValue: Double,
+    currentPrice: Double,
+    onOpenPortfolio: () -> Unit,
+) {
+    val pricedAsset = asset.copy(currentPrice = currentPrice)
+    val allocation = if (totalPortfolioValue > 0.0) {
+        (pricedAsset.currentValue / totalPortfolioValue) * 100.0
+    } else {
+        pricedAsset.allocationPercent
+    }
+    val profitColor = if (pricedAsset.isProfit) GreenUp else RedDown
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SurfaceDark)
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Your Holdings",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onOpenPortfolio, contentPadding = PaddingValues(0.dp)) {
+                Text("Portfolio", color = BinanceYellow, style = MaterialTheme.typography.labelLarge)
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = BinanceYellow,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HoldingMetric(
+                label = "Value",
+                value = "$${pricedAsset.currentValue.formatLargeNumber()}",
+                modifier = Modifier.weight(1f),
+            )
+            HoldingMetric(
+                label = "Quantity",
+                value = "${pricedAsset.quantity.formatLargeNumber()} ${pricedAsset.symbol}",
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            HoldingMetric(
+                label = "Avg Buy",
+                value = "$${pricedAsset.averageBuyPrice.formatPrice()}",
+                modifier = Modifier.weight(1f),
+            )
+            HoldingMetric(
+                label = "P&L",
+                value = "${if (pricedAsset.profitLoss >= 0) "+" else "-"}$${kotlin.math.abs(pricedAsset.profitLoss).formatLargeNumber()} (${kotlin.math.abs(pricedAsset.profitLossPercent).formatPrice()}%)",
+                valueColor = profitColor,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        HoldingMetric(
+            label = "Portfolio Allocation",
+            value = "${allocation.formatPrice()}%",
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun HoldingMetric(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    valueColor: Color = TextPrimary,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(SurfaceVariant)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Text(label, color = TextTertiary, style = MaterialTheme.typography.labelSmall)
+        Spacer(Modifier.height(3.dp))
+        Text(
+            value,
+            color = valueColor,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
 private fun MarketInfoSection(coin: Coin, coinDetail: CoinDetail) {
     Column(
         modifier = Modifier
@@ -829,14 +976,20 @@ private fun MarketInfoSection(coin: Coin, coinDetail: CoinDetail) {
         )
         Spacer(Modifier.height(14.dp))
 
-        val rows = listOf(
-            "Market Cap Rank"    to "#${coin.rank}",
-            "Market Cap"         to "$${coin.marketCap.formatLargeNumber()}",
-            "24h Volume"         to "$${coin.volume24h.formatLargeNumber()}",
-            "All Time High"      to "$${coinDetail.allTimeHigh.formatPrice()}",
-            "All Time Low"       to "$${coinDetail.allTimeLow.formatPrice()}",
-            "Circulating Supply" to "${coin.circulatingSupply.formatLargeNumber()} ${coin.symbol}",
-        )
+        val rows = buildList {
+            add("Market Cap Rank" to coin.rank.formatRank())
+            add("Market Cap" to coin.marketCap.formatUsdLarge())
+            add("24h Volume" to coin.volume24h.formatUsdLarge())
+            add("24h High" to coin.high24h.formatUsdPrice())
+            add("24h Low" to coin.low24h.formatUsdPrice())
+            add("All Time High" to "${coinDetail.allTimeHigh.formatUsdPrice()}${coinDetail.allTimeHighDate.formatDateSuffix()}")
+            add("All Time Low" to "${coinDetail.allTimeLow.formatUsdPrice()}${coinDetail.allTimeLowDate.formatDateSuffix()}")
+            add("Circulating Supply" to coin.circulatingSupply.formatSupply(coin.symbol))
+            add("Total Supply" to coinDetail.totalSupply.formatSupply(coin.symbol))
+            if (coinDetail.maxSupply > 0.0) {
+                add("Max Supply" to coinDetail.maxSupply.formatSupply(coin.symbol))
+            }
+        }
 
         rows.forEachIndexed { idx, (label, value) ->
             Row(
@@ -861,6 +1014,28 @@ private fun MarketInfoSection(coin: Coin, coinDetail: CoinDetail) {
 }
 
 // ── About ─────────────────────────────────────────────────────────────────────
+
+private fun Int.formatRank(): String = if (this > 0) "#$this" else "N/A"
+
+private fun Double.formatUsdPrice(): String = if (this > 0.0) "$${formatPrice()}" else "N/A"
+
+private fun Double.formatUsdLarge(): String = if (this > 0.0) "$${formatLargeNumber()}" else "N/A"
+
+private fun Double.formatSupply(symbol: String): String =
+    if (this > 0.0) "${formatLargeNumber()} $symbol" else "N/A"
+
+private fun String.formatDateSuffix(): String {
+    if (isBlank()) return ""
+    val parsed = runCatching {
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).parse(this)
+    }.getOrNull()
+    val label = if (parsed != null) {
+        SimpleDateFormat("MMM yyyy", Locale.getDefault()).format(parsed)
+    } else {
+        take(10)
+    }
+    return " ($label)"
+}
 
 @Composable
 private fun AboutSection(description: String) {

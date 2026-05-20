@@ -28,6 +28,8 @@ data class CoinDetail(
     val allTimeHighDate: String,
     val allTimeLow: Double,
     val allTimeLowDate: String,
+    val totalSupply: Double = 0.0,
+    val maxSupply: Double = 0.0,
 )
 
 data class Kline(

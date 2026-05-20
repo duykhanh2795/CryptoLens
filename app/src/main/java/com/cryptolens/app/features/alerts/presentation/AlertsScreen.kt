@@ -114,6 +114,9 @@ fun AlertsScreen(
                     name = it.name,
                     imageUrl = it.imageUrl,
                     currentPrice = it.currentPrice,
+                    currentVolume = it.currentVolume,
+                    currentMarketCap = it.currentMarketCap,
+                    alertType = it.alertType,
                 )
             )
         }
@@ -199,6 +202,9 @@ data class AlertCoinPrefill(
     val name: String,
     val imageUrl: String,
     val currentPrice: Double,
+    val currentVolume: Double = 0.0,
+    val currentMarketCap: Double = 0.0,
+    val alertType: AlertType = AlertType.PRICE_LIMIT,
 )
 
 @Composable

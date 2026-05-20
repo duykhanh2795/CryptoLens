@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cryptolens.app.core.domain.util.Resource
+import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
 import com.cryptolens.app.features.market.domain.model.ChartMarketType
 import com.cryptolens.app.features.market.domain.model.CoinDetail
 import com.cryptolens.app.features.market.domain.model.FuturesMarketInfo
@@ -20,6 +21,8 @@ import com.cryptolens.app.features.market.domain.util.CryptoSymbolMapper
 import com.cryptolens.app.features.news.domain.model.NewsFilter
 import com.cryptolens.app.features.news.domain.model.NewsItem
 import com.cryptolens.app.features.news.domain.usecase.GetNewsUseCase
+import com.cryptolens.app.features.portfolio.domain.model.PortfolioAsset
+import com.cryptolens.app.features.portfolio.domain.usecase.ObservePortfolioSummaryUseCase
 import com.cryptolens.app.features.watchlist.domain.usecase.ObserveIsWatchlistedUseCase
 import com.cryptolens.app.features.watchlist.domain.usecase.ToggleWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -57,6 +60,8 @@ data class CoinDetailUiState(
     val isKlinesLoading: Boolean        = false,
     val chartError: String?             = null,
     val isWatchlisted: Boolean          = false,
+    val portfolioAsset: PortfolioAsset? = null,
+    val portfolioTotalValue: Double     = 0.0,
     val relatedNews: List<NewsItem>     = emptyList(),
     val isNewsLoading: Boolean          = false,
     val newsError: String?              = null,
@@ -86,6 +91,8 @@ class CoinDetailViewModel @Inject constructor(
     private val observeIsWatchlisted: ObserveIsWatchlistedUseCase,
     private val toggleWatchlist: ToggleWatchlistUseCase,
     private val getNews: GetNewsUseCase,
+    private val observePortfolioSummary: ObservePortfolioSummaryUseCase,
+    private val getCurrentUser: GetCurrentUserUseCase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -102,6 +109,7 @@ class CoinDetailViewModel @Inject constructor(
 
     init {
         observeWatchlistState()
+        observePortfolioPosition()
         // Load detail first, then klines after detail is ready
         loadDetailThenKlines(ChartInterval.ONE_DAY)
     }
@@ -304,6 +312,21 @@ class CoinDetailViewModel @Inject constructor(
         viewModelScope.launch {
             observeIsWatchlisted(coinId).collect { isWatchlisted ->
                 _uiState.update { it.copy(isWatchlisted = isWatchlisted) }
+            }
+        }
+    }
+
+    private fun observePortfolioPosition() {
+        val userId = getCurrentUser()?.id.orEmpty()
+        if (userId.isBlank()) return
+        viewModelScope.launch {
+            observePortfolioSummary(userId).collect { summary ->
+                _uiState.update {
+                    it.copy(
+                        portfolioAsset = summary.assets.firstOrNull { asset -> asset.coinId == coinId },
+                        portfolioTotalValue = summary.totalValue,
+                    )
+                }
             }
         }
     }
