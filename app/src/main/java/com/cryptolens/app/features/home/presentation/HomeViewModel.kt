@@ -8,6 +8,8 @@ import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
 import com.cryptolens.app.features.market.data.remote.MarketCache
 import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.features.market.domain.usecase.GetTopCoinsUseCase
+import com.cryptolens.app.features.wallet.domain.model.TrendingWallet
+import com.cryptolens.app.features.wallet.domain.usecase.GetTrendingWalletsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -18,6 +20,7 @@ data class HomeUiState(
     val trendingCoins: List<Coin> = emptyList(),
     val topGainers: List<Coin>    = emptyList(),
     val topLosers: List<Coin>     = emptyList(),
+    val trendingWallets: List<TrendingWallet> = emptyList(),
     val isLoading: Boolean        = true,
     val error: String?            = null,
 )
@@ -25,6 +28,7 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getTopCoins: GetTopCoinsUseCase,
+    private val getTrendingWallets: GetTrendingWalletsUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
     private val marketCache: MarketCache,
 ) : ViewModel() {
@@ -35,11 +39,13 @@ class HomeViewModel @Inject constructor(
     init {
         _uiState.update { it.copy(user = getCurrentUser()) }
         loadMarketData()
+        loadTrendingWallets()
     }
 
     fun refresh() {
         marketCache.invalidate()
         loadMarketData()
+        loadTrendingWallets()
     }
 
     private fun loadMarketData() {
@@ -74,6 +80,17 @@ class HomeViewModel @Inject constructor(
                             state.copy(isLoading = false)
                     }
                 }
+            }
+        }
+    }
+
+    private fun loadTrendingWallets() {
+        viewModelScope.launch {
+            when (val result = getTrendingWallets()) {
+                is Resource.Success -> _uiState.update {
+                    it.copy(trendingWallets = result.data.take(2))
+                }
+                else -> Unit
             }
         }
     }

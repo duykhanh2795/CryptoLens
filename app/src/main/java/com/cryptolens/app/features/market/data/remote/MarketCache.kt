@@ -20,16 +20,32 @@ class MarketCache @Inject constructor() {
     val coins: StateFlow<Resource<List<Coin>>> = _coins.asStateFlow()
 
     private var lastFetchMs: Long = 0L
+    private var lastCurrency: String = "usd"
+    private var lastPage: Int = 1
     private val cacheTtlMs: Long  = 60_000L  // 1 minute TTL
 
-    fun isFresh(): Boolean =
-        _coins.value is Resource.Success &&
-        System.currentTimeMillis() - lastFetchMs < cacheTtlMs
+    fun isFresh(
+        currency: String = "usd",
+        perPage: Int = 0,
+        page: Int = 1,
+    ): Boolean {
+        val current = _coins.value as? Resource.Success ?: return false
+        return System.currentTimeMillis() - lastFetchMs < cacheTtlMs &&
+            lastCurrency == currency &&
+            lastPage == page &&
+            current.data.size >= perPage
+    }
 
-    fun update(resource: Resource<List<Coin>>) {
+    fun update(
+        resource: Resource<List<Coin>>,
+        currency: String = "usd",
+        page: Int = 1,
+    ) {
         _coins.value = resource
         if (resource is Resource.Success) {
             lastFetchMs = System.currentTimeMillis()
+            lastCurrency = currency
+            lastPage = page
         }
     }
 

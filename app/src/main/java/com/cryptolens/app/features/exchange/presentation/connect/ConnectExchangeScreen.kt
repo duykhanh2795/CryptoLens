@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -403,7 +405,7 @@ private fun EnterKeysStep(
             colors   = ButtonDefaults.outlinedButtonColors(contentColor = BinanceYellow),
         ) {
             Icon(
-                Icons.Default.OpenInNew,
+                Icons.AutoMirrored.Filled.OpenInNew,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
             )
@@ -419,7 +421,7 @@ private fun EnterKeysStep(
             onValueChange = { onEvent(ConnectExchangeEvent.LabelChanged(it)) },
             label         = "Nickname (optional)",
             placeholder   = "e.g. My Binance Main",
-            leadingIcon   = Icons.Outlined.Label,
+            leadingIcon   = Icons.AutoMirrored.Outlined.Label,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }

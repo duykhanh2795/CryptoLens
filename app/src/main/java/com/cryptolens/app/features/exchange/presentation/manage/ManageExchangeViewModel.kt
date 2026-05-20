@@ -3,6 +3,7 @@ package com.cryptolens.app.features.exchange.presentation.manage
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cryptolens.app.core.domain.util.Resource
+import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
 import com.cryptolens.app.features.exchange.domain.model.ExchangeConnection
 import com.cryptolens.app.features.exchange.domain.model.SyncResult
 import com.cryptolens.app.features.exchange.domain.usecase.DeleteExchangeConnectionUseCase
@@ -39,6 +40,7 @@ class ManageExchangeViewModel @Inject constructor(
     private val deleteConnection: DeleteExchangeConnectionUseCase,
     private val syncTrades: SyncExchangeTradesUseCase,
     private val setConnectionActive: SetConnectionActiveUseCase,
+    private val getCurrentUser: GetCurrentUserUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ManageExchangeUiState())
@@ -78,8 +80,9 @@ class ManageExchangeViewModel @Inject constructor(
     private fun handleSync(id: String) {
         if (_uiState.value.syncingId != null) return   // already syncing
         viewModelScope.launch {
+            val userId = getCurrentUser()?.id.orEmpty()
             _uiState.update { it.copy(syncingId = id) }
-            when (val r = syncTrades(id)) {
+            when (val r = syncTrades(id, userId)) {
                 is Resource.Success -> {
                     _uiState.update { it.copy(syncingId = null, lastSyncResult = r.data) }
                     _effect.emit(ManageExchangeEffect.ShowSuccess(

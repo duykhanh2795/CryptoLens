@@ -48,3 +48,16 @@ data class PortfolioSummary(
 ) {
     val isProfit: Boolean get() = totalProfitLoss >= 0
 }
+
+data class PortfolioSnapshot(
+    val userId: String,
+    val dayStart: Long,
+    val totalValue: Double,
+    val totalInvested: Double,
+    val totalProfitLoss: Double,
+    val totalProfitLossPercent: Double,
+    val assetCount: Int,
+    val createdAt: Long,
+) {
+    val isProfit: Boolean get() = totalProfitLoss >= 0
+}

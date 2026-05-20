@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.market.data.remote.MarketCache
 import com.cryptolens.app.features.market.domain.model.Coin
+import com.cryptolens.app.features.market.domain.model.PriceTicker
 import com.cryptolens.app.features.market.domain.usecase.GetTopCoinsUseCase
 import com.cryptolens.app.features.market.domain.usecase.ObserveMultipleTickersUseCase
+import com.cryptolens.app.features.market.domain.util.CryptoSymbolMapper
 import com.cryptolens.app.features.watchlist.domain.model.WatchlistItem
 import com.cryptolens.app.features.watchlist.domain.usecase.ObserveWatchlistUseCase
 import com.cryptolens.app.features.watchlist.domain.usecase.RemoveFromWatchlistUseCase
@@ -58,7 +60,7 @@ class WatchlistViewModel @Inject constructor(
     val effect: SharedFlow<WatchlistEffect> = _effect.asSharedFlow()
 
     // Local ticker cache for realtime prices (Binance WS)
-    private val tickerCache = MutableStateFlow<Map<String, Double>>(emptyMap())
+    private val tickerCache = MutableStateFlow<Map<String, PriceTicker>>(emptyMap())
 
     init {
         observeWatchlistItems()
@@ -89,9 +91,12 @@ class WatchlistViewModel @Inject constructor(
                 val enriched = watchlistItems.map { item ->
                     val coin = coinMap[item.coinId]
                     if (coin != null) {
-                        val livePrice = tickers["${coin.symbol}USDT"]
-                        val updatedCoin = if (livePrice != null && livePrice > 0) {
-                            coin.copy(currentPrice = livePrice)
+                        val liveTicker = tickers[CryptoSymbolMapper.binanceTickerSymbol(coin)]
+                        val updatedCoin = if (liveTicker != null && liveTicker.price > 0) {
+                            coin.copy(
+                                currentPrice = liveTicker.price,
+                                priceChangePercent24h = liveTicker.priceChangePercent,
+                            )
                         } else coin
                         item.copy(coin = updatedCoin)
                     } else {
@@ -114,7 +119,7 @@ class WatchlistViewModel @Inject constructor(
      * Only calls API if cache is stale or empty.
      */
     private fun fetchMarketPricesIfNeeded() {
-        if (marketCache.isFresh()) return
+        if (marketCache.isFresh(perPage = 100)) return
         fetchMarketPrices()
     }
 
@@ -137,7 +142,7 @@ class WatchlistViewModel @Inject constructor(
 
     private fun startRealtimeTickers(items: List<WatchlistItem>) {
         val symbols = items.mapNotNull { item ->
-            item.coin?.symbol?.let { "${it}USDT" }
+            item.coin?.let { CryptoSymbolMapper.binanceTickerSymbol(it) }
         }.distinct()
         if (symbols.isEmpty()) return
 
@@ -145,8 +150,7 @@ class WatchlistViewModel @Inject constructor(
         tickerJob = viewModelScope.launch {
             observeMultipleTickers(symbols).collect { resource ->
                 if (resource is Resource.Success) {
-                    val prices = resource.data.mapValues { it.value.price }
-                    tickerCache.value = prices
+                    tickerCache.value = resource.data
                 }
             }
         }

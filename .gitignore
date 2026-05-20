@@ -5,3 +5,4 @@
 /app/build
 /captures
 *.iml
+hs_err_pid*.log

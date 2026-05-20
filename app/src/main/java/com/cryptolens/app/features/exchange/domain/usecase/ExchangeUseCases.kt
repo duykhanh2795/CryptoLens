@@ -53,8 +53,10 @@ class DeleteExchangeConnectionUseCase @Inject constructor(
 class SyncExchangeTradesUseCase @Inject constructor(
     private val repo: ExchangeRepository,
 ) {
-    suspend operator fun invoke(connectionId: String): Resource<SyncResult> =
-        repo.syncTrades(connectionId)
+    suspend operator fun invoke(connectionId: String, userId: String): Resource<SyncResult> {
+        if (userId.isBlank()) return Resource.Error("Please log in before syncing exchange trades")
+        return repo.syncTrades(connectionId, userId)
+    }
 }
 
 class SetConnectionActiveUseCase @Inject constructor(

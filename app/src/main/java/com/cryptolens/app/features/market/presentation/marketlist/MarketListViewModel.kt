@@ -8,6 +8,7 @@ import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.features.market.domain.model.PriceTicker
 import com.cryptolens.app.features.market.domain.usecase.GetTopCoinsUseCase
 import com.cryptolens.app.features.market.domain.usecase.ObserveMultipleTickersUseCase
+import com.cryptolens.app.features.market.domain.util.CryptoSymbolMapper
 import com.cryptolens.app.features.watchlist.domain.usecase.ObserveWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -47,7 +48,7 @@ class MarketListViewModel @Inject constructor(
 
     val filteredCoins: StateFlow<List<Coin>> = _uiState.map { state ->
         var coins = state.coins.map { coin ->
-            val ticker = state.realtimePrices["${coin.symbol}USDT"]
+            val ticker = state.realtimePrices[CryptoSymbolMapper.binanceTickerSymbol(coin)]
             if (ticker != null) coin.copy(
                 currentPrice          = ticker.price,
                 priceChangePercent24h = ticker.priceChangePercent,
@@ -122,7 +123,7 @@ class MarketListViewModel @Inject constructor(
     }
 
     private fun startRealtimePrices(coins: List<Coin>) {
-        val symbols = coins.take(50).map { "${it.symbol}USDT" }
+        val symbols = coins.take(50).map { CryptoSymbolMapper.binanceTickerSymbol(it) }
         realtimeJob?.cancel()
         realtimeJob = viewModelScope.launch {
             observeMultipleTickers(symbols).collect { resource ->

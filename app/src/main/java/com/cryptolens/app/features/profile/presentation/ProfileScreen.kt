@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -27,6 +28,8 @@ fun ProfileScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToExchanges: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToAlerts: () -> Unit,
+    onNavigateToWalletWatchlist: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -139,19 +142,19 @@ fun ProfileScreen(
                 icon        = Icons.Outlined.Person,
                 label       = "Edit Profile",
                 subtitle    = "Name, avatar",
-                onClick     = { /* TODO */ },
+                onClick     = { viewModel.onEvent(ProfileEvent.ComingSoon("Edit profile")) },
             )
             ProfileMenuItem(
                 icon        = Icons.Outlined.Lock,
                 label       = "Change Password",
                 subtitle    = "Update your password",
-                onClick     = { /* TODO */ },
+                onClick     = { viewModel.onEvent(ProfileEvent.ComingSoon("Change password")) },
             )
             ProfileMenuItem(
                 icon        = Icons.Outlined.NotificationsNone,
                 label       = "Notifications",
                 subtitle    = "Price alerts, news",
-                onClick     = { /* TODO */ },
+                onClick     = onNavigateToAlerts,
             )
 
             Spacer(Modifier.height(8.dp))
@@ -177,17 +180,23 @@ fun ProfileScreen(
                 },
             )
             ProfileMenuItem(
+                icon     = Icons.Outlined.AccountBalanceWallet,
+                label    = "Wallet Watchlist",
+                subtitle = "Track public wallets and whale balances",
+                onClick  = onNavigateToWalletWatchlist,
+            )
+            ProfileMenuItem(
                 icon     = Icons.Outlined.FileDownload,
                 label    = "Export Data",
                 subtitle = "Download your transaction history",
-                onClick  = { /* TODO */ },
+                onClick  = { viewModel.onEvent(ProfileEvent.ComingSoon("Export data")) },
             )
             ProfileMenuItem(
                 icon     = Icons.Outlined.DeleteForever,
                 label    = "Clear Portfolio",
                 subtitle = "Remove all assets and transactions",
                 iconTint = RedDown,
-                onClick  = { /* TODO */ },
+                onClick  = { viewModel.onEvent(ProfileEvent.ShowClearPortfolioDialog) },
             )
 
             Spacer(Modifier.height(8.dp))
@@ -209,17 +218,17 @@ fun ProfileScreen(
                 icon     = Icons.Outlined.Info,
                 label    = "About CryptoLens",
                 subtitle = "Version ${uiState.appVersion}",
-                onClick  = { /* TODO */ },
+                onClick  = { viewModel.onEvent(ProfileEvent.ComingSoon("About CryptoLens")) },
             )
             ProfileMenuItem(
                 icon     = Icons.Outlined.Shield,
                 label    = "Privacy Policy",
-                onClick  = { /* TODO */ },
+                onClick  = { viewModel.onEvent(ProfileEvent.ComingSoon("Privacy Policy")) },
             )
             ProfileMenuItem(
                 icon     = Icons.Outlined.Description,
                 label    = "Terms of Service",
-                onClick  = { /* TODO */ },
+                onClick  = { viewModel.onEvent(ProfileEvent.ComingSoon("Terms of Service")) },
             )
 
             Spacer(Modifier.height(16.dp))
@@ -234,7 +243,7 @@ fun ProfileScreen(
                     border   = BorderStroke(1.dp, RedDown),
                     colors   = ButtonDefaults.outlinedButtonColors(contentColor = RedDown),
                 ) {
-                    Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text("Log Out", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 }
@@ -263,7 +272,7 @@ fun ProfileScreen(
             titleContentColor = TextPrimary,
             textContentColor  = TextSecondary,
             icon = {
-                Icon(Icons.Default.Logout, contentDescription = null,
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null,
                     tint = RedDown, modifier = Modifier.size(32.dp))
             },
             title = { Text("Log Out?", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) },
@@ -291,6 +300,48 @@ fun ProfileScreen(
                     border  = BorderStroke(1.dp, BorderColor),
                     shape   = RoundedCornerShape(8.dp),
                     colors  = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
+                ) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
+
+    if (uiState.showClearPortfolioDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onEvent(ProfileEvent.DismissClearPortfolioDialog) },
+            containerColor = SurfaceDark,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+            icon = {
+                Icon(Icons.Outlined.DeleteForever, contentDescription = null,
+                    tint = RedDown, modifier = Modifier.size(32.dp))
+            },
+            title = { Text("Clear Portfolio?", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) },
+            text = {
+                Text(
+                    "This removes all tracked assets and transactions for your account. Connected exchanges stay linked and can be synced again.",
+                    textAlign = TextAlign.Center,
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.onEvent(ProfileEvent.ConfirmClearPortfolio) },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = RedDown,
+                        contentColor = Color.White,
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Text("Clear", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { viewModel.onEvent(ProfileEvent.DismissClearPortfolioDialog) },
+                    border = BorderStroke(1.dp, BorderColor),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
                 ) {
                     Text("Cancel")
                 }

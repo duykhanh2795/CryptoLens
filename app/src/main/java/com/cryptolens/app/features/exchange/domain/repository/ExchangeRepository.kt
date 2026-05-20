@@ -46,5 +46,5 @@ interface ExchangeRepository {
      * Pull trades from exchange and store them as portfolio transactions.
      * Returns a [SyncResult] with counts.
      */
-    suspend fun syncTrades(connectionId: String): Resource<SyncResult>
+    suspend fun syncTrades(connectionId: String, userId: String): Resource<SyncResult>
 }

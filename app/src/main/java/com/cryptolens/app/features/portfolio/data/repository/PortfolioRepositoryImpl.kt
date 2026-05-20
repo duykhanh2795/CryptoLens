@@ -2,15 +2,20 @@ package com.cryptolens.app.features.portfolio.data.repository
 
 import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.portfolio.data.local.dao.PortfolioAssetDao
+import com.cryptolens.app.features.portfolio.data.local.dao.PortfolioSnapshotDao
 import com.cryptolens.app.features.portfolio.data.local.dao.TransactionDao
 import com.cryptolens.app.features.portfolio.data.local.entity.PortfolioAssetEntity
+import com.cryptolens.app.features.portfolio.data.local.entity.PortfolioSnapshotEntity
 import com.cryptolens.app.features.portfolio.data.local.entity.TransactionEntity
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioAsset
+import com.cryptolens.app.features.portfolio.domain.model.PortfolioSnapshot
+import com.cryptolens.app.features.portfolio.domain.model.PortfolioSummary
 import com.cryptolens.app.features.portfolio.domain.model.Transaction
 import com.cryptolens.app.features.portfolio.domain.model.TransactionType
 import com.cryptolens.app.features.portfolio.domain.repository.PortfolioRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,6 +24,7 @@ import javax.inject.Singleton
 class PortfolioRepositoryImpl @Inject constructor(
     private val assetDao: PortfolioAssetDao,
     private val txDao: TransactionDao,
+    private val snapshotDao: PortfolioSnapshotDao,
 ) : PortfolioRepository {
 
     override fun observeAssets(userId: String): Flow<List<PortfolioAsset>> =
@@ -33,6 +39,11 @@ class PortfolioRepositoryImpl @Inject constructor(
 
     override fun observeTransactionsByCoin(userId: String, coinId: String): Flow<List<Transaction>> =
         txDao.observeTransactionsByCoin(userId, coinId).map { entities ->
+            entities.map { it.toDomain() }
+        }
+
+    override fun observeSnapshots(userId: String, limit: Int): Flow<List<PortfolioSnapshot>> =
+        snapshotDao.observeSnapshots(userId, limit).map { entities ->
             entities.map { it.toDomain() }
         }
 
@@ -81,7 +92,7 @@ class PortfolioRepositoryImpl @Inject constructor(
             if (updatedAsset != null) {
                 assetDao.upsertAsset(updatedAsset)
             } else if (existingAsset != null) {
-                assetDao.deleteAsset(existingAsset.id)
+                assetDao.deleteAsset(existingAsset.id, userId)
             }
             Resource.Success(Unit)
         } catch (e: Exception) {
@@ -104,10 +115,41 @@ class PortfolioRepositoryImpl @Inject constructor(
 
     override suspend fun deleteAsset(assetId: String, userId: String): Resource<Unit> {
         return try {
-            assetDao.deleteAsset(assetId)
+            val asset = assetDao.getAssetById(assetId)
+            if (asset == null || asset.userId != userId) {
+                return Resource.Error("Asset not found")
+            }
+            txDao.deleteTransactionsByCoin(userId, asset.coinId)
+            assetDao.deleteAsset(assetId, userId)
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error("Failed to delete asset: ${e.message}", e)
+        }
+    }
+
+    override suspend fun saveSnapshot(
+        userId: String,
+        summary: PortfolioSummary,
+        timestamp: Long,
+    ): Resource<Unit> {
+        if (userId.isBlank()) return Resource.Error("Missing user")
+        return try {
+            val dayStart = timestamp.startOfDayMillis()
+            snapshotDao.upsertSnapshot(
+                PortfolioSnapshotEntity(
+                    userId = userId,
+                    dayStart = dayStart,
+                    totalValue = summary.totalValue,
+                    totalInvested = summary.totalInvested,
+                    totalProfitLoss = summary.totalProfitLoss,
+                    totalProfitLossPercent = summary.totalProfitLossPercent,
+                    assetCount = summary.assets.size,
+                    createdAt = timestamp,
+                )
+            )
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error("Failed to save portfolio snapshot: ${e.message}", e)
         }
     }
 
@@ -115,6 +157,7 @@ class PortfolioRepositoryImpl @Inject constructor(
         return try {
             assetDao.deleteAllAssets(userId)
             txDao.deleteAllTransactions(userId)
+            snapshotDao.deleteAllSnapshots(userId)
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error("Failed to clear portfolio: ${e.message}", e)
@@ -170,7 +213,7 @@ class PortfolioRepositoryImpl @Inject constructor(
         val history = txDao.getTransactionsByCoin(userId, coinId)
         val existing = assetDao.getAsset(userId, coinId)
         if (history.isEmpty()) {
-            existing?.let { assetDao.deleteAsset(it.id) }
+            existing?.let { assetDao.deleteAsset(it.id, userId) }
             return
         }
 
@@ -196,7 +239,7 @@ class PortfolioRepositoryImpl @Inject constructor(
         }
 
         if (quantity <= 0.0) {
-            existing?.let { assetDao.deleteAsset(it.id) }
+            existing?.let { assetDao.deleteAsset(it.id, userId) }
             return
         }
 
@@ -242,4 +285,25 @@ class PortfolioRepositoryImpl @Inject constructor(
         note      = note,
         timestamp = timestamp,
     )
+
+    private fun PortfolioSnapshotEntity.toDomain() = PortfolioSnapshot(
+        userId = userId,
+        dayStart = dayStart,
+        totalValue = totalValue,
+        totalInvested = totalInvested,
+        totalProfitLoss = totalProfitLoss,
+        totalProfitLossPercent = totalProfitLossPercent,
+        assetCount = assetCount,
+        createdAt = createdAt,
+    )
+
+    private fun Long.startOfDayMillis(): Long {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = this
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        return calendar.timeInMillis
+    }
 }

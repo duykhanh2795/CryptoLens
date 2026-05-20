@@ -14,6 +14,7 @@ import javax.inject.Inject
 data class PortfolioUiState(
     val isLoading: Boolean               = true,
     val summary: PortfolioSummary?       = null,
+    val snapshots: List<PortfolioSnapshot> = emptyList(),
     val transactions: List<Transaction>  = emptyList(),
     val selectedTab: PortfolioTab        = PortfolioTab.ASSETS,
     val error: String?                   = null,
@@ -49,6 +50,8 @@ sealed class PortfolioEffect {
 @HiltViewModel
 class PortfolioViewModel @Inject constructor(
     private val observePortfolioSummary: ObservePortfolioSummaryUseCase,
+    private val observePortfolioSnapshots: ObservePortfolioSnapshotsUseCase,
+    private val savePortfolioSnapshot: SavePortfolioSnapshotUseCase,
     private val observeTransactions: ObserveTransactionsUseCase,
     private val addTransaction: AddTransactionUseCase,
     private val deleteTransaction: DeleteTransactionUseCase,
@@ -67,6 +70,7 @@ class PortfolioViewModel @Inject constructor(
     init {
         if (userId.isNotBlank()) {
             observeSummary()
+            observeSnapshots()
             observeTxs()
         } else {
             _uiState.update { it.copy(isLoading = false) }
@@ -88,6 +92,17 @@ class PortfolioViewModel @Inject constructor(
         viewModelScope.launch {
             observePortfolioSummary(userId).collect { summary ->
                 _uiState.update { it.copy(isLoading = false, summary = summary) }
+                if (summary.assets.isNotEmpty()) {
+                    savePortfolioSnapshot(userId, summary)
+                }
+            }
+        }
+    }
+
+    private fun observeSnapshots() {
+        viewModelScope.launch {
+            observePortfolioSnapshots(userId).collect { snapshots ->
+                _uiState.update { it.copy(snapshots = snapshots) }
             }
         }
     }

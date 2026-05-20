@@ -8,6 +8,38 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
+val localProps = mutableMapOf<String, String>().apply {
+    val localPropsFile = rootProject.file("local.properties")
+    if (localPropsFile.exists()) {
+        localPropsFile.readLines().forEach { line ->
+            val trimmed = line.trim()
+            if (trimmed.isNotBlank() && !trimmed.startsWith("#")) {
+                val separatorIndex = trimmed.indexOf("=")
+                if (separatorIndex > 0) {
+                    put(
+                        trimmed.substring(0, separatorIndex).trim(),
+                        trimmed.substring(separatorIndex + 1).trim(),
+                    )
+                }
+            }
+        }
+    }
+}
+
+fun configValue(name: String, defaultValue: String = ""): String {
+    val gradleValue = providers.gradleProperty(name).orNull
+    val localValue = localProps[name]
+    val envValue = providers.environmentVariable(name).orNull
+
+    return gradleValue?.takeIf { it.isNotBlank() }
+        ?: localValue?.takeIf { it.isNotBlank() }
+        ?: envValue?.takeIf { it.isNotBlank() }
+        ?: defaultValue
+}
+
+fun String.asBuildConfigString(): String =
+    "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
 android {
     namespace = "com.cryptolens.app"
     compileSdk = 35
@@ -20,10 +52,12 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Supabase config - replace with your own values
-        buildConfigField("String", "SUPABASE_URL", "\"https://yhpbiqtadbycedossnhh.supabase.co\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlocGJpcXRhZGJ5Y2Vkb3NzbmhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2OTAzMTUsImV4cCI6MjA5MzI2NjMxNX0.3v8Sus5O-XvpnGh__IxZp06weW7OsCv6XnfudF_oaak\"")
-        buildConfigField("String", "GEMINI_API_KEY", "\"your-gemini-api-key\"")
+        buildConfigField("String", "SUPABASE_URL", configValue("SUPABASE_URL").asBuildConfigString())
+        buildConfigField("String", "SUPABASE_ANON_KEY", configValue("SUPABASE_ANON_KEY").asBuildConfigString())
+        buildConfigField("String", "GEMINI_API_KEY", configValue("GEMINI_API_KEY").asBuildConfigString())
+        buildConfigField("String", "ALCHEMY_API_KEY", configValue("ALCHEMY_API_KEY").asBuildConfigString())
+        buildConfigField("String", "MORALIS_API_KEY", configValue("MORALIS_API_KEY").asBuildConfigString())
+        buildConfigField("String", "CRYPTOPANIC_API_KEY", configValue("CRYPTOPANIC_API_KEY").asBuildConfigString())
     }
 
     buildTypes {
@@ -41,20 +75,28 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.incremental", "true")
+}
+
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
 
@@ -125,5 +167,6 @@ dependencies {
 
     // Test
     testImplementation(libs.junit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
 }

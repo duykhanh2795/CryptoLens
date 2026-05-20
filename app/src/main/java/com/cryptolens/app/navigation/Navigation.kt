@@ -1,5 +1,6 @@
 package com.cryptolens.app.navigation
 
+import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -22,6 +23,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.cryptolens.app.features.alerts.presentation.AlertCoinPrefill
+import com.cryptolens.app.features.alerts.presentation.AlertsScreen
+import com.cryptolens.app.features.ai.presentation.AiAssistantOverlay
 import com.cryptolens.app.features.auth.presentation.login.LoginScreen
 import com.cryptolens.app.features.auth.presentation.register.RegisterScreen
 import com.cryptolens.app.features.auth.presentation.splash.SplashScreen
@@ -30,9 +34,13 @@ import com.cryptolens.app.features.exchange.presentation.manage.ManageExchangeSc
 import com.cryptolens.app.features.home.presentation.HomeScreen
 import com.cryptolens.app.features.market.presentation.detail.CoinDetailScreen
 import com.cryptolens.app.features.market.presentation.marketlist.MarketListScreen
+import com.cryptolens.app.features.news.presentation.NewsScreen
 import com.cryptolens.app.features.portfolio.presentation.PortfolioScreen
 import com.cryptolens.app.features.profile.presentation.ProfileScreen
 import com.cryptolens.app.features.settings.presentation.SettingsScreen
+import com.cryptolens.app.features.wallet.presentation.TrendingWalletDetailScreen
+import com.cryptolens.app.features.wallet.presentation.TrendingWalletsScreen
+import com.cryptolens.app.features.wallet.presentation.WalletWatchlistScreen
 import com.cryptolens.app.features.watchlist.presentation.WatchlistScreen
 import com.cryptolens.app.ui.theme.*
 
@@ -48,6 +56,37 @@ sealed class Screen(val route: String) {
     data object ManageExchanges : Screen("manage_exchanges")
     data object ConnectExchange : Screen("connect_exchange")
     data object Settings        : Screen("settings")
+    data object Alerts          : Screen("alerts")
+    data object News            : Screen("news?symbol={symbol}") {
+        fun createRoute(symbol: String? = null): String =
+            if (symbol.isNullOrBlank()) {
+                "news"
+            } else {
+                "news?symbol=${Uri.encode(symbol)}"
+            }
+    }
+    data object WalletWatchlist : Screen("wallet_watchlist")
+    data object TrendingWallets : Screen("trending_wallets")
+    data object TrendingWalletDetail : Screen("trending_wallet/{chain}/{address}") {
+        fun createRoute(chain: String, address: String): String =
+            "trending_wallet/${Uri.encode(chain)}/${Uri.encode(address)}"
+    }
+    data object AlertsFromCoin  : Screen(
+        "alerts/create?coinId={coinId}&symbol={symbol}&name={name}&imageUrl={imageUrl}&price={price}"
+    ) {
+        fun createRoute(
+            coinId: String,
+            symbol: String,
+            name: String,
+            imageUrl: String,
+            price: Double,
+        ): String =
+            "alerts/create?coinId=${Uri.encode(coinId)}" +
+                "&symbol=${Uri.encode(symbol)}" +
+                "&name=${Uri.encode(name)}" +
+                "&imageUrl=${Uri.encode(imageUrl)}" +
+                "&price=${Uri.encode(price.toString())}"
+    }
     data object CoinDetail      : Screen("coin_detail/{coinId}") {
         fun createRoute(coinId: String) = "coin_detail/$coinId"
     }
@@ -76,6 +115,12 @@ private val bottomNavItems = listOf(
     BottomNavItem(Screen.Profile,   "Profile",   Icons.Filled.Person,               Icons.Outlined.Person),
 )
 
+private val aiHiddenRoutes = setOf(
+    Screen.Splash.route,
+    Screen.Login.route,
+    Screen.Register.route,
+)
+
 @Composable
 fun CryptoLensNavHost(
     navController: NavHostController = rememberNavController(),
@@ -84,60 +129,61 @@ fun CryptoLensNavHost(
     val currentRoute = backStack?.destination?.route
     val showBottomBar = currentRoute in mainRoutes
 
-    Scaffold(
-        containerColor = BackgroundDark,
-        bottomBar = {
-            AnimatedVisibility(
-                visible = showBottomBar,
-                enter   = slideInVertically { it } + fadeIn(tween(200)),
-                exit    = slideOutVertically { it } + fadeOut(tween(200)),
-            ) {
-                NavigationBar(
-                    containerColor = SurfaceElevated,
-                    tonalElevation = 0.dp,
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            containerColor = BackgroundDark,
+            bottomBar = {
+                AnimatedVisibility(
+                    visible = showBottomBar,
+                    enter   = slideInVertically { it } + fadeIn(tween(200)),
+                    exit    = slideOutVertically { it } + fadeOut(tween(200)),
                 ) {
-                    bottomNavItems.forEach { item ->
-                        val selected = currentRoute == item.screen.route
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick  = {
-                                navController.navigate(item.screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
+                    NavigationBar(
+                        containerColor = SurfaceElevated,
+                        tonalElevation = 0.dp,
+                    ) {
+                        bottomNavItems.forEach { item ->
+                            val selected = currentRoute == item.screen.route
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick  = {
+                                    navController.navigate(item.screen.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState    = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState    = true
-                                }
-                            },
-                            icon  = {
-                                Icon(
-                                    if (selected) item.iconSelected else item.iconDefault,
-                                    contentDescription = item.label,
-                                )
-                            },
-                            label  = { Text(item.label, style = MaterialTheme.typography.labelSmall) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor   = BinanceYellow,
-                                selectedTextColor   = BinanceYellow,
-                                unselectedIconColor = TextSecondary,
-                                unselectedTextColor = TextSecondary,
-                                indicatorColor      = SurfaceVariant,
-                            ),
-                        )
+                                },
+                                icon  = {
+                                    Icon(
+                                        if (selected) item.iconSelected else item.iconDefault,
+                                        contentDescription = item.label,
+                                    )
+                                },
+                                label  = { Text(item.label, style = MaterialTheme.typography.labelSmall) },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor   = BinanceYellow,
+                                    selectedTextColor   = BinanceYellow,
+                                    unselectedIconColor = TextSecondary,
+                                    unselectedTextColor = TextSecondary,
+                                    indicatorColor      = SurfaceVariant,
+                                ),
+                            )
+                        }
                     }
                 }
-            }
-        },
-    ) { padding ->
-        NavHost(
-            navController       = navController,
-            startDestination    = Screen.Splash.route,
-            modifier            = Modifier.padding(padding),
-            enterTransition     = { fadeIn(tween(220)) },
-            exitTransition      = { fadeOut(tween(180)) },
-            popEnterTransition  = { fadeIn(tween(220)) },
-            popExitTransition   = { fadeOut(tween(180)) },
-        ) {
+            },
+        ) { padding ->
+            NavHost(
+                navController       = navController,
+                startDestination    = Screen.Splash.route,
+                modifier            = Modifier.padding(padding),
+                enterTransition     = { fadeIn(tween(220)) },
+                exitTransition      = { fadeOut(tween(180)) },
+                popEnterTransition  = { fadeIn(tween(220)) },
+                popExitTransition   = { fadeOut(tween(180)) },
+            ) {
             composable(Screen.Splash.route) {
                 SplashScreen(
                     onNavigateToHome = {
@@ -179,6 +225,11 @@ fun CryptoLensNavHost(
                 HomeScreen(
                     onCoinClick    = { navController.navigate(Screen.CoinDetail.createRoute(it)) },
                     onSeeAllMarket = { navController.navigate(Screen.Markets.route) },
+                    onWalletClick  = { chain, address ->
+                        navController.navigate(Screen.TrendingWalletDetail.createRoute(chain.name, address))
+                    },
+                    onSeeAllWallets = { navController.navigate(Screen.TrendingWallets.route) },
+                    onSeeAllNews = { navController.navigate(Screen.News.createRoute()) },
                 )
             }
 
@@ -211,6 +262,84 @@ fun CryptoLensNavHost(
                     },
                     onNavigateToExchanges = { navController.navigate(Screen.ManageExchanges.route) },
                     onNavigateToSettings  = { navController.navigate(Screen.Settings.route) },
+                    onNavigateToAlerts    = { navController.navigate(Screen.Alerts.route) },
+                    onNavigateToWalletWatchlist = { navController.navigate(Screen.WalletWatchlist.route) },
+                )
+            }
+
+            composable(Screen.Alerts.route) {
+                AlertsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(
+                route = Screen.News.route,
+                arguments = listOf(
+                    navArgument("symbol") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                ),
+            ) {
+                NewsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(
+                route = Screen.AlertsFromCoin.route,
+                arguments = listOf(
+                    navArgument("coinId") { type = NavType.StringType },
+                    navArgument("symbol") { type = NavType.StringType },
+                    navArgument("name") { type = NavType.StringType },
+                    navArgument("imageUrl") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                    navArgument("price") {
+                        type = NavType.StringType
+                        defaultValue = "0.0"
+                    },
+                ),
+            ) { entry ->
+                val args = entry.arguments
+                AlertsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    prefill = AlertCoinPrefill(
+                        coinId = args?.getString("coinId").orEmpty(),
+                        symbol = args?.getString("symbol").orEmpty(),
+                        name = args?.getString("name").orEmpty(),
+                        imageUrl = args?.getString("imageUrl").orEmpty(),
+                        currentPrice = args?.getString("price")?.toDoubleOrNull() ?: 0.0,
+                    ),
+                )
+            }
+
+            composable(Screen.WalletWatchlist.route) {
+                WalletWatchlistScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(Screen.TrendingWallets.route) {
+                TrendingWalletsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onWalletClick = { chain, address ->
+                        navController.navigate(Screen.TrendingWalletDetail.createRoute(chain.name, address))
+                    },
+                )
+            }
+
+            composable(
+                route = Screen.TrendingWalletDetail.route,
+                arguments = listOf(
+                    navArgument("chain") { type = NavType.StringType },
+                    navArgument("address") { type = NavType.StringType },
+                ),
+            ) {
+                TrendingWalletDetailScreen(
+                    onNavigateBack = { navController.popBackStack() },
                 )
             }
 
@@ -239,8 +368,28 @@ fun CryptoLensNavHost(
             ) {
                 CoinDetailScreen(
                     onNavigateBack = { navController.popBackStack() },
+                    onSetAlert = { coin, price ->
+                        navController.navigate(
+                            Screen.AlertsFromCoin.createRoute(
+                                coinId = coin.id,
+                                symbol = coin.symbol,
+                                name = coin.name,
+                                imageUrl = coin.imageUrl,
+                                price = price,
+                            )
+                        )
+                    },
+                    onSeeAllNews = { symbol ->
+                        navController.navigate(Screen.News.createRoute(symbol))
+                    },
                 )
             }
+            }
         }
+
+        AiAssistantOverlay(
+            visible = currentRoute != null && currentRoute !in aiHiddenRoutes,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }

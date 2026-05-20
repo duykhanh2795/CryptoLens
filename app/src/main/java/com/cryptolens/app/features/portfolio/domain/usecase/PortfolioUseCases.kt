@@ -1,19 +1,41 @@
 package com.cryptolens.app.features.portfolio.domain.usecase
 
 import com.cryptolens.app.core.domain.util.Resource
+import com.cryptolens.app.features.market.domain.repository.MarketRepository
 import com.cryptolens.app.features.portfolio.domain.model.*
 import com.cryptolens.app.features.portfolio.domain.repository.PortfolioRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 
 class ObservePortfolioSummaryUseCase @Inject constructor(
     private val repo: PortfolioRepository,
+    private val marketRepository: MarketRepository,
 ) {
     operator fun invoke(userId: String): Flow<PortfolioSummary> =
-        repo.observeAssets(userId).map { assets ->
-            val totalInvested   = assets.sumOf { it.totalInvested }
-            val totalValue      = assets.sumOf { it.currentValue }
+        combine(
+            repo.observeAssets(userId),
+            marketRepository.getTopCoins(perPage = 250),
+        ) { assets, marketResource ->
+            val marketById = when (marketResource) {
+                is Resource.Success -> marketResource.data.associateBy { it.id }
+                else -> emptyMap()
+            }
+            val enrichedAssets = assets.map { asset ->
+                val coin = marketById[asset.coinId]
+                if (coin != null) {
+                    asset.copy(
+                        imageUrl = asset.imageUrl.ifBlank { coin.imageUrl },
+                        currentPrice = coin.currentPrice,
+                        priceChangePercent24h = coin.priceChangePercent24h,
+                    )
+                } else {
+                    asset.copy(currentPrice = asset.averageBuyPrice)
+                }
+            }
+
+            val totalInvested   = enrichedAssets.sumOf { it.totalInvested }
+            val totalValue      = enrichedAssets.sumOf { it.currentValue }
             val totalPnl        = totalValue - totalInvested
             val totalPnlPercent = if (totalInvested == 0.0) 0.0 else (totalPnl / totalInvested) * 100
             PortfolioSummary(
@@ -21,7 +43,7 @@ class ObservePortfolioSummaryUseCase @Inject constructor(
                 totalInvested       = totalInvested,
                 totalProfitLoss     = totalPnl,
                 totalProfitLossPercent = totalPnlPercent,
-                assets              = assets,
+                assets              = enrichedAssets,
             )
         }
 }
@@ -31,6 +53,13 @@ class ObserveTransactionsUseCase @Inject constructor(
 ) {
     operator fun invoke(userId: String): Flow<List<Transaction>> =
         repo.observeTransactions(userId)
+}
+
+class ObservePortfolioSnapshotsUseCase @Inject constructor(
+    private val repo: PortfolioRepository,
+) {
+    operator fun invoke(userId: String, limit: Int = 90): Flow<List<PortfolioSnapshot>> =
+        repo.observeSnapshots(userId, limit)
 }
 
 class AddTransactionUseCase @Inject constructor(
@@ -72,4 +101,18 @@ class DeleteAssetUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(assetId: String, userId: String): Resource<Unit> =
         repo.deleteAsset(assetId, userId)
+}
+
+class SavePortfolioSnapshotUseCase @Inject constructor(
+    private val repo: PortfolioRepository,
+) {
+    suspend operator fun invoke(userId: String, summary: PortfolioSummary): Resource<Unit> =
+        repo.saveSnapshot(userId, summary, System.currentTimeMillis())
+}
+
+class ClearPortfolioUseCase @Inject constructor(
+    private val repo: PortfolioRepository,
+) {
+    suspend operator fun invoke(userId: String): Resource<Unit> =
+        repo.clearAll(userId)
 }

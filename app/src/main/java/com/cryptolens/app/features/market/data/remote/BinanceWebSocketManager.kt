@@ -6,7 +6,7 @@ import com.cryptolens.app.core.domain.util.Resource
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -21,9 +21,6 @@ import javax.inject.Inject
 
 // ── Binance REST DTOs ────────────────────────────────────────────────────────
 
-// Klines come as JSON arrays: [openTime, open, high, low, close, volume, ...]
-typealias KlineArray = List<kotlinx.serialization.json.JsonElement>
-
 // ── Binance WebSocket DTOs ───────────────────────────────────────────────────
 
 @Serializable
@@ -34,17 +31,6 @@ data class BinanceTickerWsDto(
     @SerialName("v")  val volume: String = "0",
     @SerialName("h")  val high: String = "0",
     @SerialName("l")  val low: String = "0",
-)
-
-@Serializable
-data class BinanceMiniTickerDto(
-    @SerialName("e")  val eventType: String = "",
-    @SerialName("s")  val symbol: String = "",
-    @SerialName("c")  val close: String = "0",
-    @SerialName("o")  val open: String = "0",
-    @SerialName("h")  val high: String = "0",
-    @SerialName("l")  val low: String = "0",
-    @SerialName("v")  val volume: String = "0",
 )
 
 // ── Binance REST Service ─────────────────────────────────────────────────────
@@ -112,7 +98,10 @@ class BinanceWebSocketManager @Inject constructor(
      * Observe multiple tickers at once via combined stream.
      */
     fun observeMultipleTickers(symbols: List<String>): Flow<Resource<Map<String, PriceTicker>>> {
-        val streams = symbols.joinToString("/") { "${it.lowercase()}@miniTicker" }
+        val distinctSymbols = symbols.distinct()
+        if (distinctSymbols.isEmpty()) return flowOf(Resource.Success(emptyMap()))
+
+        val streams = distinctSymbols.joinToString("/") { "${it.lowercase()}@ticker" }
         val url = "wss://stream.binance.com:9443/stream?streams=$streams"
 
         return callbackFlow {
@@ -131,8 +120,8 @@ class BinanceWebSocketManager @Inject constructor(
                         val dto = wrapper.data
                         priceMap[dto.symbol] = PriceTicker(
                             symbol             = dto.symbol,
-                            price              = dto.close.toDoubleOrNull() ?: 0.0,
-                            priceChangePercent = 0.0,
+                            price              = dto.lastPrice.toDoubleOrNull() ?: 0.0,
+                            priceChangePercent = dto.priceChangePercent.toDoubleOrNull() ?: 0.0,
                             volume             = dto.volume.toDoubleOrNull() ?: 0.0,
                             high               = dto.high.toDoubleOrNull() ?: 0.0,
                             low                = dto.low.toDoubleOrNull() ?: 0.0,
@@ -156,5 +145,5 @@ class BinanceWebSocketManager @Inject constructor(
 @Serializable
 data class CombinedStreamWrapper(
     @SerialName("stream") val stream: String = "",
-    @SerialName("data")   val data: BinanceMiniTickerDto = BinanceMiniTickerDto(),
+    @SerialName("data")   val data: BinanceTickerWsDto = BinanceTickerWsDto(),
 )

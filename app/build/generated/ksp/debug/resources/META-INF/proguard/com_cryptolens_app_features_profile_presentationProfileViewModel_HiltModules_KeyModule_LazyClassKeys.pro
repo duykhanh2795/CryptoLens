@@ -1,3 +1,7 @@
+-keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.ai.presentation.AiAssistantViewModel
+-keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.ai.presentation.AiAssistantViewModel
+-keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.alerts.presentation.AlertsViewModel
+-keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.alerts.presentation.AlertsViewModel
 -keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.auth.presentation.login.LoginViewModel
 -keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.auth.presentation.login.LoginViewModel
 -keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.auth.presentation.register.RegisterViewModel
@@ -14,6 +18,10 @@
 -keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.market.presentation.detail.CoinDetailViewModel
 -keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.market.presentation.marketlist.MarketListViewModel
 -keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.market.presentation.marketlist.MarketListViewModel
+-keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.news.presentation.NewsPreviewViewModel
+-keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.news.presentation.NewsPreviewViewModel
+-keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.news.presentation.NewsViewModel
+-keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.news.presentation.NewsViewModel
 -keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.portfolio.presentation.PortfolioViewModel
 -keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.portfolio.presentation.PortfolioViewModel
 -keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.profile.presentation.ProfileViewModel

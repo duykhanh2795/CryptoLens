@@ -68,7 +68,18 @@ class ExchangeRepositoryImpl @Inject constructor(
 
     override suspend fun deleteConnection(id: String): Resource<Unit> {
         return try {
+            val importedTransactions = transactionDao.getTransactionsByConnection(id)
+            val affectedHoldings = importedTransactions
+                .map { it.userId to it.coinId }
+                .toSet()
+
+            transactionDao.deleteTransactionsByConnection(id)
+            transactionDao.deleteAllTransactions("exchange_$id")
+            assetDao.deleteAllAssets("exchange_$id")
             dao.deleteById(id)
+            affectedHoldings.forEach { (userId, coinId) ->
+                rebuildAssetFromTransactions(userId, coinId)
+            }
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error("Failed to delete: ${e.message}")
@@ -84,10 +95,11 @@ class ExchangeRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun syncTrades(connectionId: String): Resource<SyncResult> {
+    override suspend fun syncTrades(connectionId: String, userId: String): Resource<SyncResult> {
         return try {
             val entity = dao.getById(connectionId)
                 ?: return Resource.Error("Connection not found")
+            if (userId.isBlank()) return Resource.Error("Please log in before syncing exchange trades")
 
             val apiKey = cryptoManager.decrypt(entity.apiKey)
                 ?: return Resource.Error("Failed to decrypt API Key")
@@ -99,6 +111,7 @@ class ExchangeRepositoryImpl @Inject constructor(
             when (exchangeType) {
                 ExchangeType.BINANCE -> syncBinance(
                     connectionId = connectionId,
+                    userId       = userId,
                     apiKey       = apiKey,
                     apiSecret    = apiSecret,
                     exchangeType = exchangeType,
@@ -114,6 +127,7 @@ class ExchangeRepositoryImpl @Inject constructor(
 
     private suspend fun syncBinance(
         connectionId: String,
+        userId: String,
         apiKey: String,
         apiSecret: String,
         exchangeType: ExchangeType,
@@ -141,7 +155,7 @@ class ExchangeRepositoryImpl @Inject constructor(
         val existingIds = mutableSetOf<String>()
 
         for (symbol in prioritySymbols) {
-            val (baseAsset, quoteAsset) = symbolMap[symbol] ?: continue
+            val (baseAsset, _) = symbolMap[symbol] ?: continue
 
             val tradesResult = binanceClient.getAllTrades(apiKey, apiSecret, symbol)
             if (tradesResult is Resource.Error) continue   // skip symbol on error
@@ -150,7 +164,7 @@ class ExchangeRepositoryImpl @Inject constructor(
             if (trades.isEmpty()) continue
 
             for (trade in trades) {
-                val txId = "binance_${trade.id}_${trade.symbol}"
+                val txId = "binance_${connectionId}_${trade.symbol}_${trade.id}"
 
                 // Skip if already imported
                 if (txId in existingIds || transactionDao.getTransactionById(txId) != null) {
@@ -168,7 +182,7 @@ class ExchangeRepositoryImpl @Inject constructor(
                 // Save transaction
                 val txEntity = TransactionEntity(
                     id        = txId,
-                    userId    = "exchange_$connectionId",
+                    userId    = userId,
                     coinId    = coinId,
                     symbol    = baseAsset,
                     name      = baseAsset,
@@ -178,13 +192,14 @@ class ExchangeRepositoryImpl @Inject constructor(
                     price     = price,
                     fee       = fee,
                     note      = "Imported from Binance · ${trade.symbol}",
+                    sourceConnectionId = connectionId,
                     timestamp = trade.time,
                 )
                 transactionDao.insertTransaction(txEntity)
 
                 // Update portfolio asset
                 updatePortfolioAsset(
-                    userId    = "exchange_$connectionId",
+                    userId    = userId,
                     coinId    = coinId,
                     symbol    = baseAsset,
                     name      = baseAsset,
@@ -246,9 +261,62 @@ class ExchangeRepositoryImpl @Inject constructor(
                 val newQty = ((existing?.quantity ?: 0.0) - quantity).coerceAtLeast(0.0)
                 if (newQty > 0.0 && existing != null) {
                     assetDao.upsertAsset(existing.copy(quantity = newQty, updatedAt = System.currentTimeMillis()))
+                } else if (existing != null) {
+                    assetDao.deleteAsset(existing.id, userId)
                 }
             }
         }
+    }
+
+    private suspend fun rebuildAssetFromTransactions(userId: String, coinId: String) {
+        val history = transactionDao.getTransactionsByCoin(userId, coinId)
+        val existing = assetDao.getAsset(userId, coinId)
+        if (history.isEmpty()) {
+            existing?.let { assetDao.deleteAsset(it.id, userId) }
+            return
+        }
+
+        var quantity = 0.0
+        var averageBuyPrice = 0.0
+        var lastMetadata: TransactionEntity? = null
+
+        history.forEach { tx ->
+            lastMetadata = tx
+            when (TransactionType.valueOf(tx.type)) {
+                TransactionType.BUY -> {
+                    val newQty = quantity + tx.quantity
+                    if (newQty > 0.0) {
+                        averageBuyPrice = if (quantity == 0.0) tx.price
+                        else ((quantity * averageBuyPrice) + (tx.quantity * tx.price)) / newQty
+                    }
+                    quantity = newQty
+                }
+                TransactionType.SELL -> {
+                    quantity = (quantity - tx.quantity).coerceAtLeast(0.0)
+                }
+            }
+        }
+
+        if (quantity <= 0.0) {
+            existing?.let { assetDao.deleteAsset(it.id, userId) }
+            return
+        }
+
+        val metadata = lastMetadata ?: return
+        assetDao.upsertAsset(
+            PortfolioAssetEntity(
+                id = existing?.id ?: UUID.randomUUID().toString(),
+                userId = userId,
+                coinId = coinId,
+                symbol = metadata.symbol,
+                name = metadata.name,
+                imageUrl = metadata.imageUrl,
+                quantity = quantity,
+                averageBuyPrice = averageBuyPrice,
+                createdAt = existing?.createdAt ?: System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
+            )
+        )
     }
 
     // ── Mappers ────────────────────────────────────────────────────────────────

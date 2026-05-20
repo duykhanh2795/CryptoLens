@@ -16,7 +16,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.cryptolens.app.core.domain.util.formatLargeNumber
 import com.cryptolens.app.core.domain.util.formatPrice
 import com.cryptolens.app.features.portfolio.domain.model.*
 import com.cryptolens.app.ui.theme.*
@@ -85,6 +90,10 @@ fun PortfolioScreen(
                 else -> {
                     // Summary Card
                     uiState.summary?.let { PortfolioSummaryCard(it) }
+                    PortfolioTimelineCard(
+                        snapshots = uiState.snapshots,
+                        currentSummary = uiState.summary,
+                    )
 
                     // Tabs
                     TabRow(
@@ -143,6 +152,146 @@ fun PortfolioScreen(
                 ))
             },
         )
+    }
+}
+
+@Composable
+private fun PortfolioTimelineCard(
+    snapshots: List<PortfolioSnapshot>,
+    currentSummary: PortfolioSummary?,
+) {
+    val latest = snapshots.lastOrNull()
+    val first = snapshots.firstOrNull()
+    val valueChange = if (first != null && latest != null) latest.totalValue - first.totalValue else 0.0
+    val isUp = valueChange >= 0.0
+    val displaySnapshots = snapshots.ifEmpty {
+        currentSummary?.let {
+            listOf(
+                PortfolioSnapshot(
+                    userId = "",
+                    dayStart = System.currentTimeMillis(),
+                    totalValue = it.totalValue,
+                    totalInvested = it.totalInvested,
+                    totalProfitLoss = it.totalProfitLoss,
+                    totalProfitLossPercent = it.totalProfitLossPercent,
+                    assetCount = it.assets.size,
+                    createdAt = System.currentTimeMillis(),
+                )
+            )
+        } ?: emptyList()
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SurfaceDark)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Portfolio Timeline",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                )
+                Text(
+                    if (snapshots.size >= 2) "Daily value snapshots" else "Snapshot starts from today",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary,
+                )
+            }
+            if (snapshots.size >= 2) {
+                Text(
+                    "${if (isUp) "+" else "-"}$${kotlin.math.abs(valueChange).formatLargeNumber()}",
+                    color = if (isUp) GreenUp else RedDown,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+        PortfolioSnapshotChart(
+            snapshots = displaySnapshots,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp),
+        )
+
+        if (snapshots.size < 2) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "More data points will appear as the app records daily portfolio snapshots.",
+                color = TextTertiary,
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PortfolioSnapshotChart(
+    snapshots: List<PortfolioSnapshot>,
+    modifier: Modifier = Modifier,
+) {
+    if (snapshots.isEmpty()) {
+        Box(modifier.background(SurfaceVariant), contentAlignment = Alignment.Center) {
+            Text("No snapshot data", color = TextTertiary, style = MaterialTheme.typography.labelSmall)
+        }
+        return
+    }
+
+    Canvas(modifier = modifier.clip(RoundedCornerShape(8.dp)).background(SurfaceVariant)) {
+        val paddingH = 12.dp.toPx()
+        val paddingV = 14.dp.toPx()
+        val chartWidth = size.width - paddingH * 2
+        val chartHeight = size.height - paddingV * 2
+        val minValue = snapshots.minOf { it.totalValue }
+        val maxValue = snapshots.maxOf { it.totalValue }
+        val range = (maxValue - minValue).coerceAtLeast(0.000001)
+
+        fun xFor(index: Int): Float {
+            if (snapshots.size == 1) return size.width / 2f
+            return paddingH + (index.toFloat() / (snapshots.lastIndex.toFloat())) * chartWidth
+        }
+
+        fun yFor(value: Double): Float =
+            (paddingV + (1.0 - (value - minValue) / range) * chartHeight).toFloat()
+
+        repeat(3) { line ->
+            val y = paddingV + chartHeight * line / 2f
+            drawLine(
+                color = DividerColor.copy(alpha = 0.7f),
+                start = Offset(paddingH, y),
+                end = Offset(size.width - paddingH, y),
+                strokeWidth = 0.7f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f)),
+            )
+        }
+
+        val lineColor = if ((snapshots.last().totalValue - snapshots.first().totalValue) >= 0) GreenUp else RedDown
+        if (snapshots.size == 1) {
+            drawCircle(
+                color = lineColor,
+                radius = 5.dp.toPx(),
+                center = Offset(xFor(0), yFor(snapshots.first().totalValue)),
+            )
+        } else {
+            val path = Path()
+            snapshots.forEachIndexed { index, snapshot ->
+                val point = Offset(xFor(index), yFor(snapshot.totalValue))
+                if (index == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
+            }
+            drawPath(path, color = lineColor, style = Stroke(width = 2.2.dp.toPx()))
+            snapshots.forEachIndexed { index, snapshot ->
+                drawCircle(
+                    color = lineColor,
+                    radius = if (index == snapshots.lastIndex) 4.dp.toPx() else 2.5.dp.toPx(),
+                    center = Offset(xFor(index), yFor(snapshot.totalValue)),
+                )
+            }
+        }
     }
 }
 

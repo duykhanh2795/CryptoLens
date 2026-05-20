@@ -1,4 +1,4 @@
-package com.cryptolens.app.features.exchange.domain.model
+ package com.cryptolens.app.features.exchange.domain.model
 
 /**
  * Supported exchanges. Easy to extend later.

@@ -40,6 +40,49 @@ data class Kline(
     val closeTime: Long,
 )
 
+enum class ChartMarketType {
+    SPOT,
+    FUTURES
+}
+
+data class FuturesMarketInfo(
+    val symbol: String,
+    val markPrice: Double,
+    val indexPrice: Double,
+    val lastFundingRate: Double,
+    val nextFundingTime: Long,
+    val openInterest: Double,
+    val openInterestChangePercent: Double = 0.0,
+    val time: Long,
+)
+
+enum class FuturesSentimentBias {
+    BULLISH,
+    BEARISH,
+    LONG_CROWDED,
+    SHORT_CROWDED,
+    NEUTRAL,
+    UNAVAILABLE
+}
+
+enum class FuturesRiskLevel {
+    LOW,
+    MEDIUM,
+    HIGH,
+    UNKNOWN
+}
+
+data class FuturesSentiment(
+    val bias: FuturesSentimentBias,
+    val riskLevel: FuturesRiskLevel,
+    val title: String,
+    val summary: String,
+    val fundingRatePercent: Double,
+    val premiumPercent: Double,
+    val openInterestChangePercent: Double,
+    val signals: List<String>,
+)
+
 data class OrderBook(
     val bids: List<Pair<Double, Double>>,  // price, qty
     val asks: List<Pair<Double, Double>>,

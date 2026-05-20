@@ -4,6 +4,10 @@ import android.content.Context
 import androidx.room.Room
 import com.cryptolens.app.BuildConfig
 import com.cryptolens.app.core.data.local.CryptoDatabase
+import com.cryptolens.app.core.data.local.CryptoDatabaseMigrations
+import com.cryptolens.app.features.alerts.data.local.dao.PriceAlertDao
+import com.cryptolens.app.features.alerts.data.repository.AlertRepositoryImpl
+import com.cryptolens.app.features.alerts.domain.repository.AlertRepository
 import com.cryptolens.app.features.auth.data.repository.AuthRepositoryImpl
 import com.cryptolens.app.features.auth.domain.repository.AuthRepository
 import com.cryptolens.app.features.exchange.data.local.ExchangeConnectionDao
@@ -11,19 +15,29 @@ import com.cryptolens.app.features.exchange.data.remote.BinanceApiClient
 import com.cryptolens.app.features.exchange.data.repository.ExchangeRepositoryImpl
 import com.cryptolens.app.features.exchange.domain.repository.ExchangeRepository
 import com.cryptolens.app.features.market.data.remote.BinanceApiService
+import com.cryptolens.app.features.market.data.remote.BinanceFuturesDataApiService
+import com.cryptolens.app.features.market.data.remote.BinanceFuturesApiService
 import com.cryptolens.app.features.market.data.remote.BinanceWebSocketManager
 import com.cryptolens.app.features.market.data.remote.CoinGeckoApiService
 import com.cryptolens.app.features.market.data.repository.MarketRepositoryImpl
 import com.cryptolens.app.features.market.domain.repository.MarketRepository
+import com.cryptolens.app.features.news.data.repository.NewsRepositoryImpl
+import com.cryptolens.app.features.news.domain.repository.NewsRepository
 import com.cryptolens.app.features.settings.data.repository.SettingsRepositoryImpl
 import com.cryptolens.app.features.settings.domain.repository.SettingsRepository
 import com.cryptolens.app.features.portfolio.data.local.dao.PortfolioAssetDao
+import com.cryptolens.app.features.portfolio.data.local.dao.PortfolioSnapshotDao
 import com.cryptolens.app.features.portfolio.data.local.dao.TransactionDao
 import com.cryptolens.app.features.portfolio.data.repository.PortfolioRepositoryImpl
 import com.cryptolens.app.features.portfolio.domain.repository.PortfolioRepository
 import com.cryptolens.app.features.watchlist.data.local.dao.WatchlistDao
 import com.cryptolens.app.features.watchlist.data.repository.WatchlistRepositoryImpl
 import com.cryptolens.app.features.watchlist.domain.repository.WatchlistRepository
+import com.cryptolens.app.features.wallet.data.local.dao.WalletWatchDao
+import com.cryptolens.app.features.wallet.data.repository.WalletDiscoveryRepositoryImpl
+import com.cryptolens.app.features.wallet.data.repository.WalletWatchRepositoryImpl
+import com.cryptolens.app.features.wallet.domain.repository.WalletDiscoveryRepository
+import com.cryptolens.app.features.wallet.domain.repository.WalletWatchRepository
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Binds
 import dagger.Module
@@ -85,6 +99,22 @@ object NetworkModule {
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
 
+    @Provides @Singleton @Named("binanceFutures")
+    fun provideBinanceFuturesRetrofit(client: OkHttpClient, json: Json): Retrofit =
+        Retrofit.Builder()
+            .baseUrl("https://fapi.binance.com/fapi/v1/")
+            .client(client)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+
+    @Provides @Singleton @Named("binanceFuturesData")
+    fun provideBinanceFuturesDataRetrofit(client: OkHttpClient, json: Json): Retrofit =
+        Retrofit.Builder()
+            .baseUrl("https://fapi.binance.com/futures/data/")
+            .client(client)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+
     @Provides @Singleton
     fun provideCoinGeckoApiService(@Named("coingecko") r: Retrofit): CoinGeckoApiService =
         r.create(CoinGeckoApiService::class.java)
@@ -92,6 +122,16 @@ object NetworkModule {
     @Provides @Singleton
     fun provideBinanceApiService(@Named("binance") r: Retrofit): BinanceApiService =
         r.create(BinanceApiService::class.java)
+
+    @Provides @Singleton
+    fun provideBinanceFuturesApiService(@Named("binanceFutures") r: Retrofit): BinanceFuturesApiService =
+        r.create(BinanceFuturesApiService::class.java)
+
+    @Provides @Singleton
+    fun provideBinanceFuturesDataApiService(
+        @Named("binanceFuturesData") r: Retrofit,
+    ): BinanceFuturesDataApiService =
+        r.create(BinanceFuturesDataApiService::class.java)
 
     @Provides @Singleton
     fun provideBinanceWsManager(client: OkHttpClient, json: Json): BinanceWebSocketManager =
@@ -128,7 +168,7 @@ object DatabaseModule {
     @Provides @Singleton
     fun provideDatabase(@ApplicationContext ctx: Context): CryptoDatabase =
         Room.databaseBuilder(ctx, CryptoDatabase::class.java, CryptoDatabase.DATABASE_NAME)
-            .fallbackToDestructiveMigration()
+            .addMigrations(*CryptoDatabaseMigrations.ALL)
             .build()
 
     @Provides @Singleton
@@ -138,10 +178,19 @@ object DatabaseModule {
     fun provideTransactionDao(db: CryptoDatabase): TransactionDao = db.transactionDao()
 
     @Provides @Singleton
+    fun providePortfolioSnapshotDao(db: CryptoDatabase): PortfolioSnapshotDao = db.portfolioSnapshotDao()
+
+    @Provides @Singleton
     fun provideExchangeConnectionDao(db: CryptoDatabase): ExchangeConnectionDao = db.exchangeConnectionDao()
 
     @Provides @Singleton
     fun provideWatchlistDao(db: CryptoDatabase): WatchlistDao = db.watchlistDao()
+
+    @Provides @Singleton
+    fun providePriceAlertDao(db: CryptoDatabase): PriceAlertDao = db.priceAlertDao()
+
+    @Provides @Singleton
+    fun provideWalletWatchDao(db: CryptoDatabase): WalletWatchDao = db.walletWatchDao()
 }
 
 @Module
@@ -165,4 +214,16 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository
+
+    @Binds @Singleton
+    abstract fun bindAlertRepository(impl: AlertRepositoryImpl): AlertRepository
+
+    @Binds @Singleton
+    abstract fun bindWalletWatchRepository(impl: WalletWatchRepositoryImpl): WalletWatchRepository
+
+    @Binds @Singleton
+    abstract fun bindWalletDiscoveryRepository(impl: WalletDiscoveryRepositoryImpl): WalletDiscoveryRepository
+
+    @Binds @Singleton
+    abstract fun bindNewsRepository(impl: NewsRepositoryImpl): NewsRepository
 }

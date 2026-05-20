@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -144,7 +145,7 @@ private fun WatchlistTopBar(
         // Sort
         Box {
             IconButton(onClick = { showSortMenu = true }) {
-                Icon(Icons.Default.Sort, contentDescription = "Sort", tint = TextSecondary)
+                Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort", tint = TextSecondary)
             }
             DropdownMenu(
                 expanded         = showSortMenu,

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.SendToMobile
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -24,12 +25,19 @@ import coil3.compose.AsyncImage
 import com.cryptolens.app.core.domain.util.formatLargeNumber
 import com.cryptolens.app.core.domain.util.formatPrice
 import com.cryptolens.app.features.market.domain.model.Coin
+import com.cryptolens.app.features.news.presentation.NewsPreviewSection
+import com.cryptolens.app.features.wallet.domain.model.TrendingWallet
+import com.cryptolens.app.features.wallet.domain.model.WalletChain
+import com.cryptolens.app.features.wallet.presentation.TrendingWalletRow
 import com.cryptolens.app.ui.theme.*
 
 @Composable
 fun HomeScreen(
     onCoinClick: (String) -> Unit,
     onSeeAllMarket: () -> Unit,
+    onWalletClick: (WalletChain, String) -> Unit,
+    onSeeAllWallets: () -> Unit,
+    onSeeAllNews: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -88,8 +96,19 @@ fun HomeScreen(
                         CompactCoinRow(coin = coin, onCoinClick = { onCoinClick(coin.id) })
                         HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
                     }
+
+                    if (uiState.trendingWallets.isNotEmpty()) {
+                        HorizontalDivider(color = DividerColor)
+                        TrendingWalletsHomeSection(
+                            wallets = uiState.trendingWallets,
+                            onSeeAll = onSeeAllWallets,
+                            onWalletClick = onWalletClick,
+                        )
+                    }
                 }
             }
+
+            NewsPreviewSection(onSeeAll = onSeeAllNews)
 
             // ── AI Insight Banner ──────────────────────────────────────────
             AiInsightBanner()
@@ -100,6 +119,36 @@ fun HomeScreen(
 }
 
 // ── Top Bar ───────────────────────────────────────────────────────────────────
+
+@Composable
+private fun TrendingWalletsHomeSection(
+    wallets: List<TrendingWallet>,
+    onSeeAll: () -> Unit,
+    onWalletClick: (WalletChain, String) -> Unit,
+) {
+    SectionHeader(title = "Trending Addresses", onSeeAll = onSeeAll)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SurfaceDark)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        wallets.forEach { wallet ->
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = SurfaceVariant,
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                TrendingWalletRow(
+                    wallet = wallet,
+                    compact = true,
+                    onClick = { onWalletClick(wallet.chain, wallet.address) },
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun HomeTopBar(userName: String?, onRefresh: () -> Unit) {
@@ -172,7 +221,7 @@ private fun QuickActionsRow() {
         Icons.Default.AddCircleOutline    to "Deposit",
         Icons.Default.RemoveCircleOutline to "Withdraw",
         Icons.Default.SwapHoriz          to "Convert",
-        Icons.Default.SendToMobile       to "Transfer",
+        Icons.AutoMirrored.Filled.SendToMobile to "Transfer",
     )
     Row(
         modifier = Modifier.fillMaxWidth().background(SurfaceDark)

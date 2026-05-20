@@ -30,5 +30,21 @@ data class TransactionEntity(
     val price: Double,
     val fee: Double = 0.0,
     val note: String = "",
+    val sourceConnectionId: String? = null,
     val timestamp: Long = System.currentTimeMillis(),
+)
+
+@Entity(
+    tableName = "portfolio_snapshots",
+    primaryKeys = ["userId", "dayStart"],
+)
+data class PortfolioSnapshotEntity(
+    val userId: String,
+    val dayStart: Long,
+    val totalValue: Double,
+    val totalInvested: Double,
+    val totalProfitLoss: Double,
+    val totalProfitLossPercent: Double,
+    val assetCount: Int,
+    val createdAt: Long = System.currentTimeMillis(),
 )
