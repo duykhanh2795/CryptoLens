@@ -57,6 +57,7 @@ fun CoinDetailScreen(
     onNavigateBack: () -> Unit,
     onSetAlert: (Coin, Double) -> Unit = { _, _ -> },
     onSeeAllNews: (String) -> Unit = {},
+    onOpenPortfolio: () -> Unit = {},
     viewModel: CoinDetailViewModel = hiltViewModel(),
 ) {
     val uiState  by viewModel.uiState.collectAsStateWithLifecycle()
@@ -110,6 +111,7 @@ fun CoinDetailScreen(
                     onBack            = onNavigateBack,
                     onSetAlert        = onSetAlert,
                     onSeeAllNews      = onSeeAllNews,
+                    onOpenPortfolio   = onOpenPortfolio,
                     onIntervalChange  = { viewModel.onEvent(CoinDetailEvent.IntervalChanged(it)) },
                     onMarketTypeChange = { viewModel.onEvent(CoinDetailEvent.MarketTypeChanged(it)) },
                     onChartTypeChange = { viewModel.onEvent(CoinDetailEvent.ChartTypeChanged(it)) },
@@ -142,6 +144,7 @@ private fun CoinDetailContent(
     onBack: () -> Unit,
     onSetAlert: (Coin, Double) -> Unit,
     onSeeAllNews: (String) -> Unit,
+    onOpenPortfolio: () -> Unit,
     onIntervalChange: (ChartInterval) -> Unit,
     onMarketTypeChange: (ChartMarketType) -> Unit,
     onChartTypeChange: (ChartDisplayType) -> Unit,
@@ -245,7 +248,7 @@ private fun CoinDetailContent(
             Spacer(Modifier.height(100.dp))
         }
 
-        BuySellBar(symbol = coin.symbol)
+        BuySellBar(symbol = coin.symbol, onOpenPortfolio = onOpenPortfolio)
     }
 }
 
@@ -651,10 +654,6 @@ private fun CoinDetailTopBar(
                 tint               = if (isWatchlisted) BinanceYellow else TextSecondary,
             )
         }
-
-        IconButton(onClick = {}) {
-            Icon(Icons.Default.Share, contentDescription = "Share", tint = TextSecondary)
-        }
     }
 }
 
@@ -916,7 +915,7 @@ private fun AboutSection(description: String) {
 // ── Buy/Sell Bar ──────────────────────────────────────────────────────────────
 
 @Composable
-private fun BuySellBar(symbol: String) {
+private fun BuySellBar(symbol: String, onOpenPortfolio: () -> Unit) {
     Surface(
         color           = SurfaceElevated,
         tonalElevation  = 0.dp,
@@ -930,7 +929,7 @@ private fun BuySellBar(symbol: String) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Button(
-                onClick  = {},
+                onClick  = onOpenPortfolio,
                 modifier = Modifier.weight(1f).height(48.dp),
                 shape    = RoundedCornerShape(8.dp),
                 colors   = ButtonDefaults.buttonColors(
@@ -940,11 +939,11 @@ private fun BuySellBar(symbol: String) {
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Buy $symbol", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("Track Buy", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
 
             OutlinedButton(
-                onClick  = {},
+                onClick  = onOpenPortfolio,
                 modifier = Modifier.weight(1f).height(48.dp),
                 shape    = RoundedCornerShape(8.dp),
                 border   = BorderStroke(1.dp, RedDown),
@@ -952,7 +951,7 @@ private fun BuySellBar(symbol: String) {
             ) {
                 Icon(Icons.Default.Remove, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Sell $symbol", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("Track Sell", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
         }
     }

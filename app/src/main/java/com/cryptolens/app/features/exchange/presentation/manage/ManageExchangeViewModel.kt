@@ -86,7 +86,7 @@ class ManageExchangeViewModel @Inject constructor(
                 is Resource.Success -> {
                     _uiState.update { it.copy(syncingId = null, lastSyncResult = r.data) }
                     _effect.emit(ManageExchangeEffect.ShowSuccess(
-                        "Sync complete: ${r.data.tradesImported} trades imported"
+                        "Sync complete: ${r.data.tradesImported} trades imported across ${r.data.symbolsScanned} pairs"
                     ))
                 }
                 is Resource.Error -> {

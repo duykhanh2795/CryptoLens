@@ -155,6 +155,32 @@ class BinanceApiClient @Inject constructor(
         }
     }
 
+    suspend fun getAccountBalances(
+        apiKey: String,
+        apiSecret: String,
+    ): Resource<List<BinanceBalanceDto>> {
+        return try {
+            val request = buildSignedRequest("/api/v3/account", apiKey, apiSecret)
+            val response = okHttpClient.newCall(request).execute()
+            val body = response.body?.string().orEmpty()
+
+            if (!response.isSuccessful) {
+                val err = runCatching { json.decodeFromString<BinanceErrorDto>(body) }.getOrNull()
+                return Resource.Error(err?.msg ?: "Failed to fetch balances (${response.code})")
+            }
+
+            val account = json.decodeFromString<BinanceAccountDto>(body)
+            Resource.Success(
+                account.balances.filter { balance ->
+                    (balance.free.toDoubleOrNull() ?: 0.0) > 0.0 ||
+                        (balance.locked.toDoubleOrNull() ?: 0.0) > 0.0
+                },
+            )
+        } catch (e: Exception) {
+            Resource.Error("Failed to fetch balances: ${e.message}")
+        }
+    }
+
     /**
      * Fetch all USDT trading pair symbols from exchange info.
      * Used to discover which symbols to pull trades for.

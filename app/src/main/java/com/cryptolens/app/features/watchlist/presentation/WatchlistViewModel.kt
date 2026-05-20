@@ -23,18 +23,30 @@ enum class WatchlistSortOrder {
     CHANGE_DESC,
     CHANGE_ASC,
     PRICE_DESC,
+    PRICE_ASC,
+}
+
+enum class WatchlistFilter {
+    ALL,
+    GAINERS,
+    LOSERS,
 }
 
 data class WatchlistUiState(
     val items: List<WatchlistItem>   = emptyList(),
     val isLoadingPrices: Boolean     = false,
+    val isRealtimeConnected: Boolean = false,
     val sortOrder: WatchlistSortOrder = WatchlistSortOrder.DEFAULT,
+    val filter: WatchlistFilter      = WatchlistFilter.ALL,
+    val searchQuery: String          = "",
     val error: String?               = null,
 )
 
 sealed class WatchlistEvent {
     data class Remove(val coinId: String)                  : WatchlistEvent()
     data class SortChanged(val order: WatchlistSortOrder)  : WatchlistEvent()
+    data class FilterChanged(val filter: WatchlistFilter)  : WatchlistEvent()
+    data class SearchChanged(val query: String)            : WatchlistEvent()
     data object Refresh                                    : WatchlistEvent()
 }
 
@@ -71,18 +83,28 @@ class WatchlistViewModel @Inject constructor(
         when (event) {
             is WatchlistEvent.Remove      -> handleRemove(event.coinId)
             is WatchlistEvent.SortChanged -> _uiState.update { it.copy(sortOrder = event.order) }
+            is WatchlistEvent.FilterChanged -> _uiState.update { it.copy(filter = event.filter) }
+            is WatchlistEvent.SearchChanged -> _uiState.update { it.copy(searchQuery = event.query) }
             is WatchlistEvent.Refresh     -> fetchMarketPrices()
         }
     }
 
     private fun observeWatchlistItems() {
         viewModelScope.launch {
+            val preferences = combine(
+                _uiState.map { it.sortOrder }.distinctUntilChanged(),
+                _uiState.map { it.filter }.distinctUntilChanged(),
+                _uiState.map { it.searchQuery }.distinctUntilChanged(),
+            ) { sort, filter, searchQuery ->
+                WatchlistPreferences(sort, filter, searchQuery)
+            }
+
             combine(
                 observeWatchlist(),
                 marketCache.coins,
                 tickerCache,
-                _uiState.map { it.sortOrder }.distinctUntilChanged(),
-            ) { watchlistItems, coinsResource, tickers, sort ->
+                preferences,
+            ) { watchlistItems, coinsResource, tickers, prefs ->
                 val coinMap: Map<String, Coin> = when (coinsResource) {
                     is Resource.Success -> coinsResource.data.associateBy { it.id }
                     else                -> emptyMap()
@@ -103,7 +125,10 @@ class WatchlistViewModel @Inject constructor(
                         item
                     }
                 }
-                applySortOrder(enriched, sort)
+                applySortOrder(
+                    items = applyFilter(enriched, prefs.filter, prefs.searchQuery),
+                    order = prefs.sortOrder,
+                )
             }.collect { sortedItems ->
                 _uiState.update { it.copy(items = sortedItems) }
                 // Start realtime tickers for all watchlisted coins
@@ -149,8 +174,13 @@ class WatchlistViewModel @Inject constructor(
         tickerJob?.cancel()
         tickerJob = viewModelScope.launch {
             observeMultipleTickers(symbols).collect { resource ->
-                if (resource is Resource.Success) {
-                    tickerCache.value = resource.data
+                when (resource) {
+                    is Resource.Loading -> _uiState.update { it.copy(isRealtimeConnected = false) }
+                    is Resource.Success -> {
+                        tickerCache.value = resource.data
+                        _uiState.update { it.copy(isRealtimeConnected = true) }
+                    }
+                    is Resource.Error -> _uiState.update { it.copy(isRealtimeConnected = false) }
                 }
             }
         }
@@ -177,5 +207,34 @@ class WatchlistViewModel @Inject constructor(
         WatchlistSortOrder.CHANGE_DESC -> items.sortedByDescending { it.priceChangePercent24h }
         WatchlistSortOrder.CHANGE_ASC  -> items.sortedBy { it.priceChangePercent24h }
         WatchlistSortOrder.PRICE_DESC  -> items.sortedByDescending { it.currentPrice }
+        WatchlistSortOrder.PRICE_ASC   -> items.sortedBy { it.currentPrice }
     }
+
+    private fun applyFilter(
+        items: List<WatchlistItem>,
+        filter: WatchlistFilter,
+        searchQuery: String,
+    ): List<WatchlistItem> {
+        val searched = if (searchQuery.isBlank()) {
+            items
+        } else {
+            val query = searchQuery.trim()
+            items.filter {
+                it.name.contains(query, ignoreCase = true) ||
+                    it.symbol.contains(query, ignoreCase = true)
+            }
+        }
+
+        return when (filter) {
+            WatchlistFilter.ALL -> searched
+            WatchlistFilter.GAINERS -> searched.filter { it.hasMarketData && it.priceChangePercent24h >= 0.0 }
+            WatchlistFilter.LOSERS -> searched.filter { it.hasMarketData && it.priceChangePercent24h < 0.0 }
+        }
+    }
+
+    private data class WatchlistPreferences(
+        val sortOrder: WatchlistSortOrder,
+        val filter: WatchlistFilter,
+        val searchQuery: String,
+    )
 }

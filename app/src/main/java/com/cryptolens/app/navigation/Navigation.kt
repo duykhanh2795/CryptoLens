@@ -382,6 +382,15 @@ fun CryptoLensNavHost(
                     onSeeAllNews = { symbol ->
                         navController.navigate(Screen.News.createRoute(symbol))
                     },
+                    onOpenPortfolio = {
+                        navController.navigate(Screen.Portfolio.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                 )
             }
             }

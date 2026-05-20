@@ -69,6 +69,8 @@ data class SyncResult(
     val exchangeType: ExchangeType,
     val tradesImported: Int,
     val tradesSkipped: Int,
+    val symbolsScanned: Int = 0,
+    val balanceAssetsFound: Int = 0,
     val syncedAt: Long = System.currentTimeMillis(),
 )
 

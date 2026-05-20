@@ -331,26 +331,58 @@ private fun PortfolioSummaryCard(summary: PortfolioSummary) {
                 color = if (isProfit) GreenUp else RedDown,
                 style = MaterialTheme.typography.bodyMedium)
         }
+        Spacer(Modifier.height(8.dp))
+        val isUp24h = summary.isUp24h
+        Text(
+            "${if (isUp24h) "+" else "-"}$${"%.2f".format(kotlin.math.abs(summary.totalChange24h))} " +
+                "(${"%.2f".format(kotlin.math.abs(summary.totalChange24hPercent))}%) today",
+            color = if (isUp24h) GreenUp else RedDown,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
         Spacer(Modifier.height(16.dp))
         HorizontalDivider(color = DividerColor)
         Spacer(Modifier.height(14.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Invested", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                Spacer(Modifier.height(4.dp))
-                Text("$${"%.2f".format(summary.totalInvested)}", style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold, color = TextPrimary)
-            }
-            VerticalDivider(Modifier.height(32.dp), color = DividerColor)
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Assets", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                Spacer(Modifier.height(4.dp))
-                Text("${summary.assets.size}", style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold, color = TextPrimary)
-            }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            SummaryMetric("Invested", "$${"%.2f".format(summary.totalInvested)}", TextPrimary, Modifier.weight(1f))
+            SummaryMetric("Unrealized", signedUsd(summary.unrealizedProfitLoss), pnlColor(summary.unrealizedProfitLoss), Modifier.weight(1f))
+            SummaryMetric("Realized", signedUsd(summary.realizedProfitLoss), pnlColor(summary.realizedProfitLoss), Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            SummaryMetric("Fees", "$${"%.2f".format(summary.totalFeesPaid)}", TextSecondary, Modifier.weight(1f))
+            SummaryMetric("Assets", "${summary.assets.size}", TextPrimary, Modifier.weight(1f))
+            SummaryMetric("24h", "${if (summary.isUp24h) "+" else "-"}${"%.2f".format(kotlin.math.abs(summary.totalChange24hPercent))}%", if (summary.isUp24h) GreenUp else RedDown, Modifier.weight(1f))
         }
     }
 }
+
+@Composable
+private fun SummaryMetric(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(SurfaceVariant)
+            .padding(horizontal = 8.dp, vertical = 9.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary, maxLines = 1)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            value,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            maxLines = 1,
+        )
+    }
+}
+
+private fun signedUsd(value: Double): String =
+    "${if (value >= 0.0) "+" else "-"}$${"%.2f".format(kotlin.math.abs(value))}"
+
+private fun pnlColor(value: Double): Color =
+    if (value >= 0.0) GreenUp else RedDown
 
 @Composable
 private fun AssetsTab(assets: List<PortfolioAsset>, onCoinClick: (String) -> Unit, onDelete: (String) -> Unit) {
@@ -387,6 +419,8 @@ private fun AssetItem(asset: PortfolioAsset, onCoinClick: () -> Unit, onDelete: 
                 style = MaterialTheme.typography.labelSmall, color = TextSecondary)
             Text("Avg: $${asset.averageBuyPrice.formatPrice()}",
                 style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+            Text("${"%.1f".format(asset.allocationPercent)}% allocation",
+                style = MaterialTheme.typography.labelSmall, color = TextTertiary)
         }
         Column(horizontalAlignment = Alignment.End) {
             Text("$${"%.2f".format(asset.currentValue)}", style = MaterialTheme.typography.titleSmall,
@@ -395,6 +429,12 @@ private fun AssetItem(asset: PortfolioAsset, onCoinClick: () -> Unit, onDelete: 
                 style = MaterialTheme.typography.labelSmall, color = if (isProfit) GreenUp else RedDown)
             Text("(${"%.2f".format(asset.profitLossPercent)}%)",
                 style = MaterialTheme.typography.labelSmall, color = if (isProfit) GreenUp else RedDown)
+            val dayChange = asset.change24h
+            Text(
+                "24h ${if (dayChange >= 0.0) "+" else "-"}$${"%.2f".format(kotlin.math.abs(dayChange))}",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (dayChange >= 0.0) GreenUp else RedDown,
+            )
         }
     }
     if (showDialog) {
@@ -432,7 +472,7 @@ private fun TransactionItem(tx: Transaction, fmt: SimpleDateFormat, onDelete: ()
     val isBuy = tx.type == TransactionType.BUY
     Row(
         modifier = Modifier.fillMaxWidth()
-            .combinedClickable(onClick = {}, onLongClick = { showDialog = true })
+            .combinedClickable(onClick = { showDialog = true }, onLongClick = { showDialog = true })
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -7,6 +7,7 @@ import com.cryptolens.app.features.exchange.data.local.CryptoManager
 import com.cryptolens.app.features.exchange.data.local.ExchangeConnectionDao
 import com.cryptolens.app.features.exchange.data.local.ExchangeConnectionEntity
 import com.cryptolens.app.features.exchange.data.remote.BinanceApiClient
+import com.cryptolens.app.features.exchange.data.remote.BinanceSymbolDto
 import com.cryptolens.app.features.exchange.domain.model.*
 import com.cryptolens.app.features.exchange.domain.repository.ExchangeRepository
 import com.cryptolens.app.features.portfolio.data.local.dao.PortfolioAssetDao
@@ -141,7 +142,8 @@ class ExchangeRepositoryImpl @Inject constructor(
         val symbolsResult = binanceClient.getUsdtSymbols()
         if (symbolsResult is Resource.Error) return symbolsResult
 
-        val symbolMap = (symbolsResult as Resource.Success).data
+        val exchangeSymbols = (symbolsResult as Resource.Success).data
+        val symbolMap = exchangeSymbols
             .associate { it.symbol to Pair(it.baseAsset, it.quoteAsset) }
 
         // Commonly traded USDT pairs — fetch these first, then expand
@@ -151,6 +153,31 @@ class ExchangeRepositoryImpl @Inject constructor(
             "DOTUSDT", "MATICUSDT", "LINKUSDT", "LTCUSDT",
             "UNIUSDT", "ATOMUSDT", "ETCUSDT", "TRXUSDT",
         )
+        val balanceAssets = when (val balances = binanceClient.getAccountBalances(apiKey, apiSecret)) {
+            is Resource.Success -> balances.data
+                .map { it.asset.uppercase() }
+                .filterNot { it in setOf("USDT", "BUSD", "USDC", "FDUSD", "TUSD") }
+                .toSet()
+            else -> emptySet()
+        }
+        val balanceSymbols = exchangeSymbols
+            .filter {
+                it.baseAsset.uppercase() in balanceAssets &&
+                    it.quoteAsset in setOf("USDT", "BUSD", "BTC", "ETH", "BNB")
+            }
+            .sortedWith(
+                compareBy<BinanceSymbolDto> {
+                    when (it.quoteAsset) {
+                        "USDT" -> 0
+                        "BUSD" -> 1
+                        "BTC" -> 2
+                        "ETH" -> 3
+                        else -> 4
+                    }
+                }.thenBy { it.symbol }
+            )
+            .map { it.symbol }
+        val symbolsToSync = (prioritySymbols + balanceSymbols).distinct()
 
         var totalImported = 0
         var totalSkipped  = 0
@@ -159,7 +186,7 @@ class ExchangeRepositoryImpl @Inject constructor(
         // Existing rows in DB are checked via DAO before applying portfolio updates.
         val existingIds = mutableSetOf<String>()
 
-        for (symbol in prioritySymbols) {
+        for (symbol in symbolsToSync) {
             val (baseAsset, _) = symbolMap[symbol] ?: continue
 
             val tradesResult = binanceClient.getAllTrades(apiKey, apiSecret, symbol)
@@ -227,6 +254,8 @@ class ExchangeRepositoryImpl @Inject constructor(
                 exchangeType    = exchangeType,
                 tradesImported  = totalImported,
                 tradesSkipped   = totalSkipped,
+                symbolsScanned  = symbolsToSync.size,
+                balanceAssetsFound = balanceAssets.size,
             )
         )
     }

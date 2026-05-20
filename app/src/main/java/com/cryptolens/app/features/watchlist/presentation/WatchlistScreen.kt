@@ -65,13 +65,23 @@ fun WatchlistScreen(
             WatchlistTopBar(
                 sortOrder  = uiState.sortOrder,
                 isLoading  = uiState.isLoadingPrices,
+                isRealtimeConnected = uiState.isRealtimeConnected,
                 onRefresh  = { viewModel.onEvent(WatchlistEvent.Refresh) },
                 onSortChange = { viewModel.onEvent(WatchlistEvent.SortChanged(it)) },
+            )
+            WatchlistSearchAndFilters(
+                query = uiState.searchQuery,
+                filter = uiState.filter,
+                onQueryChange = { viewModel.onEvent(WatchlistEvent.SearchChanged(it)) },
+                onFilterChange = { viewModel.onEvent(WatchlistEvent.FilterChanged(it)) },
             )
 
             when {
                 uiState.items.isEmpty() && !uiState.isLoadingPrices ->
-                    WatchlistEmptyState()
+                    WatchlistEmptyState(
+                        isFiltered = uiState.searchQuery.isNotBlank() ||
+                            uiState.filter != WatchlistFilter.ALL,
+                    )
 
                 else -> {
                     // Summary strip
@@ -107,6 +117,7 @@ fun WatchlistScreen(
 private fun WatchlistTopBar(
     sortOrder: WatchlistSortOrder,
     isLoading: Boolean,
+    isRealtimeConnected: Boolean,
     onRefresh: () -> Unit,
     onSortChange: (WatchlistSortOrder) -> Unit,
 ) {
@@ -135,6 +146,26 @@ private fun WatchlistTopBar(
                 color       = BinanceYellow,
                 strokeWidth = 2.dp,
             )
+        }
+        AnimatedVisibility(visible = !isLoading) {
+            Row(
+                modifier = Modifier.padding(end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(if (isRealtimeConnected) GreenUp else TextTertiary),
+                )
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    if (isRealtimeConnected) "LIVE" else "SYNC",
+                    color = if (isRealtimeConnected) GreenUp else TextTertiary,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
         }
 
         // Refresh
@@ -188,11 +219,84 @@ private data class SortOption(val label: String, val order: WatchlistSortOrder) 
             SortOption("Top Gainers",   WatchlistSortOrder.CHANGE_DESC),
             SortOption("Top Losers",    WatchlistSortOrder.CHANGE_ASC),
             SortOption("Highest Price", WatchlistSortOrder.PRICE_DESC),
+            SortOption("Lowest Price",  WatchlistSortOrder.PRICE_ASC),
         )
     }
 }
 
 // ── Summary Strip ─────────────────────────────────────────────────────────────
+
+@Composable
+private fun WatchlistSearchAndFilters(
+    query: String,
+    filter: WatchlistFilter,
+    onQueryChange: (String) -> Unit,
+    onFilterChange: (WatchlistFilter) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SurfaceDark)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            placeholder = { Text("Search symbol or name", color = TextTertiary) },
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary)
+            },
+            trailingIcon = {
+                if (query.isNotBlank()) {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(Icons.Default.Close, contentDescription = "Clear search", tint = TextSecondary)
+                    }
+                }
+            },
+            shape = RoundedCornerShape(8.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = BinanceYellow,
+                unfocusedBorderColor = BorderColor,
+                focusedTextColor = TextPrimary,
+                unfocusedTextColor = TextPrimary,
+                cursorColor = BinanceYellow,
+                focusedContainerColor = SurfaceVariant,
+                unfocusedContainerColor = SurfaceVariant,
+            ),
+        )
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            WatchlistFilter.entries.forEach { item ->
+                val selected = filter == item
+                FilterChip(
+                    selected = selected,
+                    onClick = { onFilterChange(item) },
+                    label = {
+                        Text(
+                            item.name.lowercase().replaceFirstChar { it.uppercase() },
+                            maxLines = 1,
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = SurfaceVariant,
+                        selectedContainerColor = BinanceYellow.copy(alpha = 0.18f),
+                        labelColor = TextSecondary,
+                        selectedLabelColor = BinanceYellow,
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selected,
+                        borderColor = BorderColor,
+                        selectedBorderColor = BinanceYellow,
+                    ),
+                )
+            }
+        }
+    }
+    HorizontalDivider(color = DividerColor)
+}
 
 @Composable
 private fun WatchlistSummaryStrip(items: List<WatchlistItem>) {
@@ -424,7 +528,7 @@ private fun WatchlistCoinRow(
 // ── Empty State ───────────────────────────────────────────────────────────────
 
 @Composable
-private fun WatchlistEmptyState() {
+private fun WatchlistEmptyState(isFiltered: Boolean = false) {
     Column(
         modifier            = Modifier.fillMaxSize().padding(40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -438,7 +542,7 @@ private fun WatchlistEmptyState() {
         )
         Spacer(Modifier.height(20.dp))
         Text(
-            text       = "Your watchlist is empty",
+            text       = if (isFiltered) "No matches" else "Your watchlist is empty",
             style      = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color      = TextPrimary,
