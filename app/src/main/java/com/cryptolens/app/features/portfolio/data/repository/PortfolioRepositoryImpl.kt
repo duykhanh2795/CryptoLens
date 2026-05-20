@@ -1,6 +1,8 @@
 package com.cryptolens.app.features.portfolio.data.repository
 
+import androidx.room.withTransaction
 import com.cryptolens.app.core.domain.util.Resource
+import com.cryptolens.app.core.data.local.CryptoDatabase
 import com.cryptolens.app.features.portfolio.data.local.dao.PortfolioAssetDao
 import com.cryptolens.app.features.portfolio.data.local.dao.PortfolioSnapshotDao
 import com.cryptolens.app.features.portfolio.data.local.dao.TransactionDao
@@ -22,6 +24,7 @@ import javax.inject.Singleton
 
 @Singleton
 class PortfolioRepositoryImpl @Inject constructor(
+    private val database: CryptoDatabase,
     private val assetDao: PortfolioAssetDao,
     private val txDao: TransactionDao,
     private val snapshotDao: PortfolioSnapshotDao,
@@ -59,69 +62,90 @@ class PortfolioRepositoryImpl @Inject constructor(
         fee: Double,
         note: String,
     ): Resource<Unit> {
+        if (userId.isBlank()) return Resource.Error("Missing user")
         return try {
-            // 1. Save transaction
-            val tx = TransactionEntity(
-                id       = UUID.randomUUID().toString(),
-                userId   = userId,
-                coinId   = coinId,
-                symbol   = symbol,
-                name     = name,
-                imageUrl = imageUrl,
-                type     = type.name,
-                quantity = quantity,
-                price    = price,
-                fee      = fee,
-                note     = note,
-            )
-            txDao.insertTransaction(tx)
+            database.withTransaction {
+                val existingAsset = assetDao.getAsset(userId, coinId)
+                if (type == TransactionType.SELL && (existingAsset == null || existingAsset.quantity < quantity)) {
+                    throw PortfolioValidationException("Sell quantity exceeds current holdings.")
+                }
 
-            // 2. Recalculate and upsert the portfolio asset
-            val existingAsset = assetDao.getAsset(userId, coinId)
-            val updatedAsset  = recalculateAsset(
-                existing = existingAsset,
-                type     = type,
-                quantity = quantity,
-                price    = price,
-                userId   = userId,
-                coinId   = coinId,
-                symbol   = symbol,
-                name     = name,
-                imageUrl = imageUrl,
-            )
-            if (updatedAsset != null) {
-                assetDao.upsertAsset(updatedAsset)
-            } else if (existingAsset != null) {
-                assetDao.deleteAsset(existingAsset.id, userId)
+                val tx = TransactionEntity(
+                    id       = UUID.randomUUID().toString(),
+                    userId   = userId,
+                    coinId   = coinId,
+                    symbol   = symbol,
+                    name     = name,
+                    imageUrl = imageUrl,
+                    type     = type.name,
+                    quantity = quantity,
+                    price    = price,
+                    fee      = fee,
+                    note     = note,
+                )
+                txDao.insertTransaction(tx)
+
+                val updatedAsset = recalculateAsset(
+                    existing = existingAsset,
+                    type     = type,
+                    quantity = quantity,
+                    price    = price,
+                    fee      = fee,
+                    userId   = userId,
+                    coinId   = coinId,
+                    symbol   = symbol,
+                    name     = name,
+                    imageUrl = imageUrl,
+                )
+                if (updatedAsset != null) {
+                    assetDao.upsertAsset(updatedAsset)
+                } else if (existingAsset != null) {
+                    assetDao.deleteAsset(existingAsset.id, userId)
+                }
             }
             Resource.Success(Unit)
+        } catch (e: PortfolioValidationException) {
+            Resource.Error(e.message ?: "Invalid portfolio transaction")
         } catch (e: Exception) {
             Resource.Error("Failed to save transaction: ${e.message}", e)
         }
     }
 
     override suspend fun deleteTransaction(transactionId: String, userId: String): Resource<Unit> {
+        if (userId.isBlank()) return Resource.Error("Missing user")
         return try {
-            val transaction = txDao.getTransactionById(transactionId)
-            txDao.deleteTransaction(transactionId)
-            if (transaction != null && transaction.userId == userId) {
+            database.withTransaction {
+                val transaction = txDao.getTransactionById(transactionId)
+                    ?: throw PortfolioValidationException("Transaction not found")
+                if (transaction.userId != userId) {
+                    throw PortfolioValidationException("Transaction not found")
+                }
+                txDao.deleteTransaction(transactionId)
                 rebuildAssetFromTransactions(userId, transaction.coinId)
             }
             Resource.Success(Unit)
+        } catch (e: PortfolioValidationException) {
+            Resource.Error(e.message ?: "Invalid portfolio transaction")
         } catch (e: Exception) {
             Resource.Error("Failed to delete transaction: ${e.message}", e)
         }
     }
 
     override suspend fun deleteAsset(assetId: String, userId: String): Resource<Unit> {
+        if (userId.isBlank()) return Resource.Error("Missing user")
         return try {
-            val asset = assetDao.getAssetById(assetId)
-            if (asset == null || asset.userId != userId) {
-                return Resource.Error("Asset not found")
+            database.withTransaction {
+                val asset = assetDao.getAssetById(assetId)
+                    ?: throw PortfolioValidationException("Asset not found")
+                if (asset.userId != userId) {
+                    throw PortfolioValidationException("Asset not found")
+                }
+                txDao.deleteTransactionsByCoin(userId, asset.coinId)
+                assetDao.deleteAsset(assetId, userId)
             }
-            txDao.deleteTransactionsByCoin(userId, asset.coinId)
-            assetDao.deleteAsset(assetId, userId)
             Resource.Success(Unit)
+        } catch (e: PortfolioValidationException) {
+            Resource.Error(e.message ?: "Invalid portfolio asset")
         } catch (e: Exception) {
             Resource.Error("Failed to delete asset: ${e.message}", e)
         }
@@ -154,10 +178,13 @@ class PortfolioRepositoryImpl @Inject constructor(
     }
 
     override suspend fun clearAll(userId: String): Resource<Unit> {
+        if (userId.isBlank()) return Resource.Error("Missing user")
         return try {
-            assetDao.deleteAllAssets(userId)
-            txDao.deleteAllTransactions(userId)
-            snapshotDao.deleteAllSnapshots(userId)
+            database.withTransaction {
+                assetDao.deleteAllAssets(userId)
+                txDao.deleteAllTransactions(userId)
+                snapshotDao.deleteAllSnapshots(userId)
+            }
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error("Failed to clear portfolio: ${e.message}", e)
@@ -171,6 +198,7 @@ class PortfolioRepositoryImpl @Inject constructor(
         type: TransactionType,
         quantity: Double,
         price: Double,
+        fee: Double,
         userId: String,
         coinId: String,
         symbol: String,
@@ -182,8 +210,8 @@ class PortfolioRepositoryImpl @Inject constructor(
                 val prevQty   = existing?.quantity ?: 0.0
                 val prevAvg   = existing?.averageBuyPrice ?: 0.0
                 val newQty    = prevQty + quantity
-                val newAvg    = if (prevQty == 0.0) price
-                                else (prevQty * prevAvg + quantity * price) / newQty
+                val newCost   = (prevQty * prevAvg) + (quantity * price) + fee
+                val newAvg    = newCost / newQty
                 PortfolioAssetEntity(
                     id             = existing?.id ?: UUID.randomUUID().toString(),
                     userId         = userId,
@@ -227,8 +255,8 @@ class PortfolioRepositoryImpl @Inject constructor(
                 TransactionType.BUY -> {
                     val newQty = quantity + tx.quantity
                     if (newQty > 0.0) {
-                        averageBuyPrice = if (quantity == 0.0) tx.price
-                        else ((quantity * averageBuyPrice) + (tx.quantity * tx.price)) / newQty
+                        val newCost = (quantity * averageBuyPrice) + (tx.quantity * tx.price) + tx.fee
+                        averageBuyPrice = newCost / newQty
                     }
                     quantity = newQty
                 }
@@ -306,4 +334,6 @@ class PortfolioRepositoryImpl @Inject constructor(
         calendar.set(Calendar.MILLISECOND, 0)
         return calendar.timeInMillis
     }
+
+    private class PortfolioValidationException(message: String) : IllegalArgumentException(message)
 }

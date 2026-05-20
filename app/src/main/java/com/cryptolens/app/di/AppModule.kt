@@ -74,8 +74,11 @@ object NetworkModule {
     @Provides @Singleton
     fun provideOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply {
-            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
-                    else HttpLoggingInterceptor.Level.NONE
+            redactHeader("Authorization")
+            redactHeader("X-API-Key")
+            redactHeader("X-MBX-APIKEY")
+            redactHeader("x-goog-api-key")
+            level = HttpLoggingInterceptor.Level.NONE
         })
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)

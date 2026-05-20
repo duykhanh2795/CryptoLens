@@ -55,10 +55,8 @@ class AlertCheckWorker @AssistedInject constructor(
             activeAlerts.forEach { alert ->
                 val currentPrice = pricesByAlertId[alert.id] ?: return@forEach
                 if (alert.isTriggered(currentPrice)) {
-                    val notificationSent = sendNotification(alert, currentPrice)
-                    if (notificationSent) {
-                        markAlertTriggered(alert.id)
-                    }
+                    markAlertTriggered(alert.id)
+                    sendNotification(alert, currentPrice)
                 }
             }
 

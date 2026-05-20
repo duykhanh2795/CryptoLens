@@ -77,6 +77,8 @@ class AddTransactionUseCase @Inject constructor(
         fee: Double = 0.0,
         note: String = "",
     ): Resource<Unit> {
+        if (userId.isBlank()) return Resource.Error("Missing user")
+
         val quantity = quantityStr.toDoubleOrNull()
             ?: return Resource.Error("Invalid quantity")
         if (quantity <= 0) return Resource.Error("Quantity must be greater than 0")
@@ -84,6 +86,8 @@ class AddTransactionUseCase @Inject constructor(
         val price = priceStr.toDoubleOrNull()
             ?: return Resource.Error("Invalid price")
         if (price <= 0) return Resource.Error("Price must be greater than 0")
+
+        if (fee < 0) return Resource.Error("Fee cannot be negative")
 
         return repo.addTransaction(userId, coinId, symbol, name, imageUrl, type, quantity, price, fee, note)
     }

@@ -4,9 +4,11 @@ import com.cryptolens.app.features.market.domain.model.Kline
 import com.cryptolens.app.features.market.domain.model.PriceTicker
 import com.cryptolens.app.core.domain.util.Resource
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -58,7 +60,14 @@ class BinanceWebSocketManager @Inject constructor(
      * Observe a single ticker symbol in realtime.
      * Stream: <symbol>@ticker
      */
-    fun observeTicker(symbol: String): Flow<Resource<PriceTicker>> = callbackFlow {
+    fun observeTicker(symbol: String): Flow<Resource<PriceTicker>> =
+        observeTickerOnce(symbol).retryWhen { _, attempt ->
+            emit(Resource.Loading)
+            delay(retryDelayMillis(attempt))
+            true
+        }
+
+    private fun observeTickerOnce(symbol: String): Flow<Resource<PriceTicker>> = callbackFlow {
         val streamName = "${symbol.lowercase()}@ticker"
         val request = Request.Builder()
             .url("$WS_BASE/$streamName")
@@ -88,6 +97,7 @@ class BinanceWebSocketManager @Inject constructor(
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 trySend(Resource.Error("WebSocket error: ${t.message}", t))
+                close(t)
             }
         })
 
@@ -101,6 +111,16 @@ class BinanceWebSocketManager @Inject constructor(
         val distinctSymbols = symbols.distinct()
         if (distinctSymbols.isEmpty()) return flowOf(Resource.Success(emptyMap()))
 
+        return observeMultipleTickersOnce(distinctSymbols).retryWhen { _, attempt ->
+            emit(Resource.Loading)
+            delay(retryDelayMillis(attempt))
+            true
+        }
+    }
+
+    private fun observeMultipleTickersOnce(
+        distinctSymbols: List<String>,
+    ): Flow<Resource<Map<String, PriceTicker>>> {
         val streams = distinctSymbols.joinToString("/") { "${it.lowercase()}@ticker" }
         val url = "wss://stream.binance.com:9443/stream?streams=$streams"
 
@@ -134,12 +154,16 @@ class BinanceWebSocketManager @Inject constructor(
 
                 override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                     trySend(Resource.Error("WebSocket error: ${t.message}", t))
+                    close(t)
                 }
             })
 
             awaitClose { ws.close(1000, "Flow cancelled") }
         }
     }
+
+    private fun retryDelayMillis(attempt: Long): Long =
+        (1_000L * (attempt + 1)).coerceAtMost(30_000L)
 }
 
 @Serializable

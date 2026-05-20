@@ -1,6 +1,8 @@
 package com.cryptolens.app.features.exchange.data.repository
 
+import androidx.room.withTransaction
 import com.cryptolens.app.core.domain.util.Resource
+import com.cryptolens.app.core.data.local.CryptoDatabase
 import com.cryptolens.app.features.exchange.data.local.CryptoManager
 import com.cryptolens.app.features.exchange.data.local.ExchangeConnectionDao
 import com.cryptolens.app.features.exchange.data.local.ExchangeConnectionEntity
@@ -20,6 +22,7 @@ import javax.inject.Singleton
 
 @Singleton
 class ExchangeRepositoryImpl @Inject constructor(
+    private val database: CryptoDatabase,
     private val dao: ExchangeConnectionDao,
     private val cryptoManager: CryptoManager,
     private val binanceClient: BinanceApiClient,
@@ -68,17 +71,19 @@ class ExchangeRepositoryImpl @Inject constructor(
 
     override suspend fun deleteConnection(id: String): Resource<Unit> {
         return try {
-            val importedTransactions = transactionDao.getTransactionsByConnection(id)
-            val affectedHoldings = importedTransactions
-                .map { it.userId to it.coinId }
-                .toSet()
+            database.withTransaction {
+                val importedTransactions = transactionDao.getTransactionsByConnection(id)
+                val affectedHoldings = importedTransactions
+                    .map { it.userId to it.coinId }
+                    .toSet()
 
-            transactionDao.deleteTransactionsByConnection(id)
-            transactionDao.deleteAllTransactions("exchange_$id")
-            assetDao.deleteAllAssets("exchange_$id")
-            dao.deleteById(id)
-            affectedHoldings.forEach { (userId, coinId) ->
-                rebuildAssetFromTransactions(userId, coinId)
+                transactionDao.deleteTransactionsByConnection(id)
+                transactionDao.deleteAllTransactions("exchange_$id")
+                assetDao.deleteAllAssets("exchange_$id")
+                dao.deleteById(id)
+                affectedHoldings.forEach { (userId, coinId) ->
+                    rebuildAssetFromTransactions(userId, coinId)
+                }
             }
             Resource.Success(Unit)
         } catch (e: Exception) {
@@ -195,18 +200,19 @@ class ExchangeRepositoryImpl @Inject constructor(
                     sourceConnectionId = connectionId,
                     timestamp = trade.time,
                 )
-                transactionDao.insertTransaction(txEntity)
+                database.withTransaction {
+                    transactionDao.insertTransaction(txEntity)
 
-                // Update portfolio asset
-                updatePortfolioAsset(
-                    userId    = userId,
-                    coinId    = coinId,
-                    symbol    = baseAsset,
-                    name      = baseAsset,
-                    quantity  = quantity,
-                    price     = price,
-                    type      = type,
-                )
+                    updatePortfolioAsset(
+                        userId    = userId,
+                        coinId    = coinId,
+                        symbol    = baseAsset,
+                        name      = baseAsset,
+                        quantity  = quantity,
+                        price     = price,
+                        type      = type,
+                    )
+                }
 
                 existingIds.add(txId)
                 totalImported++
