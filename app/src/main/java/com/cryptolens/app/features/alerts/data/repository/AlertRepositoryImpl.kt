@@ -4,7 +4,10 @@ import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.alerts.data.local.dao.PriceAlertDao
 import com.cryptolens.app.features.alerts.data.local.entity.PriceAlertEntity
 import com.cryptolens.app.features.alerts.domain.model.AlertCondition
+import com.cryptolens.app.features.alerts.domain.model.AlertFrequency
 import com.cryptolens.app.features.alerts.domain.model.AlertStatus
+import com.cryptolens.app.features.alerts.domain.model.AlertType
+import com.cryptolens.app.features.alerts.domain.model.AlertValueType
 import com.cryptolens.app.features.alerts.domain.model.PriceAlert
 import com.cryptolens.app.features.alerts.domain.repository.AlertRepository
 import kotlinx.coroutines.flow.Flow
@@ -29,8 +32,12 @@ class AlertRepositoryImpl @Inject constructor(
         symbol: String,
         name: String,
         imageUrl: String,
+        type: AlertType,
+        valueType: AlertValueType,
+        frequency: AlertFrequency,
         condition: AlertCondition,
-        targetPrice: Double,
+        targetValue: Double,
+        baselineValue: Double,
         note: String,
     ): Resource<PriceAlert> = runCatching {
         val alert = PriceAlert(
@@ -39,8 +46,12 @@ class AlertRepositoryImpl @Inject constructor(
             symbol = symbol.uppercase(),
             name = name,
             imageUrl = imageUrl,
+            type = type,
+            valueType = valueType,
+            frequency = frequency,
             condition = condition,
-            targetPrice = targetPrice,
+            targetPrice = targetValue,
+            baselineValue = baselineValue,
             status = AlertStatus.ACTIVE,
             note = note,
             createdAt = System.currentTimeMillis(),
@@ -59,8 +70,13 @@ class AlertRepositoryImpl @Inject constructor(
         Resource.Success(Unit)
     }.getOrElse { Resource.Error("Could not update alert.", it) }
 
-    override suspend fun markTriggered(id: String): Resource<Unit> = runCatching {
-        dao.markTriggered(id, System.currentTimeMillis())
+    override suspend fun markTriggered(alert: PriceAlert, currentValue: Double): Resource<Unit> = runCatching {
+        val now = System.currentTimeMillis()
+        if (alert.frequency == AlertFrequency.PERSISTENT) {
+            dao.markPersistentTriggered(alert.id, now, currentValue)
+        } else {
+            dao.markTriggered(alert.id, now)
+        }
         Resource.Success(Unit)
     }.getOrElse { Resource.Error("Could not mark alert as triggered.", it) }
 }

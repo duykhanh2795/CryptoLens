@@ -29,7 +29,7 @@ import com.cryptolens.app.features.watchlist.data.local.entity.WatchlistEntity
         PortfolioSnapshotEntity::class,
         WalletWatchEntity::class,
     ],
-    version      = 7,
+    version      = 8,
     exportSchema = true,
 )
 abstract class CryptoDatabase : RoomDatabase() {
@@ -87,6 +87,13 @@ object CryptoDatabaseMigrations {
         }
     }
 
+    val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            createCurrentTablesIfMissing(db)
+            addAdvancedAlertColumnsIfMissing(db)
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
@@ -94,6 +101,7 @@ object CryptoDatabaseMigrations {
         MIGRATION_4_5,
         MIGRATION_5_6,
         MIGRATION_6_7,
+        MIGRATION_7_8,
     )
 
     private fun createCurrentTablesIfMissing(db: SupportSQLiteDatabase) {
@@ -175,8 +183,12 @@ object CryptoDatabaseMigrations {
                 `symbol` TEXT NOT NULL,
                 `name` TEXT NOT NULL,
                 `imageUrl` TEXT NOT NULL,
+                `alertType` TEXT NOT NULL DEFAULT 'PRICE_LIMIT',
+                `valueType` TEXT NOT NULL DEFAULT 'NUMBER',
+                `frequency` TEXT NOT NULL DEFAULT 'ONE_TIME',
                 `condition` TEXT NOT NULL,
                 `targetPrice` REAL NOT NULL,
+                `baselineValue` REAL NOT NULL DEFAULT 0.0,
                 `status` TEXT NOT NULL,
                 `note` TEXT NOT NULL,
                 `createdAt` INTEGER NOT NULL,
@@ -185,6 +197,14 @@ object CryptoDatabaseMigrations {
             )
             """.trimIndent()
         )
+        addAdvancedAlertColumnsIfMissing(db)
+    }
+
+    private fun addAdvancedAlertColumnsIfMissing(db: SupportSQLiteDatabase) {
+        addColumnIfMissing(db, "price_alerts", "alertType", "TEXT NOT NULL DEFAULT 'PRICE_LIMIT'")
+        addColumnIfMissing(db, "price_alerts", "valueType", "TEXT NOT NULL DEFAULT 'NUMBER'")
+        addColumnIfMissing(db, "price_alerts", "frequency", "TEXT NOT NULL DEFAULT 'ONE_TIME'")
+        addColumnIfMissing(db, "price_alerts", "baselineValue", "REAL NOT NULL DEFAULT 0.0")
     }
 
     private fun createPortfolioSnapshotsTableIfMissing(db: SupportSQLiteDatabase) {

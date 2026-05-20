@@ -16,15 +16,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AddAlert
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -65,8 +74,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.cryptolens.app.core.domain.util.formatPrice
 import com.cryptolens.app.features.alerts.domain.model.AlertCondition
+import com.cryptolens.app.features.alerts.domain.model.AlertFrequency
 import com.cryptolens.app.features.alerts.domain.model.AlertStatus
+import com.cryptolens.app.features.alerts.domain.model.AlertType
+import com.cryptolens.app.features.alerts.domain.model.AlertValueType
 import com.cryptolens.app.features.alerts.domain.model.PriceAlert
+import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.ui.theme.BackgroundDark
 import com.cryptolens.app.ui.theme.BinanceYellow
 import com.cryptolens.app.ui.theme.BorderColor
@@ -123,7 +136,7 @@ fun AlertsScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { viewModel.onEvent(AlertsEvent.ShowCreateSheet) },
+                onClick = { viewModel.onEvent(AlertsEvent.ShowCreateSheet()) },
                 containerColor = BinanceYellow,
                 contentColor = Color(0xFF1A1400),
             ) {
@@ -138,14 +151,29 @@ fun AlertsScreen(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = BinanceYellow)
                 }
-            } else if (uiState.alerts.isEmpty()) {
-                EmptyAlerts()
             } else {
-                AlertList(
-                    alerts = uiState.alerts,
-                    onToggle = { viewModel.onEvent(AlertsEvent.ToggleAlert(it)) },
-                    onDelete = { viewModel.onEvent(AlertsEvent.DeleteAlert(it)) },
-                )
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    item {
+                        AlertTypeChooser(
+                            onSelect = { viewModel.onEvent(AlertsEvent.ShowCreateSheet(it)) },
+                        )
+                    }
+                    if (uiState.alerts.isEmpty()) {
+                        item { EmptyAlerts() }
+                    } else {
+                        items(uiState.alerts, key = { it.id }) { alert ->
+                            AlertCard(
+                                alert = alert,
+                                onToggle = { viewModel.onEvent(AlertsEvent.ToggleAlert(it)) },
+                                onDelete = { viewModel.onEvent(AlertsEvent.DeleteAlert(it)) },
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -186,7 +214,7 @@ private fun AlertsTopBar(onNavigateBack: () -> Unit) {
             Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back", tint = TextPrimary)
         }
         Text(
-            text = "Price Alerts",
+            text = "Alerts",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = TextPrimary,
@@ -203,14 +231,64 @@ private fun EmptyAlerts() {
     ) {
         Icon(Icons.Default.Notifications, contentDescription = null, tint = TextTertiary, modifier = Modifier.size(52.dp))
         Spacer(Modifier.height(14.dp))
-        Text("No price alerts yet", color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("No alerts yet", color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text(
-            "Open a coin detail page and tap Set Alert to create your first target.",
+            "Choose Price Limit, Volume, or Market Cap to create your first custom alert.",
             color = TextSecondary,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+@Composable
+private fun AlertTypeChooser(
+    onSelect: (AlertType) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            "Custom Alerts",
+            color = TextPrimary,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        AlertType.entries.forEach { type ->
+            val icon = when (type) {
+                AlertType.PRICE_LIMIT -> Icons.Default.AttachMoney
+                AlertType.VOLUME -> Icons.Default.BarChart
+                AlertType.MARKET_CAP -> Icons.Default.PieChart
+            }
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = SurfaceDark,
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, BorderColor),
+                onClick = { onSelect(type) },
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(icon, contentDescription = null, tint = BinanceYellow, modifier = Modifier.size(32.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            type.label,
+                            color = TextPrimary,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            type.description,
+                            color = TextSecondary,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextSecondary)
+                }
+            }
+        }
     }
 }
 
@@ -239,6 +317,11 @@ private fun AlertCard(
 ) {
     val conditionColor = if (alert.condition == AlertCondition.ABOVE) GreenUp else RedDown
     val conditionSurface = if (alert.condition == AlertCondition.ABOVE) GreenUpSurface else RedDownSurface
+    val conditionText = if (alert.valueType == AlertValueType.PERCENT) {
+        "${alert.condition.movementLabel} ${alert.targetPrice.formatPrice()}%"
+    } else {
+        "${alert.condition.label} ${formatAlertMetric(alert.type, alert.targetPrice)}"
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -256,7 +339,7 @@ private fun AlertCard(
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(alert.symbol, color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(alert.name, color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+                    Text("${alert.name} - ${alert.type.label}", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
                 }
                 Switch(
                     checked = alert.status == AlertStatus.ACTIVE,
@@ -277,7 +360,7 @@ private fun AlertCard(
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
                     Text(
-                        "${alert.condition.label} $${alert.targetPrice.formatPrice()}",
+                        conditionText,
                         color = conditionColor,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
@@ -285,11 +368,7 @@ private fun AlertCard(
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
-                    when (alert.status) {
-                        AlertStatus.ACTIVE -> "Active"
-                        AlertStatus.PAUSED -> "Paused"
-                        AlertStatus.TRIGGERED -> "Triggered"
-                    },
+                    "${alert.frequency.label} - ${alert.status.label()}",
                     color = if (alert.status == AlertStatus.TRIGGERED) BinanceYellow else TextSecondary,
                     style = MaterialTheme.typography.labelMedium,
                 )
@@ -299,8 +378,15 @@ private fun AlertCard(
                 HorizontalDivider(color = DividerColor, modifier = Modifier.padding(vertical = 10.dp))
                 if (alert.currentPrice > 0.0) {
                     Text(
-                        "Current price: $${alert.currentPrice.formatPrice()}",
+                        "Current ${alert.type.label.lowercase()}: ${formatAlertMetric(alert.type, alert.currentPrice)}",
                         color = TextSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                if (alert.valueType == AlertValueType.PERCENT && alert.baselineValue > 0.0) {
+                    Text(
+                        "Baseline: ${formatAlertMetric(alert.type, alert.baselineValue)}",
+                        color = TextTertiary,
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -310,6 +396,25 @@ private fun AlertCard(
             }
         }
     }
+}
+
+private fun AlertStatus.label(): String = when (this) {
+    AlertStatus.ACTIVE -> "Active"
+    AlertStatus.PAUSED -> "Paused"
+    AlertStatus.TRIGGERED -> "Triggered"
+}
+
+private fun formatAlertMetric(type: AlertType, value: Double): String = when (type) {
+    AlertType.PRICE_LIMIT -> "$${value.formatPrice()}"
+    AlertType.VOLUME -> "$${value.formatCompactUsd()}"
+    AlertType.MARKET_CAP -> "$${value.formatCompactUsd()}"
+}
+
+private fun Double.formatCompactUsd(): String = when {
+    this >= 1_000_000_000 -> "%.2fB".format(this / 1_000_000_000)
+    this >= 1_000_000 -> "%.2fM".format(this / 1_000_000)
+    this >= 1_000 -> "%.2fK".format(this / 1_000)
+    else -> "%.2f".format(this)
 }
 
 @Composable
@@ -323,8 +428,21 @@ private fun CreateAlertSheet(
             .navigationBarsPadding()
             .padding(20.dp),
     ) {
-        Text("Set Price Alert", color = TextPrimary, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text("Create ${state.selectedAlertType.label} Alert", color = TextPrimary, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(16.dp))
+
+        AlertTypeTabs(
+            selected = state.selectedAlertType,
+            onSelect = { onEvent(AlertsEvent.AlertTypeChanged(it)) },
+        )
+        Spacer(Modifier.height(14.dp))
+
+        CoinPicker(
+            coins = state.marketCoins,
+            selectedCoinId = state.coinId,
+            onSelect = { onEvent(AlertsEvent.CoinSelected(it)) },
+        )
+        Spacer(Modifier.height(14.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
@@ -336,7 +454,7 @@ private fun CreateAlertSheet(
             Column {
                 Text(state.coinSymbol, color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    "Current: $${state.coinCurrentPrice.formatPrice()}",
+                    "Current ${state.selectedAlertType.label.lowercase()}: ${formatAlertMetric(state.selectedAlertType, state.currentMetricValue())}",
                     color = TextSecondary,
                     style = MaterialTheme.typography.labelMedium,
                 )
@@ -344,12 +462,43 @@ private fun CreateAlertSheet(
         }
 
         Spacer(Modifier.height(18.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            AlertValueType.entries.forEach { valueType ->
+                FilterChip(
+                    selected = state.selectedValueType == valueType,
+                    onClick = { onEvent(AlertsEvent.ValueTypeChanged(valueType)) },
+                    label = { Text("Alert by ${valueType.label}") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = BinanceYellow.copy(alpha = 0.18f),
+                        selectedLabelColor = BinanceYellow,
+                        labelColor = TextSecondary,
+                    ),
+                )
+            }
+        }
+        Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AlertCondition.entries.forEach { condition ->
                 FilterChip(
                     selected = state.selectedCondition == condition,
                     onClick = { onEvent(AlertsEvent.ConditionChanged(condition)) },
-                    label = { Text(condition.label) },
+                    label = {
+                        Text(if (state.selectedValueType == AlertValueType.PERCENT) condition.movementLabel else condition.label)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            if (condition == AlertCondition.ABOVE) {
+                                Icons.AutoMirrored.Filled.TrendingUp
+                            } else {
+                                Icons.AutoMirrored.Filled.TrendingDown
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = BinanceYellow.copy(alpha = 0.18f),
                         selectedLabelColor = BinanceYellow,
@@ -360,21 +509,44 @@ private fun CreateAlertSheet(
         }
 
         Spacer(Modifier.height(12.dp))
-        val targetPriceError = state.targetPriceError
+        val targetValueError = state.targetValueError
         OutlinedTextField(
-            value = state.targetPriceInput,
-            onValueChange = { onEvent(AlertsEvent.TargetPriceChanged(it)) },
+            value = state.targetValueInput,
+            onValueChange = { onEvent(AlertsEvent.TargetValueChanged(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Target price") },
-            prefix = { Text("$") },
+            label = {
+                Text(
+                    if (state.selectedValueType == AlertValueType.PERCENT) {
+                        "Percent change"
+                    } else {
+                        "Target ${state.selectedAlertType.label.lowercase()}"
+                    },
+                )
+            },
+            prefix = if (state.selectedValueType == AlertValueType.NUMBER) {
+                { Text("$") }
+            } else {
+                null
+            },
+            suffix = if (state.selectedValueType == AlertValueType.PERCENT) {
+                { Text("%") }
+            } else {
+                null
+            },
             singleLine = true,
-            isError = targetPriceError != null,
-            supportingText = if (targetPriceError != null) {
-                { Text(targetPriceError) }
+            isError = targetValueError != null,
+            supportingText = if (targetValueError != null) {
+                { Text(targetValueError) }
             } else {
                 null
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        )
+
+        Spacer(Modifier.height(10.dp))
+        FrequencySelector(
+            selected = state.selectedFrequency,
+            onSelect = { onEvent(AlertsEvent.FrequencyChanged(it)) },
         )
 
         Spacer(Modifier.height(10.dp))
@@ -415,4 +587,96 @@ private fun CreateAlertSheet(
             Text("Close", color = TextTertiary)
         }
     }
+}
+
+@Composable
+private fun AlertTypeTabs(
+    selected: AlertType,
+    onSelect: (AlertType) -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        AlertType.entries.forEach { type ->
+            FilterChip(
+                selected = selected == type,
+                onClick = { onSelect(type) },
+                label = { Text(type.label) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = BinanceYellow.copy(alpha = 0.18f),
+                    selectedLabelColor = BinanceYellow,
+                    labelColor = TextSecondary,
+                ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun CoinPicker(
+    coins: List<Coin>,
+    selectedCoinId: String,
+    onSelect: (String) -> Unit,
+) {
+    if (coins.isEmpty()) return
+    Text("Coin", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+    Spacer(Modifier.height(8.dp))
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(coins.take(30), key = { it.id }) { coin ->
+            val selected = selectedCoinId == coin.id
+            FilterChip(
+                selected = selected,
+                onClick = { onSelect(coin.id) },
+                label = { Text(coin.symbol, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal) },
+                leadingIcon = {
+                    AsyncImage(
+                        model = coin.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp).clip(CircleShape),
+                    )
+                },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = BinanceYellow.copy(alpha = 0.18f),
+                    selectedLabelColor = BinanceYellow,
+                    labelColor = TextSecondary,
+                ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun FrequencySelector(
+    selected: AlertFrequency,
+    onSelect: (AlertFrequency) -> Unit,
+) {
+    Column {
+        Text("Frequency", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AlertFrequency.entries.forEach { frequency ->
+                FilterChip(
+                    selected = selected == frequency,
+                    onClick = { onSelect(frequency) },
+                    label = { Text(frequency.label) },
+                    leadingIcon = {
+                        Icon(
+                            if (frequency == AlertFrequency.PERSISTENT) Icons.Default.Repeat else Icons.Default.NotificationsActive,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = BinanceYellow.copy(alpha = 0.18f),
+                        selectedLabelColor = BinanceYellow,
+                        labelColor = TextSecondary,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+private fun AlertsUiState.currentMetricValue(): Double = when (selectedAlertType) {
+    AlertType.PRICE_LIMIT -> coinCurrentPrice
+    AlertType.VOLUME -> coinCurrentVolume
+    AlertType.MARKET_CAP -> coinCurrentMarketCap
 }

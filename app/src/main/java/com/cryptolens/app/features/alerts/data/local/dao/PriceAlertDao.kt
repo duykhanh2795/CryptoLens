@@ -29,4 +29,7 @@ interface PriceAlertDao {
 
     @Query("UPDATE price_alerts SET status = 'TRIGGERED', triggeredAt = :triggeredAt WHERE id = :id")
     suspend fun markTriggered(id: String, triggeredAt: Long)
+
+    @Query("UPDATE price_alerts SET triggeredAt = :triggeredAt, baselineValue = :baselineValue WHERE id = :id")
+    suspend fun markPersistentTriggered(id: String, triggeredAt: Long, baselineValue: Double)
 }
