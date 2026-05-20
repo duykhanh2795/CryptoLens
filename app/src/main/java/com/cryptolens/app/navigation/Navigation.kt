@@ -30,6 +30,7 @@ import com.cryptolens.app.features.ai.presentation.AiAssistantOverlay
 import com.cryptolens.app.features.auth.presentation.login.LoginScreen
 import com.cryptolens.app.features.auth.presentation.register.RegisterScreen
 import com.cryptolens.app.features.auth.presentation.splash.SplashScreen
+import com.cryptolens.app.features.converter.presentation.ConverterScreen
 import com.cryptolens.app.features.exchange.presentation.connect.ConnectExchangeScreen
 import com.cryptolens.app.features.exchange.presentation.manage.ManageExchangeScreen
 import com.cryptolens.app.features.home.presentation.HomeScreen
@@ -57,6 +58,7 @@ sealed class Screen(val route: String) {
     data object ManageExchanges : Screen("manage_exchanges")
     data object ConnectExchange : Screen("connect_exchange")
     data object Settings        : Screen("settings")
+    data object Converter       : Screen("converter")
     data object Alerts          : Screen("alerts")
     data object News            : Screen("news?symbol={symbol}") {
         fun createRoute(symbol: String? = null): String =
@@ -271,6 +273,7 @@ fun CryptoLensNavHost(
                     onNavigateToSettings  = { navController.navigate(Screen.Settings.route) },
                     onNavigateToAlerts    = { navController.navigate(Screen.Alerts.route) },
                     onNavigateToWalletWatchlist = { navController.navigate(Screen.WalletWatchlist.route) },
+                    onNavigateToConverter = { navController.navigate(Screen.Converter.route) },
                 )
             }
 
@@ -370,6 +373,12 @@ fun CryptoLensNavHost(
 
             composable(Screen.Settings.route) {
                 SettingsScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(Screen.Converter.route) {
+                ConverterScreen(
                     onNavigateBack = { navController.popBackStack() },
                 )
             }

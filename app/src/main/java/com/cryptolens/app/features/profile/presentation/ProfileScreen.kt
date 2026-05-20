@@ -30,6 +30,7 @@ fun ProfileScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     onNavigateToWalletWatchlist: () -> Unit,
+    onNavigateToConverter: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -203,6 +204,12 @@ fun ProfileScreen(
 
             // ── App Section ────────────────────────────────────────────────
             ProfileSectionHeader("App")
+            ProfileMenuItem(
+                icon     = Icons.Outlined.SwapHoriz,
+                label    = "Converter",
+                subtitle = "Convert crypto and USD with live prices",
+                onClick  = onNavigateToConverter,
+            )
             ProfileMenuItem(
                 icon     = Icons.Outlined.Settings,
                 label    = "Settings",
