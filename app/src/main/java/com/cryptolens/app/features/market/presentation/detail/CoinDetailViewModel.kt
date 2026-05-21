@@ -13,6 +13,7 @@ import com.cryptolens.app.features.market.domain.model.Kline
 import com.cryptolens.app.features.market.domain.model.PriceTicker
 import com.cryptolens.app.features.market.domain.usecase.BuildFuturesSentimentUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetCoinDetailUseCase
+import com.cryptolens.app.features.market.domain.usecase.GetCoinMarketChartUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetFuturesMarketInfoUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetKlinesUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetMarkPriceKlinesUseCase
@@ -84,6 +85,7 @@ sealed class CoinDetailEffect {
 class CoinDetailViewModel @Inject constructor(
     private val getCoinDetail: GetCoinDetailUseCase,
     private val getKlines: GetKlinesUseCase,
+    private val getCoinMarketChart: GetCoinMarketChartUseCase,
     private val getMarkPriceKlines: GetMarkPriceKlinesUseCase,
     private val getFuturesMarketInfo: GetFuturesMarketInfoUseCase,
     private val buildFuturesSentiment: BuildFuturesSentimentUseCase,
@@ -222,6 +224,10 @@ class CoinDetailViewModel @Inject constructor(
 
             when (candles) {
                 is Resource.Success -> {
+                    if (candles.data.isEmpty() && marketType == ChartMarketType.SPOT) {
+                        loadCoinGeckoFallbackChart(interval)
+                        return@launch
+                    }
                     val markPriceKlines = when (markPrices) {
                         is Resource.Success -> markPrices.data
                         else -> emptyList()
@@ -249,23 +255,65 @@ class CoinDetailViewModel @Inject constructor(
                         )
                     }
                 }
-                is Resource.Error -> _uiState.update {
-                    it.copy(
-                        isKlinesLoading = false,
-                        klines = emptyList(),
-                        markPriceKlines = emptyList(),
-                        futuresMarketInfo = null,
-                        futuresSentiment = null,
-                        chartError = if (marketType == ChartMarketType.FUTURES) {
-                            "Futures market data is not available for this symbol."
-                        } else {
-                            candles.message
-                        },
-                    )
+                is Resource.Error -> {
+                    if (marketType == ChartMarketType.SPOT) {
+                        loadCoinGeckoFallbackChart(interval)
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                isKlinesLoading = false,
+                                klines = emptyList(),
+                                markPriceKlines = emptyList(),
+                                futuresMarketInfo = null,
+                                futuresSentiment = null,
+                                chartError = "Futures market data is not available for this symbol.",
+                            )
+                        }
+                    }
                 }
                 Resource.Loading -> _uiState.update { it.copy(isKlinesLoading = false) }
             }
         }
+    }
+
+    private suspend fun loadCoinGeckoFallbackChart(interval: ChartInterval) {
+        when (val fallback = getCoinMarketChart(coinId, interval.coinGeckoDays())) {
+            is Resource.Success -> _uiState.update {
+                it.copy(
+                    isKlinesLoading = false,
+                    klines = fallback.data,
+                    markPriceKlines = emptyList(),
+                    futuresMarketInfo = null,
+                    futuresSentiment = null,
+                    selectedChartType = ChartDisplayType.LINE,
+                    chartError = if (fallback.data.isEmpty()) {
+                        "Chart history is unavailable for this coin."
+                    } else {
+                        "Binance chart is unavailable for this coin. Showing CoinGecko price history."
+                    },
+                )
+            }
+            is Resource.Error -> _uiState.update {
+                it.copy(
+                    isKlinesLoading = false,
+                    klines = emptyList(),
+                    markPriceKlines = emptyList(),
+                    futuresMarketInfo = null,
+                    futuresSentiment = null,
+                    chartError = "Chart history is unavailable for this coin.",
+                )
+            }
+            Resource.Loading -> _uiState.update { it.copy(isKlinesLoading = false) }
+        }
+    }
+
+    private fun ChartInterval.coinGeckoDays(): Int = when (this) {
+        ChartInterval.ONE_HOUR,
+        ChartInterval.FOUR_HOUR,
+        ChartInterval.ONE_DAY -> 1
+        ChartInterval.ONE_WEEK -> 7
+        ChartInterval.ONE_MONTH -> 30
+        ChartInterval.THREE_MONTH -> 90
     }
 
     private fun loadRelatedNews(symbol: String) {

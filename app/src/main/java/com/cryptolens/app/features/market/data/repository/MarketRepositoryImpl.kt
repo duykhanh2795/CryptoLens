@@ -143,6 +143,39 @@ class MarketRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getCoinMarketChart(
+        coinId: String,
+        days: Int,
+    ): Resource<List<Kline>> {
+        return try {
+            val chart = coinGeckoApi.getMarketChart(
+                id = coinId,
+                days = days.coerceAtLeast(1),
+            )
+            val volumeByTime = chart.totalVolumes.mapNotNull { point ->
+                val time = point.getOrNull(0)?.toLong() ?: return@mapNotNull null
+                val volume = point.getOrNull(1) ?: 0.0
+                time to volume
+            }.toMap()
+            val klines = chart.prices.mapNotNull { point ->
+                val openTime = point.getOrNull(0)?.toLong() ?: return@mapNotNull null
+                val close = point.getOrNull(1) ?: return@mapNotNull null
+                Kline(
+                    openTime = openTime,
+                    open = close,
+                    high = close,
+                    low = close,
+                    close = close,
+                    volume = volumeByTime[openTime] ?: 0.0,
+                    closeTime = openTime,
+                )
+            }
+            Resource.Success(klines)
+        } catch (e: Exception) {
+            Resource.Error("CoinGecko chart is unavailable: ${e.message}", e)
+        }
+    }
+
     override suspend fun getMarkPriceKlines(
         symbol: String,
         interval: String,

@@ -29,6 +29,12 @@ interface MarketRepository {
         marketType: ChartMarketType = ChartMarketType.SPOT,
     ): Resource<List<Kline>>
 
+    // CoinGecko price history - fallback when a coin has no Binance pair
+    suspend fun getCoinMarketChart(
+        coinId: String,
+        days: Int,
+    ): Resource<List<Kline>>
+
     // Binance USD-M Futures REST - mark price klines for chart overlay
     suspend fun getMarkPriceKlines(
         symbol: String,

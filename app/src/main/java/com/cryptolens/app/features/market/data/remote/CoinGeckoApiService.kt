@@ -70,6 +70,12 @@ data class LinksDto(
 @Serializable
 data class ReposUrlDto(@SerialName("github") val github: List<String> = emptyList())
 
+@Serializable
+data class MarketChartDto(
+    @SerialName("prices") val prices: List<List<Double>> = emptyList(),
+    @SerialName("total_volumes") val totalVolumes: List<List<Double>> = emptyList(),
+)
+
 // ── Retrofit Service ─────────────────────────────────────────────────────────
 
 interface CoinGeckoApiService {
@@ -92,4 +98,11 @@ interface CoinGeckoApiService {
         @Query("community_data")    communityData: Boolean = false,
         @Query("developer_data")    developerData: Boolean = false,
     ): CoinDetailDto
+
+    @GET("coins/{id}/market_chart")
+    suspend fun getMarketChart(
+        @Path("id") id: String,
+        @Query("vs_currency") currency: String = "usd",
+        @Query("days") days: Int,
+    ): MarketChartDto
 }

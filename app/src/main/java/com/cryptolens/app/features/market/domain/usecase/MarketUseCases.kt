@@ -42,6 +42,15 @@ class GetKlinesUseCase @Inject constructor(
     ): Resource<List<Kline>> = repository.getKlines(symbol, interval, limit, marketType)
 }
 
+class GetCoinMarketChartUseCase @Inject constructor(
+    private val repository: MarketRepository
+) {
+    suspend operator fun invoke(
+        coinId: String,
+        days: Int,
+    ): Resource<List<Kline>> = repository.getCoinMarketChart(coinId, days)
+}
+
 class GetMarkPriceKlinesUseCase @Inject constructor(
     private val repository: MarketRepository
 ) {
