@@ -176,7 +176,7 @@ fun CryptoLensNavHost(
                                     selectedTextColor   = BinanceYellow,
                                     unselectedIconColor = TextSecondary,
                                     unselectedTextColor = TextSecondary,
-                                    indicatorColor      = SurfaceVariant,
+                                    indicatorColor      = BinanceYellow.copy(alpha = 0.12f),
                                 ),
                             )
                         }

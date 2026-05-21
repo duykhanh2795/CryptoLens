@@ -101,11 +101,17 @@ fun PortfolioScreen(
         },
         containerColor = BackgroundDark,
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Top Bar
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(BackgroundDark)
+                .padding(horizontal = 12.dp),
+        ) {
             Row(
-                modifier = Modifier.fillMaxWidth().background(SurfaceElevated)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("Portfolio", style = MaterialTheme.typography.titleLarge,
@@ -147,26 +153,25 @@ fun PortfolioScreen(
                     CircularProgressIndicator(color = BinanceYellow)
                 }
                 else -> {
-                    // Summary Card
                     uiState.summary?.let { PortfolioSummaryCard(it) }
                     PortfolioTimelineCard(
                         snapshots = uiState.snapshots,
                         currentSummary = uiState.summary,
                     )
 
-                    // Tabs
                     TabRow(
                         selectedTabIndex = PortfolioTab.entries.indexOf(uiState.selectedTab),
                         containerColor   = BackgroundDark,
                         contentColor     = BinanceYellow,
                         indicator = { tabs ->
                             val idx = PortfolioTab.entries.indexOf(uiState.selectedTab)
-                            TabRowDefaults.SecondaryIndicator(
-                                modifier = Modifier.tabIndicatorOffset(tabs[idx]),
-                                height = 2.dp, color = BinanceYellow,
-                            )
-                        },
-                        divider = { HorizontalDivider(color = DividerColor) },
+                    TabRowDefaults.SecondaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(tabs[idx]),
+                        height = 2.dp,
+                        color = BinanceYellow,
+                    )
+                },
+                divider = { HorizontalDivider(color = DividerColor) },
                     ) {
                         PortfolioTab.entries.forEach { tab ->
                             Tab(
@@ -183,7 +188,6 @@ fun PortfolioScreen(
                         }
                     }
 
-                    // Tab content
                     when (uiState.selectedTab) {
                         PortfolioTab.ASSETS -> AssetsTab(
                             assets = uiState.summary?.assets ?: emptyList(),
@@ -339,7 +343,10 @@ private fun PortfolioTimelineCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(top = 12.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor, RoundedCornerShape(16.dp))
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -397,7 +404,7 @@ private fun PortfolioSnapshotChart(
         return
     }
 
-    Canvas(modifier = modifier.clip(RoundedCornerShape(8.dp)).background(SurfaceVariant)) {
+        Canvas(modifier = modifier.clip(RoundedCornerShape(12.dp)).background(SurfaceVariant)) {
         val paddingH = 12.dp.toPx()
         val paddingV = 14.dp.toPx()
         val chartWidth = size.width - paddingH * 2
@@ -454,7 +461,12 @@ private fun PortfolioSnapshotChart(
 private fun PortfolioSummaryCard(summary: PortfolioSummary) {
     val isProfit = summary.isProfit
     Column(
-        modifier = Modifier.fillMaxWidth().background(SurfaceDark)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(SurfaceDark)
+            .border(1.dp, BorderColor, RoundedCornerShape(18.dp))
             .padding(horizontal = 20.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -516,7 +528,7 @@ private fun PortfolioSummaryCard(summary: PortfolioSummary) {
 private fun SummaryMetric(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(SurfaceVariant)
             .padding(horizontal = 8.dp, vertical = 9.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -548,7 +560,7 @@ private fun AssetsTab(assets: List<PortfolioAsset>, onCoinClick: (String) -> Uni
     LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
         items(assets, key = { it.id }) { asset ->
             AssetItem(asset = asset, onCoinClick = { onCoinClick(asset.coinId) }, onDelete = { onDelete(asset.id) })
-            HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -559,7 +571,11 @@ private fun AssetItem(asset: PortfolioAsset, onCoinClick: () -> Unit, onDelete: 
     var showDialog by remember { mutableStateOf(false) }
     val isProfit = asset.isProfit
     Row(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(SurfaceDark)
+            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
             .combinedClickable(onClick = onCoinClick, onLongClick = { showDialog = true })
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -615,7 +631,7 @@ private fun TransactionsTab(transactions: List<Transaction>, onDelete: (String) 
     LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
         items(transactions, key = { it.id }) { tx ->
             TransactionItem(tx = tx, fmt = fmt, onDelete = { onDelete(tx.id) })
-            HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -626,7 +642,11 @@ private fun TransactionItem(tx: Transaction, fmt: SimpleDateFormat, onDelete: ()
     var showDialog by remember { mutableStateOf(false) }
     val isBuy = tx.type == TransactionType.BUY
     Row(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(SurfaceDark)
+            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
             .combinedClickable(onClick = { showDialog = true }, onLongClick = { showDialog = true })
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,

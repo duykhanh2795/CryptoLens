@@ -14,7 +14,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,7 +45,10 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(
-        modifier = Modifier.fillMaxSize().background(BackgroundDark)
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BackgroundDark)
+            .padding(horizontal = 12.dp)
     ) {
         // ── Top Bar ────────────────────────────────────────────────────────
         HomeTopBar(
@@ -52,15 +57,16 @@ fun HomeScreen(
         )
 
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // ── Portfolio Banner ───────────────────────────────────────────
             PortfolioBanner()
 
             // ── Quick Actions ──────────────────────────────────────────────
             QuickActionsRow()
-
-            HorizontalDivider(color = DividerColor)
 
             // ── Market Overview ────────────────────────────────────────────
             when {
@@ -79,26 +85,15 @@ fun HomeScreen(
                     TrendingSectionHeader(onSeeAll = onSeeAllMarket)
                     TrendingRow(coins = uiState.trendingCoins, onCoinClick = onCoinClick)
 
-                    HorizontalDivider(color = DividerColor)
-
-                    // Top Gainers
-                    SectionHeader(title = "Top Gainers 🚀", onSeeAll = onSeeAllMarket)
-                    uiState.topGainers.forEach { coin ->
-                        CompactCoinRow(coin = coin, onCoinClick = { onCoinClick(coin.id) })
-                        HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
+                    MarketMoveSection(title = "Top Gainers", coins = uiState.topGainers, onSeeAll = onSeeAllMarket) {
+                        onCoinClick(it)
                     }
 
-                    HorizontalDivider(color = DividerColor)
-
-                    // Top Losers
-                    SectionHeader(title = "Top Losers 📉", onSeeAll = onSeeAllMarket)
-                    uiState.topLosers.forEach { coin ->
-                        CompactCoinRow(coin = coin, onCoinClick = { onCoinClick(coin.id) })
-                        HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
+                    MarketMoveSection(title = "Top Losers", coins = uiState.topLosers, onSeeAll = onSeeAllMarket) {
+                        onCoinClick(it)
                     }
 
                     if (uiState.trendingWallets.isNotEmpty()) {
-                        HorizontalDivider(color = DividerColor)
                         TrendingWalletsHomeSection(
                             wallets = uiState.trendingWallets,
                             onSeeAll = onSeeAllWallets,
@@ -126,19 +121,23 @@ private fun TrendingWalletsHomeSection(
     onSeeAll: () -> Unit,
     onWalletClick: (WalletChain, String) -> Unit,
 ) {
-    SectionHeader(title = "Trending Addresses", onSeeAll = onSeeAll)
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
             .background(SurfaceDark)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .border(1.dp, BorderColor, RoundedCornerShape(16.dp))
+            .padding(bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        SectionHeader(title = "Trending Addresses", onSeeAll = onSeeAll)
         wallets.forEach { wallet ->
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
                 color = SurfaceVariant,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
             ) {
                 TrendingWalletRow(
                     wallet = wallet,
@@ -151,29 +150,57 @@ private fun TrendingWalletsHomeSection(
 }
 
 @Composable
+private fun MarketMoveSection(
+    title: String,
+    coins: List<Coin>,
+    onSeeAll: () -> Unit,
+    onCoinClick: (String) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(SurfaceDark)
+            .border(1.dp, BorderColor, RoundedCornerShape(16.dp))
+            .padding(bottom = 10.dp),
+    ) {
+        SectionHeader(title = title, onSeeAll = onSeeAll)
+        coins.forEachIndexed { index, coin ->
+            CompactCoinRow(
+                coin = coin,
+                onCoinClick = { onCoinClick(coin.id) },
+                modifier = Modifier.padding(horizontal = 10.dp),
+            )
+            if (index != coins.lastIndex) Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
 private fun HomeTopBar(userName: String?, onRefresh: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().background(SurfaceElevated)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
             Box(
-                modifier = Modifier.size(32.dp).clip(CircleShape).background(BinanceYellow),
+                modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(BinanceYellow),
                 contentAlignment = Alignment.Center,
             ) {
                 Text("CL", color = Color(0xFF1A1400), fontWeight = FontWeight.ExtraBold, fontSize = 11.sp)
             }
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(10.dp))
             Column {
                 Text(
-                    if (userName != null) "Hello, $userName 👋" else "CryptoLens",
+                    if (userName != null) "Hello, $userName" else "CryptoLens",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
                 )
                 if (userName != null) {
-                    Text("Welcome back", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                    Text("Market dashboard", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
                 }
             }
         }
@@ -190,26 +217,104 @@ private fun HomeTopBar(userName: String?, onRefresh: () -> Unit) {
 
 @Composable
 private fun PortfolioBanner() {
-    Column(
-        modifier = Modifier.fillMaxWidth().background(SurfaceDark)
-            .padding(horizontal = 20.dp, vertical = 20.dp),
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        Color(0xFF171F2A),
+                        Color(0xFF111820),
+                        Color(0xFF17150E),
+                    )
+                )
+            )
+            .border(1.dp, BinanceYellow.copy(alpha = 0.18f), RoundedCornerShape(22.dp))
+            .padding(horizontal = 18.dp, vertical = 16.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Portfolio Value", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
-            Spacer(Modifier.width(4.dp))
-            Icon(Icons.Default.Visibility, contentDescription = null,
-                tint = TextTertiary, modifier = Modifier.size(16.dp))
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("CryptoLens Balance", style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+                        Spacer(Modifier.width(8.dp))
+                        BalanceChip("USD")
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "$0.00",
+                        style = MaterialTheme.typography.displayLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color.White.copy(alpha = 0.08f))
+                        .border(1.dp, Color.White.copy(alpha = 0.10f), RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Default.Visibility,
+                        contentDescription = null,
+                        tint = TextSecondary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(GreenUp.copy(alpha = 0.12f))
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                ) {
+                    Text("+$0.00  0.00%", style = MaterialTheme.typography.labelMedium, color = GreenUp)
+                }
+                Spacer(Modifier.width(8.dp))
+                Text("Today", style = MaterialTheme.typography.labelMedium, color = TextTertiary)
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                PortfolioMiniMetric("Invested", "$0.00", Icons.Default.AccountBalanceWallet, Modifier.weight(1f))
+                PortfolioMiniMetric("Assets", "0", Icons.Default.PieChart, Modifier.weight(1f))
+                PortfolioMiniMetric("Alerts", "0", Icons.Default.NotificationsNone, Modifier.weight(1f))
+            }
         }
-        Spacer(Modifier.height(4.dp))
-        Text("$0.00", style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.Bold, color = TextPrimary)
-        Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.ArrowDropUp, contentDescription = null,
-                tint = GreenUp, modifier = Modifier.size(20.dp))
-            Text("+$0.00 (0.00%)", style = MaterialTheme.typography.bodyMedium, color = GreenUp)
-            Text(" Today", style = MaterialTheme.typography.bodyMedium, color = TextTertiary)
-        }
+    }
+}
+
+@Composable
+private fun BalanceChip(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(99.dp))
+            .background(Color.White.copy(alpha = 0.07f))
+            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(99.dp))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    ) {
+        Text(text, style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+    }
+}
+
+@Composable
+private fun PortfolioMiniMetric(label: String, value: String, icon: ImageVector, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = 0.045f))
+            .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 10.dp, vertical = 9.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = BinanceYellow, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.height(7.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+        Spacer(Modifier.height(3.dp))
+        Text(value, style = MaterialTheme.typography.labelMedium, color = TextPrimary, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -224,25 +329,64 @@ private fun QuickActionsRow() {
         Icons.AutoMirrored.Filled.SendToMobile to "Transfer",
     )
     Row(
-        modifier = Modifier.fillMaxWidth().background(SurfaceDark)
-            .padding(horizontal = 8.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(SurfaceVariant)
+            .border(1.dp, BorderColor, RoundedCornerShape(18.dp))
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         actions.forEach { (icon, label) ->
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable {},
-            ) {
-                Box(
-                    modifier = Modifier.size(52.dp).clip(CircleShape).background(SurfaceVariant),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(icon, contentDescription = label, tint = BinanceYellow, modifier = Modifier.size(24.dp))
-                }
-                Spacer(Modifier.height(6.dp))
-                Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-            }
+            ActionTile(
+                icon = icon,
+                label = label,
+                selected = label == "Convert",
+                modifier = Modifier.weight(1f),
+            )
         }
+    }
+}
+
+@Composable
+private fun ActionTile(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .height(72.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (selected) BinanceYellow.copy(alpha = 0.14f) else SurfaceDark)
+            .border(
+                1.dp,
+                if (selected) BinanceYellow.copy(alpha = 0.22f) else BorderColor,
+                RoundedCornerShape(14.dp),
+            )
+            .clickable {}
+            .padding(horizontal = 6.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(if (selected) BinanceYellow.copy(alpha = 0.18f) else SurfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = label, tint = BinanceYellow, modifier = Modifier.size(17.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (selected) BinanceYellow else TextSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -251,12 +395,14 @@ private fun QuickActionsRow() {
 @Composable
 private fun TrendingSectionHeader(onSeeAll: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("Markets", style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold, color = TextPrimary)
-        Spacer(Modifier.weight(1f))
+        Column(Modifier.weight(1f)) {
+            Text("Market Pulse", style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text("Live prices and momentum", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+        }
         TextButton(onClick = onSeeAll, contentPadding = PaddingValues(0.dp)) {
             Text("See All", color = BinanceYellow, style = MaterialTheme.typography.labelLarge)
             Icon(Icons.Default.ChevronRight, contentDescription = null,
@@ -286,13 +432,21 @@ private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
 
 @Composable
 private fun TrendingRow(coins: List<Coin>, onCoinClick: (String) -> Unit) {
-    LazyRow(
-        contentPadding      = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier            = Modifier.padding(bottom = 12.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(SurfaceDark)
+            .border(1.dp, BorderColor, RoundedCornerShape(18.dp))
+            .padding(vertical = 12.dp),
     ) {
-        items(coins, key = { it.id }) { coin ->
-            TrendingCoinCard(coin = coin, onClick = { onCoinClick(coin.id) })
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            items(coins, key = { it.id }) { coin ->
+                TrendingCoinCard(coin = coin, onClick = { onCoinClick(coin.id) })
+            }
         }
     }
 }
@@ -301,41 +455,50 @@ private fun TrendingRow(coins: List<Coin>, onCoinClick: (String) -> Unit) {
 private fun TrendingCoinCard(coin: Coin, onClick: () -> Unit) {
     Column(
         modifier = Modifier
-            .width(100.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(SurfaceDark)
-            .border(0.5.dp, DividerColor, RoundedCornerShape(12.dp))
+            .width(142.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(SurfaceVariant)
+            .border(1.dp, BorderColor, RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        AsyncImage(
-            model              = coin.imageUrl,
-            contentDescription = coin.name,
-            modifier           = Modifier.size(36.dp).clip(CircleShape),
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text      = coin.symbol,
-            style     = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color     = TextPrimary,
-            maxLines  = 1,
-        )
-        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AsyncImage(
+                model = coin.imageUrl,
+                contentDescription = coin.name,
+                modifier = Modifier.size(34.dp).clip(CircleShape),
+            )
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = coin.symbol,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    maxLines = 1,
+                )
+                Text(
+                    text = coin.name,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextTertiary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Spacer(Modifier.height(14.dp))
         Text(
             text  = "$${coin.currentPrice.formatPrice()}",
-            style = MaterialTheme.typography.labelSmall,
-            color = TextSecondary,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text  = "${"%.2f".format(coin.priceChangePercent24h)}%",
-            style = MaterialTheme.typography.labelSmall,
-            color = if (coin.isPositive) GreenUp else RedDown,
-            fontWeight = FontWeight.SemiBold,
+        Spacer(Modifier.height(8.dp))
+        PercentPill(
+            text = "${if (coin.isPositive) "+" else ""}${"%.2f".format(coin.priceChangePercent24h)}%",
+            positive = coin.isPositive,
         )
     }
 }
@@ -343,10 +506,15 @@ private fun TrendingCoinCard(coin: Coin, onClick: () -> Unit) {
 // ── Compact Coin Row ──────────────────────────────────────────────────────────
 
 @Composable
-private fun CompactCoinRow(coin: Coin, onCoinClick: () -> Unit) {
+private fun CompactCoinRow(coin: Coin, onCoinClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onCoinClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(13.dp))
+            .background(SurfaceVariant)
+            .border(1.dp, BorderColor, RoundedCornerShape(13.dp))
+            .clickable(onClick = onCoinClick)
+            .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
@@ -362,13 +530,28 @@ private fun CompactCoinRow(coin: Coin, onCoinClick: () -> Unit) {
         Column(horizontalAlignment = Alignment.End) {
             Text("$${coin.currentPrice.formatPrice()}", style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium, color = TextPrimary)
-            Text(
+            PercentPill(
                 text = "${if (coin.isPositive) "+" else ""}${"%.2f".format(coin.priceChangePercent24h)}%",
-                style = MaterialTheme.typography.labelSmall,
-                color = if (coin.isPositive) GreenUp else RedDown,
-                fontWeight = FontWeight.SemiBold,
+                positive = coin.isPositive,
             )
         }
+    }
+}
+
+@Composable
+private fun PercentPill(text: String, positive: Boolean) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(99.dp))
+            .background((if (positive) GreenUp else RedDown).copy(alpha = 0.12f))
+            .padding(horizontal = 7.dp, vertical = 3.dp),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (positive) GreenUp else RedDown,
+            fontWeight = FontWeight.SemiBold,
+        )
     }
 }
 
@@ -399,10 +582,11 @@ private fun ErrorBanner(message: String, onRetry: () -> Unit) {
 @Composable
 private fun AiInsightBanner() {
     Box(
-        modifier = Modifier.fillMaxWidth().padding(16.dp)
-            .clip(RoundedCornerShape(12.dp))
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
             .background(SurfaceVariant)
-            .border(1.dp, BinanceYellow.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .border(1.dp, BorderColor, RoundedCornerShape(16.dp))
             .clickable {}
             .padding(16.dp),
     ) {

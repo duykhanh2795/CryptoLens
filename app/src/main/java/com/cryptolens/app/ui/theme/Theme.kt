@@ -31,31 +31,31 @@ private data class CryptoPalette(
 )
 
 private val DarkPalette = CryptoPalette(
-    background = Color(0xFF0B0E11),
-    surface = Color(0xFF1E2329),
-    surfaceVariant = Color(0xFF2B3139),
-    surfaceElevated = Color(0xFF151A1F),
-    textPrimary = Color(0xFFEAECEF),
-    textSecondary = Color(0xFF848E9C),
-    textTertiary = Color(0xFF5E6673),
-    greenSurface = Color(0xFF0D2621),
-    redSurface = Color(0xFF2C1215),
-    divider = Color(0xFF2B3139),
-    border = Color(0xFF2B3139),
+    background = Color(0xFF0A0D12),
+    surface = Color(0xFF121820),
+    surfaceVariant = Color(0xFF1A222D),
+    surfaceElevated = Color(0xFF10161D),
+    textPrimary = Color(0xFFF4F7FB),
+    textSecondary = Color(0xFF96A0AE),
+    textTertiary = Color(0xFF687384),
+    greenSurface = Color(0xFF08251B),
+    redSurface = Color(0xFF2A1015),
+    divider = Color(0xFF202936),
+    border = Color(0xFF273241),
 )
 
 private val LightPalette = CryptoPalette(
-    background = Color(0xFFF4F6F9),
+    background = Color(0xFFF6F8FB),
     surface = Color(0xFFFFFFFF),
-    surfaceVariant = Color(0xFFE9EEF5),
+    surfaceVariant = Color(0xFFEDF2F7),
     surfaceElevated = Color(0xFFFFFFFF),
-    textPrimary = Color(0xFF101418),
-    textSecondary = Color(0xFF586273),
+    textPrimary = Color(0xFF111827),
+    textSecondary = Color(0xFF5D6676),
     textTertiary = Color(0xFF8792A2),
-    greenSurface = Color(0xFFE5F7EF),
-    redSurface = Color(0xFFFDECEE),
-    divider = Color(0xFFE0E6EF),
-    border = Color(0xFFD5DEE9),
+    greenSurface = Color(0xFFE8F7F0),
+    redSurface = Color(0xFFFDECEF),
+    divider = Color(0xFFE5EAF1),
+    border = Color(0xFFD8E0EA),
 )
 
 private var activePalette by mutableStateOf(DarkPalette)

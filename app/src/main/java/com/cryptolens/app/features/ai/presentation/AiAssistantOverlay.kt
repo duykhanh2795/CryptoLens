@@ -141,12 +141,14 @@ private fun FloatingAiButton(
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val density = LocalDensity.current
-        val fabSize = 58.dp
+        val fabSize = 52.dp
         val margin = 16.dp
         val bottomMargin = 34.dp
+        val topDock = 92.dp
         val fabSizePx = with(density) { fabSize.toPx() }
         val marginPx = with(density) { margin.toPx() }
         val bottomMarginPx = with(density) { bottomMargin.toPx() }
+        val topDockPx = with(density) { topDock.toPx() }
         val maxWidthPx = with(density) { maxWidth.toPx() }
         val maxHeightPx = with(density) { maxHeight.toPx() }
         val minX = marginPx
@@ -159,7 +161,7 @@ private fun FloatingAiButton(
 
         LaunchedEffect(maxX, maxY) {
             if (x.isNaN()) x = maxX
-            if (y.isNaN()) y = maxY * 0.62f
+            if (y.isNaN()) y = topDockPx.coerceIn(minY, maxY)
             x = x.coerceIn(minX, maxX)
             y = y.coerceIn(minY, maxY)
         }
@@ -196,7 +198,7 @@ private fun FloatingAiButton(
                 Box(contentAlignment = Alignment.Center) {
                     Box(
                         modifier = Modifier
-                            .size(43.dp)
+                            .size(38.dp)
                             .clip(CircleShape)
                             .background(BackgroundDark.copy(alpha = 0.66f)),
                         contentAlignment = Alignment.Center,
@@ -205,7 +207,7 @@ private fun FloatingAiButton(
                             Icons.Default.AutoAwesome,
                             contentDescription = "AI Assistant",
                             tint = TextPrimary,
-                            modifier = Modifier.size(25.dp),
+                            modifier = Modifier.size(22.dp),
                         )
                     }
                 }
