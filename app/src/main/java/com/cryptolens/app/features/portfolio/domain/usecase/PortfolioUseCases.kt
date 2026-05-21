@@ -2,10 +2,12 @@ package com.cryptolens.app.features.portfolio.domain.usecase
 
 import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.market.domain.repository.MarketRepository
+import com.cryptolens.app.features.portfolio.domain.importexport.PortfolioCsvCodec
 import com.cryptolens.app.features.portfolio.domain.model.*
 import com.cryptolens.app.features.portfolio.domain.repository.PortfolioRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class ObservePortfolioSummaryUseCase @Inject constructor(
@@ -177,4 +179,53 @@ class ClearPortfolioUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(userId: String): Resource<Unit> =
         repo.clearAll(userId)
+}
+
+class ExportPortfolioCsvUseCase @Inject constructor(
+    private val repo: PortfolioRepository,
+) {
+    private val codec = PortfolioCsvCodec()
+
+    suspend operator fun invoke(userId: String): Resource<String> {
+        if (userId.isBlank()) return Resource.Error("Missing user")
+        return try {
+            val transactions = repo.observeTransactions(userId).first()
+            Resource.Success(codec.encode(transactions))
+        } catch (e: Exception) {
+            Resource.Error("Failed to export portfolio: ${e.message}", e)
+        }
+    }
+}
+
+class PreviewPortfolioCsvUseCase @Inject constructor() {
+    private val codec = PortfolioCsvCodec()
+
+    operator fun invoke(content: String): Resource<PortfolioImportPreview> {
+        return try {
+            val transactions = codec.decode(content)
+            if (transactions.isEmpty()) {
+                Resource.Error("CSV file has no transactions")
+            } else {
+                Resource.Success(PortfolioImportPreview(transactions))
+            }
+        } catch (e: PortfolioCsvCodec.CsvParseException) {
+            Resource.Error(e.message ?: "Invalid CSV file", e)
+        } catch (e: Exception) {
+            Resource.Error("Invalid CSV file: ${e.message}", e)
+        }
+    }
+}
+
+class ImportPortfolioCsvUseCase @Inject constructor(
+    private val repo: PortfolioRepository,
+) {
+    suspend operator fun invoke(
+        userId: String,
+        preview: PortfolioImportPreview,
+        mode: PortfolioImportMode,
+    ): Resource<Int> {
+        if (userId.isBlank()) return Resource.Error("Missing user")
+        if (preview.transactions.isEmpty()) return Resource.Error("No transactions to import")
+        return repo.importTransactions(userId, preview.transactions, mode)
+    }
 }

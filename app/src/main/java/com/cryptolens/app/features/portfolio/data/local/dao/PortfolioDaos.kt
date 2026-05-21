@@ -43,11 +43,17 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE userId = :userId AND coinId = :coinId ORDER BY timestamp ASC")
     suspend fun getTransactionsByCoin(userId: String, coinId: String): List<TransactionEntity>
 
+    @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY timestamp ASC")
+    suspend fun getTransactions(userId: String): List<TransactionEntity>
+
     @Query("SELECT * FROM transactions WHERE sourceConnectionId = :connectionId")
     suspend fun getTransactionsByConnection(connectionId: String): List<TransactionEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertTransactions(transactions: List<TransactionEntity>)
 
     @Query("DELETE FROM transactions WHERE id = :id")
     suspend fun deleteTransaction(id: String)

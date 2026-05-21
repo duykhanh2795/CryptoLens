@@ -19,6 +19,8 @@ data class PortfolioUiState(
     val selectedTab: PortfolioTab        = PortfolioTab.ASSETS,
     val error: String?                   = null,
     val showAddSheet: Boolean            = false,
+    val isImportExportBusy: Boolean      = false,
+    val importPreview: PortfolioImportPreview? = null,
 )
 
 enum class PortfolioTab { ASSETS, TRANSACTIONS }
@@ -27,6 +29,11 @@ sealed class PortfolioEvent {
     data class TabSelected(val tab: PortfolioTab)     : PortfolioEvent()
     data object ShowAddSheet                          : PortfolioEvent()
     data object HideAddSheet                          : PortfolioEvent()
+    data object ExportCsv                             : PortfolioEvent()
+    data class ExportCsvCompleted(val success: Boolean) : PortfolioEvent()
+    data class ImportCsvLoaded(val content: String)   : PortfolioEvent()
+    data object DismissImportPreview                  : PortfolioEvent()
+    data class ConfirmImportCsv(val mode: PortfolioImportMode) : PortfolioEvent()
     data class DeleteAsset(val assetId: String)       : PortfolioEvent()
     data class DeleteTransaction(val txId: String)    : PortfolioEvent()
     data class AddTransaction(
@@ -45,6 +52,7 @@ sealed class PortfolioEvent {
 sealed class PortfolioEffect {
     data class ShowError(val message: String)   : PortfolioEffect()
     data class ShowSuccess(val message: String) : PortfolioEffect()
+    data class LaunchCsvExport(val fileName: String, val content: String) : PortfolioEffect()
 }
 
 @HiltViewModel
@@ -56,6 +64,9 @@ class PortfolioViewModel @Inject constructor(
     private val addTransaction: AddTransactionUseCase,
     private val deleteTransaction: DeleteTransactionUseCase,
     private val deleteAsset: DeleteAssetUseCase,
+    private val exportPortfolioCsv: ExportPortfolioCsvUseCase,
+    private val previewPortfolioCsv: PreviewPortfolioCsvUseCase,
+    private val importPortfolioCsv: ImportPortfolioCsvUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
 ) : ViewModel() {
 
@@ -82,6 +93,12 @@ class PortfolioViewModel @Inject constructor(
             is PortfolioEvent.TabSelected      -> _uiState.update { it.copy(selectedTab = event.tab) }
             is PortfolioEvent.ShowAddSheet     -> _uiState.update { it.copy(showAddSheet = true) }
             is PortfolioEvent.HideAddSheet     -> _uiState.update { it.copy(showAddSheet = false) }
+            is PortfolioEvent.ExportCsv        -> handleExportCsv()
+            is PortfolioEvent.ExportCsvCompleted -> handleExportCsvCompleted(event.success)
+            is PortfolioEvent.ImportCsvLoaded  -> handleImportCsvLoaded(event.content)
+            is PortfolioEvent.DismissImportPreview ->
+                _uiState.update { it.copy(importPreview = null, isImportExportBusy = false) }
+            is PortfolioEvent.ConfirmImportCsv -> handleConfirmImport(event.mode)
             is PortfolioEvent.AddTransaction   -> handleAddTransaction(event)
             is PortfolioEvent.DeleteAsset      -> handleDeleteAsset(event.assetId)
             is PortfolioEvent.DeleteTransaction -> handleDeleteTransaction(event.txId)
@@ -138,6 +155,79 @@ class PortfolioViewModel @Inject constructor(
                 }
                 is Resource.Error -> _effect.emit(PortfolioEffect.ShowError(result.message))
                 else -> Unit
+            }
+        }
+    }
+
+    private fun handleExportCsv() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isImportExportBusy = true) }
+            when (val result = exportPortfolioCsv(userId)) {
+                is Resource.Success -> {
+                    if (_uiState.value.transactions.isEmpty()) {
+                        _uiState.update { it.copy(isImportExportBusy = false) }
+                        _effect.emit(PortfolioEffect.ShowError("No transactions to export"))
+                    } else {
+                        _effect.emit(
+                            PortfolioEffect.LaunchCsvExport(
+                                fileName = "cryptolens-portfolio-${System.currentTimeMillis()}.csv",
+                                content = result.data,
+                            )
+                        )
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update { it.copy(isImportExportBusy = false) }
+                    _effect.emit(PortfolioEffect.ShowError(result.message))
+                }
+                else -> _uiState.update { it.copy(isImportExportBusy = false) }
+            }
+        }
+    }
+
+    private fun handleExportCsvCompleted(success: Boolean) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isImportExportBusy = false) }
+            if (success) {
+                _effect.emit(PortfolioEffect.ShowSuccess("Portfolio CSV exported"))
+            }
+        }
+    }
+
+    private fun handleImportCsvLoaded(content: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isImportExportBusy = true, importPreview = null) }
+            when (val result = previewPortfolioCsv(content)) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(isImportExportBusy = false, importPreview = result.data)
+                    }
+                }
+                is Resource.Error -> {
+                    _uiState.update { it.copy(isImportExportBusy = false) }
+                    _effect.emit(PortfolioEffect.ShowError(result.message))
+                }
+                else -> _uiState.update { it.copy(isImportExportBusy = false) }
+            }
+        }
+    }
+
+    private fun handleConfirmImport(mode: PortfolioImportMode) {
+        viewModelScope.launch {
+            val preview = _uiState.value.importPreview ?: return@launch
+            _uiState.update { it.copy(isImportExportBusy = true) }
+            when (val result = importPortfolioCsv(userId, preview, mode)) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(isImportExportBusy = false, importPreview = null)
+                    }
+                    _effect.emit(PortfolioEffect.ShowSuccess("${result.data} transactions imported"))
+                }
+                is Resource.Error -> {
+                    _uiState.update { it.copy(isImportExportBusy = false) }
+                    _effect.emit(PortfolioEffect.ShowError(result.message))
+                }
+                else -> _uiState.update { it.copy(isImportExportBusy = false) }
             }
         }
     }

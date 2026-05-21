@@ -2,6 +2,7 @@ package com.cryptolens.app.features.portfolio.domain.usecase
 
 import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioAsset
+import com.cryptolens.app.features.portfolio.domain.model.PortfolioImportMode
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioSnapshot
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioSummary
 import com.cryptolens.app.features.portfolio.domain.model.Transaction
@@ -107,6 +108,12 @@ class AddTransactionUseCaseTest {
 
         override suspend fun deleteAsset(assetId: String, userId: String): Resource<Unit> =
             Resource.Success(Unit)
+
+        override suspend fun importTransactions(
+            userId: String,
+            transactions: List<Transaction>,
+            mode: PortfolioImportMode,
+        ): Resource<Int> = Resource.Success(transactions.size)
 
         override suspend fun saveSnapshot(
             userId: String,

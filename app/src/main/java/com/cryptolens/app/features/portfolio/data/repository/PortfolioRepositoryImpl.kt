@@ -10,6 +10,7 @@ import com.cryptolens.app.features.portfolio.data.local.entity.PortfolioAssetEnt
 import com.cryptolens.app.features.portfolio.data.local.entity.PortfolioSnapshotEntity
 import com.cryptolens.app.features.portfolio.data.local.entity.TransactionEntity
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioAsset
+import com.cryptolens.app.features.portfolio.domain.model.PortfolioImportMode
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioSnapshot
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioSummary
 import com.cryptolens.app.features.portfolio.domain.model.Transaction
@@ -148,6 +149,56 @@ class PortfolioRepositoryImpl @Inject constructor(
             Resource.Error(e.message ?: "Invalid portfolio asset")
         } catch (e: Exception) {
             Resource.Error("Failed to delete asset: ${e.message}", e)
+        }
+    }
+
+    override suspend fun importTransactions(
+        userId: String,
+        transactions: List<Transaction>,
+        mode: PortfolioImportMode,
+    ): Resource<Int> {
+        if (userId.isBlank()) return Resource.Error("Missing user")
+        if (transactions.isEmpty()) return Resource.Error("No transactions to import")
+
+        return try {
+            val importedCount = transactions.distinctBy { it.id }.size
+            database.withTransaction {
+                val normalizedImports = transactions
+                    .distinctBy { it.id }
+                    .map { it.copy(symbol = it.symbol.uppercase()) }
+                val importedIds = normalizedImports.map { it.id }.toSet()
+                val existingTransactions = when (mode) {
+                    PortfolioImportMode.APPEND -> txDao.getTransactions(userId)
+                    PortfolioImportMode.REPLACE -> emptyList()
+                }
+                val completeHistory = when (mode) {
+                    PortfolioImportMode.REPLACE -> normalizedImports
+                    PortfolioImportMode.APPEND ->
+                        existingTransactions.filterNot { it.id in importedIds }.map { it.toDomain() } +
+                            normalizedImports
+                }
+
+                validateHoldings(completeHistory)
+
+                if (mode == PortfolioImportMode.REPLACE) {
+                    assetDao.deleteAllAssets(userId)
+                    txDao.deleteAllTransactions(userId)
+                    snapshotDao.deleteAllSnapshots(userId)
+                }
+
+                txDao.upsertTransactions(normalizedImports.map { it.toEntity(userId) })
+                (normalizedImports.map { it.coinId } +
+                    existingTransactions.filter { it.id in importedIds }.map { it.coinId })
+                    .distinct()
+                    .forEach { coinId ->
+                        rebuildAssetFromTransactions(userId, coinId)
+                    }
+            }
+            Resource.Success(importedCount)
+        } catch (e: PortfolioValidationException) {
+            Resource.Error(e.message ?: "Invalid imported portfolio")
+        } catch (e: Exception) {
+            Resource.Error("Failed to import portfolio: ${e.message}", e)
         }
     }
 
@@ -290,6 +341,25 @@ class PortfolioRepositoryImpl @Inject constructor(
 
     // ── Mappers ───────────────────────────────────────────────────────────────
 
+    private fun validateHoldings(transactions: List<Transaction>) {
+        val quantities = mutableMapOf<String, Double>()
+        transactions
+            .sortedWith(compareBy<Transaction> { it.timestamp }.thenBy { it.type.ordinal })
+            .forEach { tx ->
+                val current = quantities[tx.coinId] ?: 0.0
+                val next = when (tx.type) {
+                    TransactionType.BUY -> current + tx.quantity
+                    TransactionType.SELL -> current - tx.quantity
+                }
+                if (next < -0.00000001) {
+                    throw PortfolioValidationException(
+                        "Imported ${tx.symbol} sells more than current holdings"
+                    )
+                }
+                quantities[tx.coinId] = next.coerceAtLeast(0.0)
+            }
+    }
+
     private fun PortfolioAssetEntity.toDomain() = PortfolioAsset(
         id              = id,
         coinId          = coinId,
@@ -311,6 +381,21 @@ class PortfolioRepositoryImpl @Inject constructor(
         price     = price,
         fee       = fee,
         note      = note,
+        timestamp = timestamp,
+    )
+
+    private fun Transaction.toEntity(userId: String) = TransactionEntity(
+        id = id,
+        userId = userId,
+        coinId = coinId,
+        symbol = symbol,
+        name = name,
+        imageUrl = imageUrl,
+        type = type.name,
+        quantity = quantity,
+        price = price,
+        fee = fee,
+        note = note,
         timestamp = timestamp,
     )
 

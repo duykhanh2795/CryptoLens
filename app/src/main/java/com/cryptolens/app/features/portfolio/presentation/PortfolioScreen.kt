@@ -1,6 +1,8 @@
 package com.cryptolens.app.features.portfolio.presentation
 
 import androidx.compose.animation.*
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -22,6 +24,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -34,6 +37,8 @@ import com.cryptolens.app.core.domain.util.formatLargeNumber
 import com.cryptolens.app.core.domain.util.formatPrice
 import com.cryptolens.app.features.portfolio.domain.model.*
 import com.cryptolens.app.ui.theme.*
+import kotlinx.coroutines.launch
+import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -46,12 +51,44 @@ fun PortfolioScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var pendingExportContent by remember { mutableStateOf<String?>(null) }
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        val content = pendingExportContent
+        pendingExportContent = null
+        val success = uri != null && content != null && runCatching {
+            context.contentResolver.openOutputStream(uri)?.use { stream ->
+                OutputStreamWriter(stream, Charsets.UTF_8).use { it.write(content) }
+            } ?: error("Could not open output file")
+        }.isSuccess
+        viewModel.onEvent(PortfolioEvent.ExportCsvCompleted(success))
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                ?: error("Could not open CSV file")
+        }.onSuccess { content ->
+            viewModel.onEvent(PortfolioEvent.ImportCsvLoaded(content))
+        }.onFailure {
+            scope.launch { snackbar.showSnackbar("Failed to read CSV file") }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 is PortfolioEffect.ShowError   -> snackbar.showSnackbar(effect.message)
                 is PortfolioEffect.ShowSuccess -> snackbar.showSnackbar(effect.message)
+                is PortfolioEffect.LaunchCsvExport -> {
+                    pendingExportContent = effect.content
+                    exportLauncher.launch(effect.fileName)
+                }
             }
         }
     }
@@ -74,6 +111,28 @@ fun PortfolioScreen(
                 Text("Portfolio", style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold, color = TextPrimary)
                 Spacer(Modifier.weight(1f))
+                if (uiState.isImportExportBusy) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = BinanceYellow,
+                        strokeWidth = 2.dp,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                }
+                IconButton(
+                    onClick = { importLauncher.launch(arrayOf("text/csv", "text/comma-separated-values", "text/*")) },
+                    enabled = !uiState.isImportExportBusy,
+                ) {
+                    Icon(Icons.Outlined.UploadFile, contentDescription = "Import CSV",
+                        tint = TextSecondary)
+                }
+                IconButton(
+                    onClick = { viewModel.onEvent(PortfolioEvent.ExportCsv) },
+                    enabled = !uiState.isImportExportBusy,
+                ) {
+                    Icon(Icons.Outlined.FileDownload, contentDescription = "Export CSV",
+                        tint = TextSecondary)
+                }
                 IconButton(onClick = onConnectExchange) {
                     Icon(Icons.Outlined.AccountBalance, contentDescription = "Connect Exchange",
                         tint = TextSecondary)
@@ -152,6 +211,102 @@ fun PortfolioScreen(
                 ))
             },
         )
+    }
+
+    uiState.importPreview?.let { preview ->
+        ImportPreviewDialog(
+            preview = preview,
+            isBusy = uiState.isImportExportBusy,
+            onDismiss = { viewModel.onEvent(PortfolioEvent.DismissImportPreview) },
+            onConfirm = { mode -> viewModel.onEvent(PortfolioEvent.ConfirmImportCsv(mode)) },
+        )
+    }
+}
+
+@Composable
+private fun ImportPreviewDialog(
+    preview: PortfolioImportPreview,
+    isBusy: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (PortfolioImportMode) -> Unit,
+) {
+    val fmt = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
+    val dateRange = remember(preview) {
+        val first = preview.firstTimestamp
+        val last = preview.lastTimestamp
+        if (first != null && last != null) {
+            "${fmt.format(Date(first))} - ${fmt.format(Date(last))}"
+        } else {
+            "Unknown range"
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = { if (!isBusy) onDismiss() },
+        containerColor = SurfaceDark,
+        titleContentColor = TextPrimary,
+        textContentColor = TextSecondary,
+        icon = {
+            Icon(Icons.Outlined.UploadFile, contentDescription = null,
+                tint = BinanceYellow, modifier = Modifier.size(32.dp))
+        },
+        title = { Text("Import Portfolio CSV", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "Review the file before applying it to your portfolio.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                )
+                ImportPreviewRow("Transactions", "${preview.transactionCount}")
+                ImportPreviewRow("Coins", "${preview.coinCount}")
+                ImportPreviewRow("Buys / Sells", "${preview.buyCount} / ${preview.sellCount}")
+                ImportPreviewRow("Date range", dateRange)
+                Text(
+                    "Append keeps current transactions and updates matching exported IDs. Replace clears current portfolio transactions and snapshots first.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextTertiary,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(PortfolioImportMode.APPEND) },
+                enabled = !isBusy,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BinanceYellow,
+                    contentColor = Color(0xFF1A1400),
+                ),
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                Text("Append", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onDismiss, enabled = !isBusy) {
+                    Text("Cancel", color = TextSecondary)
+                }
+                OutlinedButton(
+                    onClick = { onConfirm(PortfolioImportMode.REPLACE) },
+                    enabled = !isBusy,
+                    border = BorderStroke(1.dp, RedDown),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = RedDown),
+                ) {
+                    Text("Replace")
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun ImportPreviewRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+        Text(value, style = MaterialTheme.typography.labelMedium,
+            color = TextPrimary, fontWeight = FontWeight.SemiBold)
     }
 }
 

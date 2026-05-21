@@ -4,6 +4,7 @@ import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioAsset
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioSnapshot
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioSummary
+import com.cryptolens.app.features.portfolio.domain.model.PortfolioImportMode
 import com.cryptolens.app.features.portfolio.domain.model.Transaction
 import com.cryptolens.app.features.portfolio.domain.model.TransactionType
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +28,11 @@ interface PortfolioRepository {
     ): Resource<Unit>
     suspend fun deleteTransaction(transactionId: String, userId: String): Resource<Unit>
     suspend fun deleteAsset(assetId: String, userId: String): Resource<Unit>
+    suspend fun importTransactions(
+        userId: String,
+        transactions: List<Transaction>,
+        mode: PortfolioImportMode,
+    ): Resource<Int>
     suspend fun saveSnapshot(userId: String, summary: PortfolioSummary, timestamp: Long): Resource<Unit>
     suspend fun clearAll(userId: String): Resource<Unit>
 }
