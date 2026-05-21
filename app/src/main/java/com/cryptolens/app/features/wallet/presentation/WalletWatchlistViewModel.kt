@@ -6,12 +6,15 @@ import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetTopCoinsUseCase
 import com.cryptolens.app.features.wallet.domain.model.WalletChain
+import com.cryptolens.app.features.wallet.domain.model.WalletConnectionEvent
 import com.cryptolens.app.features.wallet.domain.model.WalletWatchItem
 import com.cryptolens.app.features.wallet.domain.model.WalletWatchListItem
 import com.cryptolens.app.features.wallet.domain.usecase.AddWalletToWatchlistUseCase
+import com.cryptolens.app.features.wallet.domain.usecase.ConnectMetaMaskUseCase
 import com.cryptolens.app.features.wallet.domain.usecase.DeleteWalletWatchItemUseCase
 import com.cryptolens.app.features.wallet.domain.usecase.ObserveWalletWatchlistUseCase
 import com.cryptolens.app.features.wallet.domain.usecase.RefreshWalletWatchlistUseCase
+import com.cryptolens.app.features.wallet.domain.repository.WalletConnectionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +32,7 @@ data class WalletWatchlistUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isSaving: Boolean = false,
+    val isConnectingWallet: Boolean = false,
     val showAddSheet: Boolean = false,
     val selectedChain: WalletChain = WalletChain.ETHEREUM,
     val labelInput: String = "",
@@ -43,12 +47,14 @@ sealed class WalletWatchlistEvent {
     data class LabelChanged(val value: String) : WalletWatchlistEvent()
     data class AddressChanged(val value: String) : WalletWatchlistEvent()
     data object AddWallet : WalletWatchlistEvent()
+    data object ConnectMetaMask : WalletWatchlistEvent()
     data class DeleteWallet(val id: String) : WalletWatchlistEvent()
     data object RefreshAll : WalletWatchlistEvent()
 }
 
 sealed class WalletWatchlistEffect {
     data class ShowMessage(val message: String) : WalletWatchlistEffect()
+    data class OpenWallet(val deepLink: String, val pairingUri: String) : WalletWatchlistEffect()
 }
 
 @HiltViewModel
@@ -56,6 +62,8 @@ class WalletWatchlistViewModel @Inject constructor(
     getCurrentUser: GetCurrentUserUseCase,
     private val observeWallets: ObserveWalletWatchlistUseCase,
     private val addWallet: AddWalletToWatchlistUseCase,
+    private val connectMetaMask: ConnectMetaMaskUseCase,
+    private val walletConnectionRepository: WalletConnectionRepository,
     private val deleteWallet: DeleteWalletWatchItemUseCase,
     private val refreshWallets: RefreshWalletWatchlistUseCase,
     private val getTopCoins: GetTopCoinsUseCase,
@@ -75,6 +83,7 @@ class WalletWatchlistViewModel @Inject constructor(
         observeWalletList()
         observeNativePrices()
         combineWalletsWithPrices()
+        observeWalletConnection()
         refreshAll()
     }
 
@@ -98,6 +107,7 @@ class WalletWatchlistViewModel @Inject constructor(
             is WalletWatchlistEvent.AddressChanged ->
                 _uiState.update { it.copy(addressInput = event.value, inputError = null) }
             WalletWatchlistEvent.AddWallet -> saveWallet()
+            WalletWatchlistEvent.ConnectMetaMask -> connectWallet()
             is WalletWatchlistEvent.DeleteWallet -> delete(event.id)
             WalletWatchlistEvent.RefreshAll -> refreshAll()
         }
@@ -144,6 +154,46 @@ class WalletWatchlistViewModel @Inject constructor(
         }
     }
 
+    private fun observeWalletConnection() {
+        viewModelScope.launch {
+            walletConnectionRepository.events.collect { event ->
+                when (event) {
+                    is WalletConnectionEvent.OpenWallet -> {
+                        _effect.emit(WalletWatchlistEffect.OpenWallet(event.walletDeepLink, event.pairingUri))
+                    }
+                    is WalletConnectionEvent.Connected -> {
+                        val account = event.account
+                        _uiState.update {
+                            it.copy(
+                                selectedChain = account.chain,
+                                labelInput = account.walletName,
+                                addressInput = account.address,
+                                isConnectingWallet = false,
+                                inputError = null,
+                            )
+                        }
+                        saveConnectedWallet(account.walletName, account.address, account.chain)
+                    }
+                    is WalletConnectionEvent.Error -> {
+                        _uiState.update { it.copy(isConnectingWallet = false, inputError = event.message) }
+                        _effect.emit(WalletWatchlistEffect.ShowMessage(event.message))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun connectWallet() {
+        if (userId.isBlank()) {
+            viewModelScope.launch {
+                _effect.emit(WalletWatchlistEffect.ShowMessage("Please log in before connecting MetaMask"))
+            }
+            return
+        }
+        _uiState.update { it.copy(isConnectingWallet = true, inputError = null) }
+        connectMetaMask()
+    }
+
     private fun saveWallet() {
         viewModelScope.launch {
             val state = _uiState.value
@@ -171,6 +221,38 @@ class WalletWatchlistViewModel @Inject constructor(
                 }
                 is Resource.Error -> {
                     _uiState.update { it.copy(isSaving = false, inputError = result.message) }
+                }
+                Resource.Loading -> Unit
+            }
+        }
+    }
+
+    private fun saveConnectedWallet(label: String, address: String, chain: WalletChain) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, inputError = null) }
+            when (
+                val result = addWallet(
+                    userId = userId,
+                    label = label,
+                    address = address,
+                    chain = chain,
+                )
+            ) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isSaving = false,
+                            showAddSheet = false,
+                            labelInput = "",
+                            addressInput = "",
+                            inputError = null,
+                        )
+                    }
+                    _effect.emit(WalletWatchlistEffect.ShowMessage("MetaMask wallet connected"))
+                }
+                is Resource.Error -> {
+                    _uiState.update { it.copy(isSaving = false, inputError = result.message) }
+                    _effect.emit(WalletWatchlistEffect.ShowMessage(result.message))
                 }
                 Resource.Loading -> Unit
             }

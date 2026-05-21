@@ -1,5 +1,7 @@
 package com.cryptolens.app.features.wallet.presentation
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.text.format.DateUtils
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -55,12 +57,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.core.net.toUri
 import com.cryptolens.app.core.domain.util.formatLargeNumber
 import com.cryptolens.app.core.domain.util.formatPrice
 import com.cryptolens.app.features.wallet.domain.model.WalletChain
@@ -88,11 +92,19 @@ fun WalletWatchlistScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 is WalletWatchlistEffect.ShowMessage -> snackbar.showSnackbar(effect.message)
+                is WalletWatchlistEffect.OpenWallet -> {
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, effect.deepLink.toUri()))
+                    } catch (_: ActivityNotFoundException) {
+                        snackbar.showSnackbar("MetaMask is not installed or cannot handle this WalletConnect link")
+                    }
+                }
             }
         }
     }
@@ -428,6 +440,61 @@ private fun AddWalletSheet(
             fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(14.dp))
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = SurfaceVariant,
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, BorderColor),
+        ) {
+            Column(Modifier.padding(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Outlined.AccountBalanceWallet,
+                        contentDescription = null,
+                        tint = BinanceYellow,
+                        modifier = Modifier.size(22.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "MetaMask",
+                            color = TextPrimary,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            "Connect read-only and import your public address",
+                            color = TextSecondary,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = { onEvent(WalletWatchlistEvent.ConnectMetaMask) },
+                    enabled = !state.isConnectingWallet && !state.isSaving,
+                    modifier = Modifier.fillMaxWidth().height(46.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BinanceYellow,
+                        contentColor = Color(0xFF1A1400),
+                    ),
+                ) {
+                    if (state.isConnectingWallet) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF1A1400),
+                        )
+                    } else {
+                        Text("Connect MetaMask", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(18.dp))
 
         Text("Chain", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(8.dp))

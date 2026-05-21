@@ -34,8 +34,10 @@ import com.cryptolens.app.features.watchlist.data.local.dao.WatchlistDao
 import com.cryptolens.app.features.watchlist.data.repository.WatchlistRepositoryImpl
 import com.cryptolens.app.features.watchlist.domain.repository.WatchlistRepository
 import com.cryptolens.app.features.wallet.data.local.dao.WalletWatchDao
+import com.cryptolens.app.features.wallet.data.walletconnect.WalletConnectRepositoryImpl
 import com.cryptolens.app.features.wallet.data.repository.WalletDiscoveryRepositoryImpl
 import com.cryptolens.app.features.wallet.data.repository.WalletWatchRepositoryImpl
+import com.cryptolens.app.features.wallet.domain.repository.WalletConnectionRepository
 import com.cryptolens.app.features.wallet.domain.repository.WalletDiscoveryRepository
 import com.cryptolens.app.features.wallet.domain.repository.WalletWatchRepository
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -223,6 +225,9 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindWalletWatchRepository(impl: WalletWatchRepositoryImpl): WalletWatchRepository
+
+    @Binds @Singleton
+    abstract fun bindWalletConnectionRepository(impl: WalletConnectRepositoryImpl): WalletConnectionRepository
 
     @Binds @Singleton
     abstract fun bindWalletDiscoveryRepository(impl: WalletDiscoveryRepositoryImpl): WalletDiscoveryRepository

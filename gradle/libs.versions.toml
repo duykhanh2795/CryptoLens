@@ -24,6 +24,8 @@ hiltWork = "1.2.0"
 firebaseBom = "33.9.0"
 googleServices = "4.4.2"
 vico = "2.1.2"
+walletconnectCore = "1.35.2"
+walletconnectSign = "2.35.2"
 
 [libraries]
 # AndroidX Core
@@ -96,6 +98,10 @@ firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
+
+# WalletConnect / Reown
+walletconnect-core = { group = "com.walletconnect", name = "android-core", version.ref = "walletconnectCore" }
+walletconnect-sign = { group = "com.walletconnect", name = "sign", version.ref = "walletconnectSign" }
 
 # Test
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
