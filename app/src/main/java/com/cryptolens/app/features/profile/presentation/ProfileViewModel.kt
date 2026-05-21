@@ -6,6 +6,7 @@ import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.auth.domain.model.AuthUser
 import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
 import com.cryptolens.app.features.auth.domain.usecase.LogoutUseCase
+import com.cryptolens.app.features.auth.domain.usecase.UpdatePasswordUseCase
 import com.cryptolens.app.features.portfolio.domain.usecase.ClearPortfolioUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -17,6 +18,12 @@ data class ProfileUiState(
     val isLoading: Boolean          = false,
     val showLogoutDialog: Boolean   = false,
     val showClearPortfolioDialog: Boolean = false,
+    val showChangePasswordDialog: Boolean = false,
+    val isChangingPassword: Boolean = false,
+    val currentPassword: String     = "",
+    val newPassword: String         = "",
+    val confirmPassword: String     = "",
+    val changePasswordError: String? = null,
     val appVersion: String          = "1.0.0",
 )
 
@@ -27,6 +34,12 @@ sealed class ProfileEvent {
     data object ShowClearPortfolioDialog : ProfileEvent()
     data object DismissClearPortfolioDialog : ProfileEvent()
     data object ConfirmClearPortfolio : ProfileEvent()
+    data object ShowChangePasswordDialog : ProfileEvent()
+    data object DismissChangePasswordDialog : ProfileEvent()
+    data class CurrentPasswordChanged(val value: String) : ProfileEvent()
+    data class NewPasswordChanged(val value: String) : ProfileEvent()
+    data class ConfirmPasswordChanged(val value: String) : ProfileEvent()
+    data object SubmitChangePassword : ProfileEvent()
     data class ComingSoon(val feature: String) : ProfileEvent()
 }
 
@@ -40,6 +53,7 @@ sealed class ProfileEffect {
 class ProfileViewModel @Inject constructor(
     private val getCurrentUser: GetCurrentUserUseCase,
     private val logoutUseCase: LogoutUseCase,
+    private val updatePasswordUseCase: UpdatePasswordUseCase,
     private val clearPortfolio: ClearPortfolioUseCase,
 ) : ViewModel() {
 
@@ -63,6 +77,29 @@ class ProfileViewModel @Inject constructor(
             is ProfileEvent.DismissClearPortfolioDialog ->
                 _uiState.update { it.copy(showClearPortfolioDialog = false) }
             is ProfileEvent.ConfirmClearPortfolio -> handleClearPortfolio()
+            is ProfileEvent.ShowChangePasswordDialog -> _uiState.update {
+                it.copy(
+                    showChangePasswordDialog = true,
+                    changePasswordError = null,
+                )
+            }
+            is ProfileEvent.DismissChangePasswordDialog -> _uiState.update {
+                it.copy(
+                    showChangePasswordDialog = false,
+                    isChangingPassword = false,
+                    currentPassword = "",
+                    newPassword = "",
+                    confirmPassword = "",
+                    changePasswordError = null,
+                )
+            }
+            is ProfileEvent.CurrentPasswordChanged ->
+                _uiState.update { it.copy(currentPassword = event.value, changePasswordError = null) }
+            is ProfileEvent.NewPasswordChanged ->
+                _uiState.update { it.copy(newPassword = event.value, changePasswordError = null) }
+            is ProfileEvent.ConfirmPasswordChanged ->
+                _uiState.update { it.copy(confirmPassword = event.value, changePasswordError = null) }
+            is ProfileEvent.SubmitChangePassword -> handleChangePassword()
             is ProfileEvent.ComingSoon -> showComingSoon(event.feature)
         }
     }
@@ -101,6 +138,44 @@ class ProfileViewModel @Inject constructor(
                     _effect.emit(ProfileEffect.ShowError(result.message))
                 }
                 else -> _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+
+    private fun handleChangePassword() {
+        viewModelScope.launch {
+            val state = _uiState.value
+            _uiState.update {
+                it.copy(isChangingPassword = true, changePasswordError = null)
+            }
+
+            when (val result = updatePasswordUseCase(
+                currentPassword = state.currentPassword,
+                newPassword = state.newPassword,
+                confirmPassword = state.confirmPassword,
+            )) {
+                is Resource.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            showChangePasswordDialog = false,
+                            isChangingPassword = false,
+                            currentPassword = "",
+                            newPassword = "",
+                            confirmPassword = "",
+                            changePasswordError = null,
+                        )
+                    }
+                    _effect.emit(ProfileEffect.ShowSuccess("Password updated"))
+                }
+                is Resource.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isChangingPassword = false,
+                            changePasswordError = result.message,
+                        )
+                    }
+                }
+                else -> _uiState.update { it.copy(isChangingPassword = false) }
             }
         }
     }

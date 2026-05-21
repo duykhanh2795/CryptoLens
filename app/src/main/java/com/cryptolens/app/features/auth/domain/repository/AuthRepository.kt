@@ -12,5 +12,6 @@ interface AuthRepository {
     suspend fun register(email: String, password: String, displayName: String): Resource<AuthUser>
     suspend fun logout(): Resource<Unit>
     suspend fun resetPassword(email: String): Resource<Unit>
+    suspend fun updatePassword(currentPassword: String, newPassword: String): Resource<Unit>
     fun observeAuthState(): Flow<AuthUser?>
 }

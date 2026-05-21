@@ -46,6 +46,20 @@ class ResetPasswordUseCase @Inject constructor(private val repo: AuthRepository)
     }
 }
 
+class UpdatePasswordUseCase @Inject constructor(private val repo: AuthRepository) {
+    suspend operator fun invoke(
+        currentPassword: String,
+        newPassword: String,
+        confirmPassword: String,
+    ): Resource<Unit> {
+        if (currentPassword.isBlank()) return Resource.Error("Current password cannot be empty")
+        if (newPassword.length < 6) return Resource.Error("New password must be at least 6 characters")
+        if (newPassword != confirmPassword) return Resource.Error("Passwords do not match")
+        if (currentPassword == newPassword) return Resource.Error("New password must be different")
+        return repo.updatePassword(currentPassword, newPassword)
+    }
+}
+
 class ObserveAuthStateUseCase @Inject constructor(private val repo: AuthRepository) {
     operator fun invoke(): Flow<AuthUser?> = repo.observeAuthState()
 }

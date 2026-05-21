@@ -10,8 +10,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.content.ContextCompat
 import com.cryptolens.app.features.alerts.data.worker.AlertScheduler
+import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.features.settings.domain.usecase.ObserveSettingsUseCase
 import com.cryptolens.app.navigation.CryptoLensNavHost
 import com.cryptolens.app.ui.theme.CryptoLensTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,13 +23,15 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var alertScheduler: AlertScheduler
+    @Inject lateinit var observeSettings: ObserveSettingsUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         alertScheduler.schedulePeriodicCheck()
         enableEdgeToEdge()
         setContent {
-            CryptoLensTheme {
+            val settings = observeSettings().collectAsStateWithLifecycle(initialValue = AppSettings())
+            CryptoLensTheme(appTheme = settings.value.theme) {
                 val notificationPermissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
                 ) {}

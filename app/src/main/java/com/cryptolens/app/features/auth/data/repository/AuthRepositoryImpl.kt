@@ -114,6 +114,33 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updatePassword(currentPassword: String, newPassword: String): Resource<Unit> {
+        return try {
+            val email = currentUser?.email?.takeIf { it.isNotBlank() }
+                ?: return Resource.Error("Please log in again before changing password")
+
+            supabase.auth.signInWith(Email) {
+                this.email = email
+                this.password = currentPassword
+            }
+            supabase.auth.updateUser {
+                password = newPassword
+            }
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            val msg = when {
+                e.message?.contains("Invalid login credentials") == true ->
+                    "Current password is incorrect"
+                e.message?.contains("weak", ignoreCase = true) == true ->
+                    "New password is too weak"
+                e.message?.contains("network", ignoreCase = true) == true ->
+                    "Network error. Check your connection."
+                else -> e.message ?: "Failed to update password"
+            }
+            Resource.Error(msg, e)
+        }
+    }
+
     override fun observeAuthState(): Flow<AuthUser?> =
         supabase.auth.sessionStatus.map { status ->
             when (status) {

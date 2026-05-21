@@ -1,6 +1,7 @@
 package com.cryptolens.app.features.profile.presentation
 
 import androidx.compose.foundation.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +17,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -149,7 +153,7 @@ fun ProfileScreen(
                 icon        = Icons.Outlined.Lock,
                 label       = "Change Password",
                 subtitle    = "Update your password",
-                onClick     = { viewModel.onEvent(ProfileEvent.ComingSoon("Change password")) },
+                onClick     = { viewModel.onEvent(ProfileEvent.ShowChangePasswordDialog) },
             )
             ProfileMenuItem(
                 icon        = Icons.Outlined.NotificationsNone,
@@ -355,9 +359,159 @@ fun ProfileScreen(
             },
         )
     }
+
+    if (uiState.showChangePasswordDialog) {
+        ChangePasswordDialog(
+            state = uiState,
+            onEvent = viewModel::onEvent,
+        )
+    }
 }
 
 // ── Shared Components ──────────────────────────────────────────────────────────
+
+@Composable
+private fun ChangePasswordDialog(
+    state: ProfileUiState,
+    onEvent: (ProfileEvent) -> Unit,
+) {
+    val canSubmit = state.currentPassword.isNotBlank() &&
+        state.newPassword.length >= 6 &&
+        state.confirmPassword.isNotBlank() &&
+        !state.isChangingPassword
+
+    AlertDialog(
+        onDismissRequest = {
+            if (!state.isChangingPassword) {
+                onEvent(ProfileEvent.DismissChangePasswordDialog)
+            }
+        },
+        containerColor = SurfaceDark,
+        titleContentColor = TextPrimary,
+        textContentColor = TextSecondary,
+        icon = {
+            Icon(
+                Icons.Outlined.Lock,
+                contentDescription = null,
+                tint = BinanceYellow,
+                modifier = Modifier.size(32.dp),
+            )
+        },
+        title = {
+            Text(
+                "Change Password",
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                PasswordTextField(
+                    value = state.currentPassword,
+                    onValueChange = { onEvent(ProfileEvent.CurrentPasswordChanged(it)) },
+                    label = "Current password",
+                    enabled = !state.isChangingPassword,
+                )
+                PasswordTextField(
+                    value = state.newPassword,
+                    onValueChange = { onEvent(ProfileEvent.NewPasswordChanged(it)) },
+                    label = "New password",
+                    enabled = !state.isChangingPassword,
+                )
+                PasswordTextField(
+                    value = state.confirmPassword,
+                    onValueChange = { onEvent(ProfileEvent.ConfirmPasswordChanged(it)) },
+                    label = "Confirm new password",
+                    enabled = !state.isChangingPassword,
+                )
+
+                Text(
+                    text = state.changePasswordError
+                        ?: "Use at least 6 characters. Your current password is checked before saving.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (state.changePasswordError != null) RedDown else TextTertiary,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onEvent(ProfileEvent.SubmitChangePassword) },
+                enabled = canSubmit,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BinanceYellow,
+                    contentColor = Color(0xFF1A1400),
+                    disabledContainerColor = SurfaceVariant,
+                    disabledContentColor = TextTertiary,
+                ),
+                shape = RoundedCornerShape(8.dp),
+            ) {
+                if (state.isChangingPassword) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = Color(0xFF1A1400),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text("Save", fontWeight = FontWeight.Bold)
+                }
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = { onEvent(ProfileEvent.DismissChangePasswordDialog) },
+                enabled = !state.isChangingPassword,
+                border = BorderStroke(1.dp, BorderColor),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
+            ) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+
+@Composable
+private fun PasswordTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    enabled: Boolean,
+) {
+    var visible by remember { mutableStateOf(false) }
+
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier.fillMaxWidth(),
+        enabled = enabled,
+        singleLine = true,
+        label = { Text(label) },
+        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        trailingIcon = {
+            IconButton(onClick = { visible = !visible }, enabled = enabled) {
+                Icon(
+                    if (visible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    contentDescription = if (visible) "Hide password" else "Show password",
+                    tint = TextSecondary,
+                )
+            }
+        },
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = BinanceYellow,
+            unfocusedBorderColor = BorderColor,
+            focusedLabelColor = BinanceYellow,
+            unfocusedLabelColor = TextSecondary,
+            focusedTextColor = TextPrimary,
+            unfocusedTextColor = TextPrimary,
+            cursorColor = BinanceYellow,
+            focusedContainerColor = SurfaceVariant,
+            unfocusedContainerColor = SurfaceVariant,
+            disabledContainerColor = SurfaceVariant,
+            disabledTextColor = TextTertiary,
+        ),
+    )
+}
 
 @Composable
 private fun ProfileSectionHeader(title: String) {
