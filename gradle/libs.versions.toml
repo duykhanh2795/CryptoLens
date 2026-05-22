@@ -1,11 +1,11 @@
 [versions]
-agp = "8.7.3"
+agp = "8.13.2"
 kotlin = "2.1.0"
 ksp = "2.1.0-1.0.29"
 coreKtx = "1.15.0"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.0"
-composeBom = "2025.02.00"
+composeBom = "2026.05.01"
 navigation = "2.8.5"
 hilt = "2.54"
 hiltNavigation = "1.2.0"
@@ -14,7 +14,7 @@ okhttp = "4.12.0"
 kotlinxSerialization = "1.7.3"
 retrofitKotlinxSerializer = "1.0.0"
 room = "2.6.1"
-datastore = "1.1.2"
+datastore = "1.2.1"
 coroutines = "1.9.0"
 supabase = "3.1.4"
 ktor = "3.1.1"
@@ -24,8 +24,7 @@ hiltWork = "1.2.0"
 firebaseBom = "33.9.0"
 googleServices = "4.4.2"
 vico = "2.1.2"
-walletconnectCore = "1.35.2"
-walletconnectSign = "2.35.2"
+reown = "1.6.13"
 
 [libraries]
 # AndroidX Core
@@ -100,8 +99,8 @@ vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", ve
 vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
 
 # WalletConnect / Reown
-walletconnect-core = { group = "com.walletconnect", name = "android-core", version.ref = "walletconnectCore" }
-walletconnect-sign = { group = "com.walletconnect", name = "sign", version.ref = "walletconnectSign" }
+reown-core = { group = "com.reown", name = "android-core", version.ref = "reown" }
+reown-sign = { group = "com.reown", name = "sign", version.ref = "reown" }
 
 # Test
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }

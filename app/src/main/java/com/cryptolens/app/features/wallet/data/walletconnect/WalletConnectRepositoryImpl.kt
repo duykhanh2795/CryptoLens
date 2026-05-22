@@ -5,10 +5,10 @@ import com.cryptolens.app.features.wallet.domain.model.ConnectedWalletAccount
 import com.cryptolens.app.features.wallet.domain.model.WalletChain
 import com.cryptolens.app.features.wallet.domain.model.WalletConnectionEvent
 import com.cryptolens.app.features.wallet.domain.repository.WalletConnectionRepository
-import com.walletconnect.android.Core
-import com.walletconnect.android.CoreClient
-import com.walletconnect.sign.client.Sign
-import com.walletconnect.sign.client.SignClient
+import com.reown.android.Core
+import com.reown.android.CoreClient
+import com.reown.sign.client.Sign
+import com.reown.sign.client.SignClient
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -51,6 +51,7 @@ class WalletConnectRepositoryImpl @Inject constructor() : WalletConnectionReposi
             namespaces = mapOf(EIP155_NAMESPACE to proposal),
             optionalNamespaces = emptyMap(),
             properties = null,
+            scopedProperties = null,
             pairing = pairing,
         )
 

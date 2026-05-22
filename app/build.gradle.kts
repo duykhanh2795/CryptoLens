@@ -165,8 +165,8 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
 
     // WalletConnect / MetaMask
-    implementation(libs.walletconnect.core)
-    implementation(libs.walletconnect.sign)
+    implementation(libs.reown.core)
+    implementation(libs.reown.sign)
 
     // Firebase
     implementation(platform(libs.firebase.bom))

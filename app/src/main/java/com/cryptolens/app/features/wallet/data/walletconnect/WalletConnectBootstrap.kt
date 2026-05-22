@@ -2,11 +2,11 @@ package com.cryptolens.app.features.wallet.data.walletconnect
 
 import android.app.Application
 import com.cryptolens.app.BuildConfig
-import com.walletconnect.android.Core
-import com.walletconnect.android.CoreClient
-import com.walletconnect.android.relay.ConnectionType
-import com.walletconnect.sign.client.Sign
-import com.walletconnect.sign.client.SignClient
+import com.reown.android.Core
+import com.reown.android.CoreClient
+import com.reown.android.relay.ConnectionType
+import com.reown.sign.client.Sign
+import com.reown.sign.client.SignClient
 
 object WalletConnectBootstrap {
     private var initialized = false
