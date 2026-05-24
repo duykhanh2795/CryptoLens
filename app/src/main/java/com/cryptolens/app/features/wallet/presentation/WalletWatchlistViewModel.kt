@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetTopCoinsUseCase
+import com.cryptolens.app.features.wallet.domain.model.TrendingWalletDetail
 import com.cryptolens.app.features.wallet.domain.model.WalletChain
 import com.cryptolens.app.features.wallet.domain.model.WalletConnectionEvent
 import com.cryptolens.app.features.wallet.domain.model.WalletWatchItem
@@ -12,6 +13,7 @@ import com.cryptolens.app.features.wallet.domain.model.WalletWatchListItem
 import com.cryptolens.app.features.wallet.domain.usecase.AddWalletToWatchlistUseCase
 import com.cryptolens.app.features.wallet.domain.usecase.ConnectMetaMaskUseCase
 import com.cryptolens.app.features.wallet.domain.usecase.DeleteWalletWatchItemUseCase
+import com.cryptolens.app.features.wallet.domain.usecase.GetConnectedWalletPortfoliosUseCase
 import com.cryptolens.app.features.wallet.domain.usecase.ObserveWalletWatchlistUseCase
 import com.cryptolens.app.features.wallet.domain.usecase.RefreshWalletWatchlistUseCase
 import com.cryptolens.app.features.wallet.domain.repository.WalletConnectionRepository
@@ -29,8 +31,10 @@ import javax.inject.Inject
 
 data class WalletWatchlistUiState(
     val wallets: List<WalletWatchListItem> = emptyList(),
+    val portfolios: Map<String, ConnectedWalletPortfolioUiState> = emptyMap(),
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
+    val isLoadingPortfolios: Boolean = false,
     val isSaving: Boolean = false,
     val isConnectingWallet: Boolean = false,
     val showAddSheet: Boolean = false,
@@ -38,6 +42,12 @@ data class WalletWatchlistUiState(
     val labelInput: String = "",
     val addressInput: String = "",
     val inputError: String? = null,
+)
+
+data class ConnectedWalletPortfolioUiState(
+    val detail: TrendingWalletDetail? = null,
+    val isLoading: Boolean = false,
+    val error: String? = null,
 )
 
 sealed class WalletWatchlistEvent {
@@ -66,12 +76,15 @@ class WalletWatchlistViewModel @Inject constructor(
     private val walletConnectionRepository: WalletConnectionRepository,
     private val deleteWallet: DeleteWalletWatchItemUseCase,
     private val refreshWallets: RefreshWalletWatchlistUseCase,
+    private val getConnectedWalletPortfolios: GetConnectedWalletPortfoliosUseCase,
     private val getTopCoins: GetTopCoinsUseCase,
 ) : ViewModel() {
 
     private val userId = getCurrentUser()?.id.orEmpty()
     private val rawWallets = MutableStateFlow<List<WalletWatchItem>>(emptyList())
     private val nativePrices = MutableStateFlow<Map<String, Double>>(emptyMap())
+    private var lastPortfolioLoadKey: String? = null
+    private var portfolioLoadGeneration: Long = 0L
 
     private val _uiState = MutableStateFlow(WalletWatchlistUiState())
     val uiState: StateFlow<WalletWatchlistUiState> = _uiState.asStateFlow()
@@ -123,6 +136,7 @@ class WalletWatchlistViewModel @Inject constructor(
             observeWallets(userId).collect { wallets ->
                 rawWallets.value = wallets
                 _uiState.update { it.copy(isLoading = false) }
+                loadConnectedWalletPortfolios(wallets)
             }
         }
     }
@@ -281,7 +295,54 @@ class WalletWatchlistViewModel @Inject constructor(
                 is Resource.Error -> _effect.emit(WalletWatchlistEffect.ShowMessage(result.message))
                 else -> Unit
             }
+            loadConnectedWalletPortfolios(rawWallets.value, force = true)
             _uiState.update { it.copy(isRefreshing = false) }
+        }
+    }
+
+    private fun loadConnectedWalletPortfolios(
+        wallets: List<WalletWatchItem>,
+        force: Boolean = false,
+    ) {
+        if (wallets.isEmpty()) {
+            lastPortfolioLoadKey = null
+            _uiState.update { it.copy(portfolios = emptyMap(), isLoadingPortfolios = false) }
+            return
+        }
+
+        val loadKey = wallets.joinToString(separator = "|") {
+            "${it.id}:${it.address}:${it.chain.name}:${it.nativeBalance}:${it.lastSyncedAt}"
+        }
+        if (!force && loadKey == lastPortfolioLoadKey) return
+        lastPortfolioLoadKey = loadKey
+        val generation = ++portfolioLoadGeneration
+
+        viewModelScope.launch {
+            _uiState.update { state ->
+                state.copy(
+                    isLoadingPortfolios = true,
+                    portfolios = wallets.associate { wallet ->
+                        wallet.id to (state.portfolios[wallet.id]?.copy(isLoading = true, error = null)
+                            ?: ConnectedWalletPortfolioUiState(isLoading = true))
+                    },
+                )
+            }
+
+            val results = getConnectedWalletPortfolios(wallets)
+            if (generation != portfolioLoadGeneration) return@launch
+            _uiState.update { state ->
+                state.copy(
+                    isLoadingPortfolios = false,
+                    portfolios = wallets.associate { wallet ->
+                        val result = results[wallet.id]
+                        wallet.id to when (result) {
+                            is Resource.Success -> ConnectedWalletPortfolioUiState(detail = result.data)
+                            is Resource.Error -> ConnectedWalletPortfolioUiState(error = result.message)
+                            Resource.Loading, null -> ConnectedWalletPortfolioUiState(isLoading = true)
+                        }
+                    },
+                )
+            }
         }
     }
 }

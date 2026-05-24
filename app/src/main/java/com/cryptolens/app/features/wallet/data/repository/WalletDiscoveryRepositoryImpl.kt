@@ -67,6 +67,7 @@ class WalletDiscoveryRepositoryImpl @Inject constructor(
                 valueUsd = wallet.valueUsd,
                 changePercent24h = wallet.changePercent24h,
                 chain = chain,
+                coinId = chain.priceCoinIds.firstOrNull(),
             )
 
             val indexerErrors = mutableListOf<String>()

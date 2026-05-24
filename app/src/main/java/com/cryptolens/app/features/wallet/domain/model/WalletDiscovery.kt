@@ -24,6 +24,7 @@ data class WalletAsset(
     val chain: WalletChain,
     val networkLabel: String = chain.label,
     val contractAddress: String? = null,
+    val coinId: String? = null,
 )
 
 data class WalletTransaction(

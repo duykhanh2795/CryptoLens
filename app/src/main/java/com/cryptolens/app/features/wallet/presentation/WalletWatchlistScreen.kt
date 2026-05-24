@@ -5,6 +5,7 @@ import android.content.Intent
 import android.text.format.DateUtils
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,6 +50,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,6 +69,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.net.toUri
 import com.cryptolens.app.core.domain.util.formatLargeNumber
 import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.features.wallet.domain.model.TrendingWalletDetail
+import com.cryptolens.app.features.wallet.domain.model.WalletAsset
 import com.cryptolens.app.features.wallet.domain.model.WalletChain
 import com.cryptolens.app.features.wallet.domain.model.WalletWatchListItem
 import com.cryptolens.app.ui.theme.BackgroundDark
@@ -88,6 +92,8 @@ import com.cryptolens.app.ui.theme.TextTertiary
 @Composable
 fun WalletWatchlistScreen(
     onNavigateBack: () -> Unit,
+    onWalletDetailsClick: (WalletChain, String) -> Unit,
+    onAssetClick: (String) -> Unit,
     viewModel: WalletWatchlistViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -147,7 +153,10 @@ fun WalletWatchlistScreen(
             } else {
                 WalletList(
                     wallets = uiState.wallets,
+                    portfolios = uiState.portfolios,
                     onDelete = { viewModel.onEvent(WalletWatchlistEvent.DeleteWallet(it)) },
+                    onWalletDetailsClick = onWalletDetailsClick,
+                    onAssetClick = onAssetClick,
                 )
             }
         }
@@ -240,7 +249,10 @@ private fun EmptyWallets() {
 @Composable
 private fun WalletList(
     wallets: List<WalletWatchListItem>,
+    portfolios: Map<String, ConnectedWalletPortfolioUiState>,
     onDelete: (String) -> Unit,
+    onWalletDetailsClick: (WalletChain, String) -> Unit,
+    onAssetClick: (String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -251,7 +263,13 @@ private fun WalletList(
             WalletScopeNotice()
         }
         items(wallets, key = { it.wallet.id }) { item ->
-            WalletCard(item = item, onDelete = onDelete)
+            WalletCard(
+                item = item,
+                portfolio = portfolios[item.wallet.id],
+                onDelete = onDelete,
+                onWalletDetailsClick = onWalletDetailsClick,
+                onAssetClick = onAssetClick,
+            )
         }
     }
 }
@@ -264,7 +282,7 @@ private fun WalletScopeNotice() {
         shape = RoundedCornerShape(8.dp),
     ) {
         Text(
-            text = "Native balance only. Token, NFT and DeFi positions need a dedicated indexer/API in a later phase.",
+            text = "Connected wallets are read-only. Native balances load from public RPCs; token holdings, USD values and transfer history use the configured Alchemy or Moralis indexer.",
             color = TextSecondary,
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(12.dp),
@@ -275,7 +293,10 @@ private fun WalletScopeNotice() {
 @Composable
 private fun WalletCard(
     item: WalletWatchListItem,
+    portfolio: ConnectedWalletPortfolioUiState?,
     onDelete: (String) -> Unit,
+    onWalletDetailsClick: (WalletChain, String) -> Unit,
+    onAssetClick: (String) -> Unit,
 ) {
     val wallet = item.wallet
 
@@ -318,7 +339,7 @@ private fun WalletCard(
                         }
                     }
                     Text(
-                        "${wallet.chain.label}  •  ${wallet.address.shortAddress()}",
+                        "${wallet.chain.label} - ${wallet.address.shortAddress()}",
                         color = TextSecondary,
                         style = MaterialTheme.typography.labelMedium,
                         maxLines = 1,
@@ -377,6 +398,207 @@ private fun WalletCard(
                     )
                 }
             }
+
+            HorizontalDivider(color = DividerColor, modifier = Modifier.padding(vertical = 12.dp))
+            ConnectedWalletPortfolioSection(
+                portfolio = portfolio,
+                nativeFallbackValueUsd = item.nativeValueUsd,
+                onViewDetails = { onWalletDetailsClick(wallet.chain, wallet.address) },
+                onAssetClick = onAssetClick,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConnectedWalletPortfolioSection(
+    portfolio: ConnectedWalletPortfolioUiState?,
+    nativeFallbackValueUsd: Double?,
+    onViewDetails: () -> Unit,
+    onAssetClick: (String) -> Unit,
+) {
+    when {
+        portfolio == null || portfolio.isLoading -> {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    color = BinanceYellow,
+                    strokeWidth = 2.dp,
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    "Loading token holdings and wallet value...",
+                    color = TextSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+        portfolio.detail != null -> {
+            WalletPortfolioLoaded(
+                detail = portfolio.detail,
+                fallbackValueUsd = nativeFallbackValueUsd,
+                onViewDetails = onViewDetails,
+                onAssetClick = onAssetClick,
+            )
+        }
+        portfolio.error != null -> {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    portfolio.error,
+                    color = RedDown,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    WalletMetric(
+                        label = "Portfolio value",
+                        value = nativeFallbackValueUsd?.let { "$${it.formatLargeNumber()}" } ?: "Unavailable",
+                        modifier = Modifier.weight(1f),
+                    )
+                    WalletMetric(
+                        label = "Assets",
+                        value = "Native only",
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                TextButton(onClick = onViewDetails, modifier = Modifier.align(Alignment.End)) {
+                    Text("Open details", color = BinanceYellow, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WalletPortfolioLoaded(
+    detail: TrendingWalletDetail,
+    fallbackValueUsd: Double?,
+    onViewDetails: () -> Unit,
+    onAssetClick: (String) -> Unit,
+) {
+    val totalValue = detail.totalValueUsd ?: fallbackValueUsd
+    val change24h = detail.weightedChangePercent24h()
+    val topAssets = detail.assets
+        .filter { it.quantity > 0.0 }
+        .sortedByDescending { it.valueUsd ?: 0.0 }
+        .take(4)
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            WalletMetric(
+                label = "Portfolio value",
+                value = totalValue?.let { "$${it.formatLargeNumber()}" } ?: "Unavailable",
+                modifier = Modifier.weight(1f),
+            )
+            WalletMetric(
+                label = "24h change",
+                value = "${if (change24h >= 0) "+" else ""}${"%.2f".format(change24h)}%",
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            WalletMetric(
+                label = "Assets",
+                value = detail.assets.size.toString(),
+                modifier = Modifier.weight(1f),
+            )
+            WalletMetric(
+                label = "Transfers",
+                value = detail.history.size.toString(),
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        if (topAssets.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                topAssets.forEach { asset ->
+                    WalletAssetPreviewRow(asset = asset, onAssetClick = onAssetClick)
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            detail.historyNote?.takeIf { topAssets.size <= 1 }?.let { note ->
+                Text(
+                    note,
+                    color = TextTertiary,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            TextButton(onClick = onViewDetails) {
+                Text("Open details", color = BinanceYellow, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun WalletAssetPreviewRow(
+    asset: WalletAsset,
+    onAssetClick: (String) -> Unit,
+) {
+    val clickableModifier = asset.coinId?.let { coinId ->
+        Modifier.clickable { onAssetClick(coinId) }
+    } ?: Modifier
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(clickableModifier)
+            .background(SurfaceVariant, RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .background(SurfaceDark, RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                asset.symbol.take(3).uppercase(),
+                color = BinanceYellow,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                asset.symbol.uppercase(),
+                color = TextPrimary,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                "${asset.quantity.formatNative()} - ${asset.networkLabel}",
+                color = TextSecondary,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                asset.valueUsd?.let { "$${it.formatLargeNumber()}" } ?: "-",
+                color = TextPrimary,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                "${if (asset.changePercent24h >= 0) "+" else ""}${"%.2f".format(asset.changePercent24h)}%",
+                color = if (asset.changePercent24h >= 0) GreenUp else RedDown,
+                style = MaterialTheme.typography.labelSmall,
+            )
         }
     }
 }
@@ -586,6 +808,16 @@ private fun Double.formatNative(): String =
         this > 0.0 -> formatPrice()
         else -> "0"
     }
+
+private fun TrendingWalletDetail.weightedChangePercent24h(): Double {
+    val valuedAssets = assets.filter { (it.valueUsd ?: 0.0) > 0.0 }
+    val totalValue = valuedAssets.sumOf { it.valueUsd ?: 0.0 }
+    return if (totalValue > 0.0) {
+        valuedAssets.sumOf { (it.valueUsd ?: 0.0) * it.changePercent24h } / totalValue
+    } else {
+        wallet.changePercent24h
+    }
+}
 
 private fun Long.relativeTime(): String =
     DateUtils.getRelativeTimeSpanString(

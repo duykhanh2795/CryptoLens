@@ -347,6 +347,12 @@ fun CryptoLensNavHost(
             composable(Screen.WalletWatchlist.route) {
                 WalletWatchlistScreen(
                     onNavigateBack = { navController.popBackStack() },
+                    onWalletDetailsClick = { chain, address ->
+                        navController.navigate(Screen.TrendingWalletDetail.createRoute(chain.name, address))
+                    },
+                    onAssetClick = { coinId ->
+                        navController.navigate(Screen.CoinDetail.createRoute(coinId))
+                    },
                 )
             }
 
