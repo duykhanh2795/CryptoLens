@@ -9,7 +9,9 @@ import com.cryptolens.app.features.alerts.data.local.dao.PriceAlertDao
 import com.cryptolens.app.features.alerts.data.repository.AlertRepositoryImpl
 import com.cryptolens.app.features.alerts.domain.repository.AlertRepository
 import com.cryptolens.app.features.auth.data.repository.AuthRepositoryImpl
+import com.cryptolens.app.features.auth.data.repository.LoginPreferencesRepositoryImpl
 import com.cryptolens.app.features.auth.domain.repository.AuthRepository
+import com.cryptolens.app.features.auth.domain.repository.LoginPreferencesRepository
 import com.cryptolens.app.features.exchange.data.local.ExchangeConnectionDao
 import com.cryptolens.app.features.exchange.data.remote.BinanceApiClient
 import com.cryptolens.app.features.exchange.data.repository.ExchangeRepositoryImpl
@@ -207,6 +209,9 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+
+    @Binds @Singleton
+    abstract fun bindLoginPreferencesRepository(impl: LoginPreferencesRepositoryImpl): LoginPreferencesRepository
 
     @Binds @Singleton
     abstract fun bindPortfolioRepository(impl: PortfolioRepositoryImpl): PortfolioRepository

@@ -132,8 +132,38 @@ fun LoginScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // Forgot password
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            viewModel.onEvent(LoginEvent.RememberLoginChanged(!uiState.rememberLogin))
+                        }
+                        .padding(end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = uiState.rememberLogin,
+                        onCheckedChange = { checked ->
+                            viewModel.onEvent(LoginEvent.RememberLoginChanged(checked))
+                        },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = BinanceYellow,
+                            uncheckedColor = TextSecondary,
+                            checkmarkColor = Color(0xFF1A1400),
+                        ),
+                    )
+                    Text(
+                        "Remember me",
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+
                 TextButton(onClick = { showForgotPassword = true }) {
                     Text("Forgot password?", color = BinanceYellow, style = MaterialTheme.typography.labelLarge)
                 }

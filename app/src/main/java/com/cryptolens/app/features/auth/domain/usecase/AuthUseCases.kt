@@ -1,7 +1,9 @@
 package com.cryptolens.app.features.auth.domain.usecase
 
 import com.cryptolens.app.features.auth.domain.model.AuthUser
+import com.cryptolens.app.features.auth.domain.model.LoginPreferences
 import com.cryptolens.app.features.auth.domain.repository.AuthRepository
+import com.cryptolens.app.features.auth.domain.repository.LoginPreferencesRepository
 import com.cryptolens.app.core.domain.util.Resource
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -66,4 +68,18 @@ class ObserveAuthStateUseCase @Inject constructor(private val repo: AuthReposito
 
 class GetCurrentUserUseCase @Inject constructor(private val repo: AuthRepository) {
     operator fun invoke(): AuthUser? = repo.currentUser
+}
+
+class ObserveLoginPreferencesUseCase @Inject constructor(
+    private val repo: LoginPreferencesRepository,
+) {
+    operator fun invoke(): Flow<LoginPreferences> = repo.observePreferences()
+}
+
+class SaveLoginPreferencesUseCase @Inject constructor(
+    private val repo: LoginPreferencesRepository,
+) {
+    suspend operator fun invoke(rememberLogin: Boolean, email: String) {
+        repo.savePreferences(rememberLogin = rememberLogin, email = email)
+    }
 }
