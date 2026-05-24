@@ -395,8 +395,7 @@ private fun ToggleSettingItem(
             .padding(vertical = 4.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .clickable { onCheckedChange(!checked) }
+                        .clickable { onCheckedChange(!checked) }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -443,8 +442,7 @@ private fun InfoSettingItem(
             .padding(vertical = 4.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -489,8 +487,7 @@ private fun SettingsRow(
             .padding(vertical = 4.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+                        .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

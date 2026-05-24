@@ -3,7 +3,6 @@ package com.cryptolens.app.features.ai.presentation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -177,8 +176,7 @@ private fun FloatingAiButton(
                     .size(fabSize)
                     .shadow(16.dp, CircleShape)
                     .clip(CircleShape)
-                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)), CircleShape)
-                    .background(
+                                        .background(
                         Brush.linearGradient(
                             colors = listOf(BinanceYellow, Color(0xFF7C6FE8), Color(0xFF9EA4AD)),
                             start = Offset.Zero,
@@ -441,7 +439,6 @@ private fun ChatMessageBubble(message: AiChatMessage) {
                 bottomStart = if (isUser) 18.dp else 4.dp,
                 bottomEnd = if (isUser) 4.dp else 18.dp,
             ),
-            border = BorderStroke(1.dp, if (isUser) BinanceYellow.copy(alpha = 0.24f) else BorderColor),
             modifier = Modifier.fillMaxWidth(0.86f),
         ) {
             Text(
@@ -467,7 +464,6 @@ private fun ChatComposer(
             .fillMaxWidth()
             .padding(horizontal = 26.dp, vertical = 18.dp),
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, Color(0xFF3A3740)),
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             OutlinedTextField(
@@ -622,7 +618,6 @@ private fun AiSidePanel(
                 Surface(
                     color = Color.Transparent,
                     shape = RoundedCornerShape(13.dp),
-                    border = BorderStroke(1.dp, Color(0xFF37343D)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 18.dp, vertical = 16.dp),

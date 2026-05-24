@@ -273,12 +273,7 @@ private fun ExchangeCard(exchange: ExchangeType, onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(SurfaceDark)
-            .border(
-                width  = 1.dp,
-                color  = if (isAvailable) DividerColor else SurfaceVariant,
-                shape  = RoundedCornerShape(12.dp),
-            )
-            .then(if (isAvailable) Modifier.clickable(onClick = onClick) else Modifier)
+                        .then(if (isAvailable) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -401,7 +396,6 @@ private fun EnterKeysStep(
             },
             modifier = Modifier.fillMaxWidth(),
             shape    = RoundedCornerShape(8.dp),
-            border   = BorderStroke(1.dp, BinanceYellow),
             colors   = ButtonDefaults.outlinedButtonColors(contentColor = BinanceYellow),
         ) {
             Icon(
@@ -692,7 +686,6 @@ private fun ValidatedStep(
             onClick  = { onEvent(ConnectExchangeEvent.BackToEnterKeys) },
             modifier = Modifier.fillMaxWidth().height(48.dp),
             shape    = RoundedCornerShape(8.dp),
-            border   = BorderStroke(1.dp, BorderColor),
             colors   = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
         ) {
             Text("Edit API Keys")
@@ -787,9 +780,9 @@ private fun ApiKeyTextField(
             modifier           = Modifier.fillMaxWidth(),
             shape              = RoundedCornerShape(8.dp),
             colors             = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor      = BinanceYellow,
-                unfocusedBorderColor    = BorderColor,
-                errorBorderColor        = RedDown,
+                focusedBorderColor      = Color.Transparent,
+                unfocusedBorderColor    = Color.Transparent,
+                errorBorderColor        = Color.Transparent,
                 focusedLabelColor       = BinanceYellow,
                 unfocusedLabelColor     = TextSecondary,
                 errorLabelColor         = RedDown,

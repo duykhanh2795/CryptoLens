@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -211,7 +210,7 @@ private fun CoinDetailContent(
                     .height(280.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(SurfaceDark)
-                    .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp)),
+                    ,
             ) {
                 if (isKlinesLoading) {
                     CircularProgressIndicator(
@@ -289,8 +288,7 @@ private fun ChartControlsRow(
             .padding(top = 8.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -372,8 +370,7 @@ private fun CompactSegmentedIconToggle(
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .border(BorderStroke(1.dp, BorderColor.copy(alpha = 0.75f)), RoundedCornerShape(8.dp))
-            .background(Color.Transparent)
+                        .background(Color.Transparent)
             .padding(2.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -424,8 +421,7 @@ private fun FuturesSentimentPanel(sentiment: FuturesSentiment) {
             .padding(top = 8.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -519,8 +515,7 @@ private fun FuturesInfoPanel(info: FuturesMarketInfo) {
             .padding(top = 8.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             FuturesMetric(
@@ -595,8 +590,7 @@ private fun ChartNotice(message: String) {
             .padding(top = 8.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(BinanceYellow.copy(alpha = 0.08f))
-            .border(1.dp, BinanceYellow.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
 
@@ -611,8 +605,7 @@ private fun AlertQuickActionsRow(
             .padding(top = 8.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Text(
             text = "Create $symbol alert",
@@ -654,7 +647,6 @@ private fun AlertQuickActionButton(
         onClick = onClick,
         modifier = modifier.height(40.dp),
         shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, BorderColor.copy(alpha = 0.95f)),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = SurfaceVariant.copy(alpha = 0.55f),
             contentColor = BinanceYellow,
@@ -744,8 +736,7 @@ private fun PriceHeader(
             .padding(top = 4.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.78f), RoundedCornerShape(16.dp))
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
         if (isLive) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -831,8 +822,7 @@ private fun IntervalSelector(
             .padding(top = 8.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceAround,
     ) {
         ChartInterval.entries.forEach { interval ->
@@ -865,8 +855,7 @@ private fun QuickStatsRow(coin: Coin) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         StatItem("24h High", "$${coin.high24h.formatPrice()}", GreenUp)
@@ -913,8 +902,7 @@ private fun YourHoldingsSection(
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(16.dp),
+                        .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -1003,8 +991,7 @@ private fun MarketInfoSection(coin: Coin, coinDetail: CoinDetail) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(16.dp),
+                        .padding(16.dp),
     ) {
         Text(
             "Market Info",
@@ -1090,8 +1077,7 @@ private fun AboutSection(description: String) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(16.dp),
+                        .padding(16.dp),
     ) {
         Text(
             "About",
@@ -1161,7 +1147,6 @@ private fun BuySellBar(symbol: String, onOpenPortfolio: () -> Unit) {
                 onClick  = onOpenPortfolio,
                 modifier = Modifier.weight(1f).height(48.dp),
                 shape    = RoundedCornerShape(12.dp),
-                border   = BorderStroke(1.dp, RedDown.copy(alpha = 0.72f)),
                 colors   = ButtonDefaults.outlinedButtonColors(
                     containerColor = SurfaceDark,
                     contentColor = RedDown,
@@ -1190,8 +1175,7 @@ private fun CoinNewsSection(
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .padding(vertical = 10.dp),
+                        .padding(vertical = 10.dp),
     ) {
         Row(
             modifier = Modifier

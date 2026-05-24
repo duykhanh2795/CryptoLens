@@ -87,8 +87,7 @@ fun ProfileScreen(
                     .padding(horizontal = 16.dp, vertical = 4.dp)
                     .clip(RoundedCornerShape(18.dp))
                     .background(SurfaceDark)
-                    .border(1.dp, BorderColor.copy(alpha = 0.85f), RoundedCornerShape(18.dp))
-                    .padding(24.dp),
+                                        .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // Avatar circle with initials
@@ -257,7 +256,6 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape    = RoundedCornerShape(14.dp),
                     enabled  = !uiState.isLoading,
-                    border   = BorderStroke(1.dp, RedDown),
                     colors   = ButtonDefaults.outlinedButtonColors(contentColor = RedDown),
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -314,7 +312,6 @@ fun ProfileScreen(
             dismissButton = {
                 OutlinedButton(
                     onClick = { viewModel.onEvent(ProfileEvent.DismissLogoutDialog) },
-                    border  = BorderStroke(1.dp, BorderColor),
                     shape   = RoundedCornerShape(8.dp),
                     colors  = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
                 ) {
@@ -356,7 +353,6 @@ fun ProfileScreen(
             dismissButton = {
                 OutlinedButton(
                     onClick = { viewModel.onEvent(ProfileEvent.DismissClearPortfolioDialog) },
-                    border = BorderStroke(1.dp, BorderColor),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
                 ) {
@@ -466,7 +462,6 @@ private fun ChangePasswordDialog(
             OutlinedButton(
                 onClick = { onEvent(ProfileEvent.DismissChangePasswordDialog) },
                 enabled = !state.isChangingPassword,
-                border = BorderStroke(1.dp, BorderColor),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
             ) {
@@ -504,8 +499,8 @@ private fun PasswordTextField(
             }
         },
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = BinanceYellow,
-            unfocusedBorderColor = BorderColor,
+            focusedBorderColor = Color.Transparent,
+            unfocusedBorderColor = Color.Transparent,
             focusedLabelColor = BinanceYellow,
             unfocusedLabelColor = TextSecondary,
             focusedTextColor = TextPrimary,
@@ -545,8 +540,7 @@ private fun ProfileMenuItem(
             .padding(horizontal = 16.dp, vertical = 4.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+                        .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

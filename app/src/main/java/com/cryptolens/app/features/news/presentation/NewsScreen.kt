@@ -1,7 +1,6 @@
 package com.cryptolens.app.features.news.presentation
 
 import android.text.format.DateUtils
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -101,7 +100,13 @@ fun NewsScreen(
                 placeholder = { Text("Search news") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 shape = RoundedCornerShape(12.dp),
-            )
+                        colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                errorBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            ),
+)
 
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -117,12 +122,6 @@ fun NewsScreen(
                             selectedContainerColor = BinanceYellow.copy(alpha = 0.16f),
                             selectedLabelColor = BinanceYellow,
                             labelColor = TextSecondary,
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = uiState.filter == filter,
-                            borderColor = BorderColor,
-                            selectedBorderColor = BinanceYellow.copy(alpha = 0.6f),
                         ),
                     )
                 }

@@ -1,6 +1,5 @@
 package com.cryptolens.app.features.alerts.presentation
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -269,7 +268,6 @@ private fun AlertTypeChooser(
                 modifier = Modifier.fillMaxWidth(),
                 color = SurfaceDark,
                 shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, BorderColor),
                 onClick = { onSelect(type) },
             ) {
                 Row(
@@ -333,7 +331,6 @@ private fun AlertCard(
         modifier = Modifier.fillMaxWidth(),
         color = SurfaceDark,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, BorderColor),
     ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -547,7 +544,13 @@ private fun CreateAlertSheet(
                 null
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        )
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            errorBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+        ),
+)
 
         Spacer(Modifier.height(10.dp))
         FrequencySelector(
@@ -562,14 +565,19 @@ private fun CreateAlertSheet(
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Note") },
             maxLines = 2,
-        )
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            errorBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+        ),
+)
 
         Spacer(Modifier.height(18.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(
                 onClick = { onEvent(AlertsEvent.HideCreateSheet) },
                 modifier = Modifier.weight(1f).height(48.dp),
-                border = BorderStroke(1.dp, BorderColor),
                 shape = RoundedCornerShape(8.dp),
             ) {
                 Text("Cancel", color = TextSecondary)

@@ -1,7 +1,6 @@
 package com.cryptolens.app.features.wallet.presentation
 
 import android.text.format.DateUtils
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -175,7 +174,13 @@ private fun TrendingWalletsTopBar(
             placeholder = { Text("Explore any address") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             shape = RoundedCornerShape(12.dp),
-        )
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            errorBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+        ),
+)
         IconButton(onClick = onRefresh) {
             Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TextSecondary)
         }
@@ -243,8 +248,7 @@ fun WalletAvatar(
         Canvas(
             modifier = Modifier
                 .matchParentSize()
-                .border(1.dp, BorderColor, CircleShape)
-                .padding(1.dp),
+                                .padding(1.dp),
         ) {
             drawCircle(base.copy(alpha = 0.95f))
             val cell = size.width / 5f
@@ -264,7 +268,7 @@ fun WalletAvatar(
             modifier = Modifier
                 .size(17.dp)
                 .background(SurfaceDark, CircleShape)
-                .border(1.dp, BorderColor, CircleShape),
+                ,
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -469,7 +473,6 @@ private fun WalletDetailHero(
                 onClick = onAddToWatchlist,
                 enabled = !isAdding,
                 modifier = Modifier.weight(1f).height(48.dp),
-                border = BorderStroke(1.dp, BorderColor),
                 shape = RoundedCornerShape(10.dp),
             ) {
                 Icon(Icons.Outlined.StarBorder, contentDescription = null, tint = TextPrimary)
@@ -479,7 +482,6 @@ private fun WalletDetailHero(
             Surface(
                 modifier = Modifier.height(48.dp),
                 shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, BorderColor),
                 color = Color.Transparent,
             ) {
                 Row(
@@ -729,7 +731,13 @@ private fun HistoryControls(
             placeholder = { Text("Search token, hash, address") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             shape = RoundedCornerShape(12.dp),
-        )
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            errorBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+        ),
+)
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(WalletHistoryFilter.entries, key = { it.name }) { item ->
                 FilterChip(
@@ -740,12 +748,6 @@ private fun HistoryControls(
                         selectedContainerColor = BinanceYellow.copy(alpha = 0.16f),
                         selectedLabelColor = BinanceYellow,
                         labelColor = TextSecondary,
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = selectedFilter == item,
-                        borderColor = BorderColor,
-                        selectedBorderColor = BinanceYellow.copy(alpha = 0.6f),
                     ),
                 )
             }
@@ -879,7 +881,6 @@ private fun TransactionDetailSheet(
                 OutlinedButton(
                     onClick = { clipboard.setText(AnnotatedString(transaction.id)) },
                     modifier = Modifier.weight(1f).height(46.dp),
-                    border = BorderStroke(1.dp, BorderColor),
                     shape = RoundedCornerShape(8.dp),
                 ) {
                     Text("Copy Hash", color = TextPrimary, fontWeight = FontWeight.SemiBold)
@@ -890,7 +891,6 @@ private fun TransactionDetailSheet(
                     },
                     enabled = transaction.counterparty != null,
                     modifier = Modifier.weight(1f).height(46.dp),
-                    border = BorderStroke(1.dp, BorderColor),
                     shape = RoundedCornerShape(8.dp),
                 ) {
                     Text("Copy Address", color = TextPrimary, fontWeight = FontWeight.SemiBold)

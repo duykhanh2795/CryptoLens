@@ -90,7 +90,7 @@ private fun darkScheme(palette: CryptoPalette) = darkColorScheme(
     onSurface = palette.textPrimary,
     surfaceVariant = palette.surfaceVariant,
     onSurfaceVariant = palette.textSecondary,
-    outline = palette.border,
+    outline = Color.Transparent,
     error = RedDown,
 )
 
@@ -107,7 +107,7 @@ private fun lightScheme(palette: CryptoPalette) = lightColorScheme(
     onSurface = palette.textPrimary,
     surfaceVariant = palette.surfaceVariant,
     onSurfaceVariant = palette.textSecondary,
-    outline = palette.border,
+    outline = Color.Transparent,
     error = RedDown,
 )
 

@@ -325,9 +325,9 @@ fun CryptoTextField(
             modifier        = Modifier.fillMaxWidth(),
             shape           = RoundedCornerShape(8.dp),
             colors          = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor   = BinanceYellow,
-                unfocusedBorderColor = BorderColor,
-                errorBorderColor     = RedDown,
+                focusedBorderColor   = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
+                errorBorderColor     = Color.Transparent,
                 focusedLabelColor    = BinanceYellow,
                 unfocusedLabelColor  = TextSecondary,
                 errorLabelColor      = RedDown,

@@ -537,8 +537,7 @@ private fun PortfolioBanner() {
                     )
                 )
             )
-            .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(18.dp))
-            .padding(horizontal = 18.dp, vertical = 16.dp),
+                        .padding(horizontal = 18.dp, vertical = 16.dp),
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -561,7 +560,7 @@ private fun PortfolioBanner() {
                         .size(44.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color.White.copy(alpha = 0.08f))
-                        .border(1.dp, Color.White.copy(alpha = 0.10f), RoundedCornerShape(12.dp)),
+                        ,
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -578,8 +577,7 @@ private fun PortfolioBanner() {
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color.White.copy(alpha = 0.08f))
-                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                                                .padding(horizontal = 8.dp, vertical = 5.dp),
                 ) {
                     Text("+$0.00  0.00%", style = MaterialTheme.typography.labelMedium, color = GreenUp)
                 }
@@ -602,8 +600,7 @@ private fun BalanceChip(text: String) {
         modifier = Modifier
             .clip(RoundedCornerShape(99.dp))
             .background(Color.White.copy(alpha = 0.07f))
-            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(99.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
         Text(text, style = MaterialTheme.typography.labelSmall, color = TextTertiary)
     }
@@ -615,8 +612,7 @@ private fun PortfolioMiniMetric(label: String, value: String, icon: ImageVector,
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .background(Color.White.copy(alpha = 0.045f))
-            .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 10.dp, vertical = 9.dp),
+                        .padding(horizontal = 10.dp, vertical = 9.dp),
     ) {
         Icon(icon, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(16.dp))
         Spacer(Modifier.height(7.dp))
@@ -641,8 +637,7 @@ private fun QuickActionsRow() {
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
-            .padding(8.dp),
+                        .padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         actions.forEach { (icon, label) ->
@@ -668,12 +663,7 @@ private fun ActionTile(
             .height(72.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(if (selected) Color.White.copy(alpha = 0.10f) else SurfaceVariant)
-            .border(
-                1.dp,
-                if (selected) Color.White.copy(alpha = 0.12f) else BorderColor,
-                RoundedCornerShape(12.dp),
-            )
-            .clickable {}
+                        .clickable {}
             .padding(horizontal = 6.dp, vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -875,7 +865,6 @@ private fun ErrorBanner(message: String, onRetry: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         OutlinedButton(
             onClick = onRetry,
-            border  = BorderStroke(1.dp, homeActionTint),
             colors  = ButtonDefaults.outlinedButtonColors(contentColor = homeActionTint),
             shape   = RoundedCornerShape(8.dp),
         ) { Text("Retry") }

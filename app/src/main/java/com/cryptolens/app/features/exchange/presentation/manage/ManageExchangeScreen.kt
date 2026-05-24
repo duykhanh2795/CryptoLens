@@ -120,7 +120,6 @@ fun ManageExchangeScreen(
                             onClick  = onConnectNew,
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             shape    = RoundedCornerShape(12.dp),
-                            border   = BorderStroke(1.dp, BinanceYellow),
                             colors   = ButtonDefaults.outlinedButtonColors(contentColor = BinanceYellow),
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -160,12 +159,7 @@ private fun ExchangeConnectionCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(SurfaceDark)
-            .border(
-                width = 1.dp,
-                color = if (connection.isActive) BinanceYellow.copy(alpha = 0.3f) else DividerColor,
-                shape = RoundedCornerShape(12.dp),
-            )
-            .padding(16.dp),
+                        .padding(16.dp),
     ) {
         // Header row
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -288,7 +282,6 @@ private fun ExchangeConnectionCard(
                 onClick  = { showDeleteDialog = true },
                 modifier = Modifier.height(40.dp),
                 shape    = RoundedCornerShape(8.dp),
-                border   = BorderStroke(1.dp, RedDown.copy(alpha = 0.5f)),
                 colors   = ButtonDefaults.outlinedButtonColors(contentColor = RedDown),
             ) {
                 Icon(Icons.Default.DeleteOutline, contentDescription = "Delete",
@@ -334,7 +327,6 @@ private fun ExchangeConnectionCard(
             dismissButton = {
                 OutlinedButton(
                     onClick = { showDeleteDialog = false },
-                    border  = BorderStroke(1.dp, BorderColor),
                     shape   = RoundedCornerShape(8.dp),
                     colors  = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
                 ) {

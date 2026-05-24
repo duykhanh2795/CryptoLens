@@ -91,8 +91,7 @@ fun MarketListScreen(
                 .padding(horizontal = 18.dp, vertical = 6.dp)
                 .clip(RoundedCornerShape(14.dp))
                 .background(SurfaceVariant)
-                .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -231,8 +230,7 @@ private fun CoinListItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+                        .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

@@ -166,7 +166,7 @@ fun PortfolioScreen(
                         modifier = Modifier
                             .padding(top = 12.dp, bottom = 10.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp)),
+                            ,
                         indicator = { tabs ->
                             val idx = PortfolioTab.entries.indexOf(uiState.selectedTab)
                             TabRowDefaults.SecondaryIndicator(
@@ -300,7 +300,6 @@ private fun ImportPreviewDialog(
                 OutlinedButton(
                     onClick = { onConfirm(PortfolioImportMode.REPLACE) },
                     enabled = !isBusy,
-                    border = BorderStroke(1.dp, RedDown),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = RedDown),
                 ) {
@@ -352,8 +351,7 @@ private fun PortfolioTimelineCard(
             .padding(top = 12.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.78f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -472,8 +470,7 @@ private fun PortfolioSummaryCard(summary: PortfolioSummary) {
             .padding(top = 8.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor.copy(alpha = 0.78f), RoundedCornerShape(16.dp))
-            .padding(horizontal = 20.dp, vertical = 20.dp),
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("Total Value", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
@@ -581,8 +578,7 @@ private fun AssetItem(asset: PortfolioAsset, onCoinClick: () -> Unit, onDelete: 
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
-            .combinedClickable(onClick = onCoinClick, onLongClick = { showDialog = true })
+                        .combinedClickable(onClick = onCoinClick, onLongClick = { showDialog = true })
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -652,8 +648,7 @@ private fun TransactionItem(tx: Transaction, fmt: SimpleDateFormat, onDelete: ()
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
-            .combinedClickable(onClick = { showDialog = true }, onLongClick = { showDialog = true })
+                        .combinedClickable(onClick = { showDialog = true }, onLongClick = { showDialog = true })
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -762,8 +757,7 @@ private fun AddTransactionSheet(
                     Box(
                         modifier = Modifier.clip(RoundedCornerShape(8.dp))
                             .background(if (isSel) BinanceYellow.copy(0.15f) else SurfaceVariant)
-                            .border(1.dp, if (isSel) BinanceYellow else Color.Transparent, RoundedCornerShape(8.dp))
-                            .clickable { coinId = cId; symbol = cSym; name = cName; imageUrl = ""; coinError = null }
+                                                        .clickable { coinId = cId; symbol = cSym; name = cName; imageUrl = ""; coinError = null }
                             .padding(horizontal = 14.dp, vertical = 8.dp),
                     ) {
                         Text(cSym, color = if (isSel) BinanceYellow else TextSecondary,
@@ -826,7 +820,7 @@ private fun SheetField(
         singleLine = true, modifier = Modifier.fillMaxWidth(),
         shape  = RoundedCornerShape(8.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = BinanceYellow, unfocusedBorderColor = BorderColor,
+            focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent,
             focusedLabelColor  = BinanceYellow, unfocusedLabelColor  = TextSecondary,
             focusedTextColor   = TextPrimary,   unfocusedTextColor   = TextPrimary,
             cursorColor        = BinanceYellow,

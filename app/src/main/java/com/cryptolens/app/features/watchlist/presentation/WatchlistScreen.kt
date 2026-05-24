@@ -257,8 +257,8 @@ private fun WatchlistSearchAndFilters(
             },
             shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = BinanceYellow,
-                unfocusedBorderColor = BorderColor,
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
                 focusedTextColor = TextPrimary,
                 unfocusedTextColor = TextPrimary,
                 cursorColor = BinanceYellow,
@@ -284,12 +284,6 @@ private fun WatchlistSearchAndFilters(
                         selectedContainerColor = BinanceYellow.copy(alpha = 0.18f),
                         labelColor = TextSecondary,
                         selectedLabelColor = BinanceYellow,
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = selected,
-                        borderColor = BorderColor,
-                        selectedBorderColor = BinanceYellow,
                     ),
                 )
             }
@@ -514,7 +508,6 @@ private fun WatchlistCoinRow(
             dismissButton = {
                 OutlinedButton(
                     onClick = { showDeleteDialog = false },
-                    border  = BorderStroke(1.dp, BorderColor),
                     shape   = RoundedCornerShape(8.dp),
                     colors  = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
                 ) {

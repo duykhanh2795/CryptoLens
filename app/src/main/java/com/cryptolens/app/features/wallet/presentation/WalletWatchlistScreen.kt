@@ -3,7 +3,6 @@ package com.cryptolens.app.features.wallet.presentation
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.text.format.DateUtils
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -304,7 +303,6 @@ private fun WalletCard(
         modifier = Modifier.fillMaxWidth(),
         color = SurfaceDark,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, BorderColor),
     ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -667,7 +665,6 @@ private fun AddWalletSheet(
             modifier = Modifier.fillMaxWidth(),
             color = SurfaceVariant,
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, BorderColor),
         ) {
             Column(Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -746,7 +743,13 @@ private fun AddWalletSheet(
             label = { Text("Label") },
             placeholder = { Text("${state.selectedChain.label} wallet") },
             singleLine = true,
-        )
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            errorBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+        ),
+)
 
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(
@@ -759,7 +762,13 @@ private fun AddWalletSheet(
             supportingText = state.inputError?.let { message ->
                 { Text(message) }
             },
-        )
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            errorBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+        ),
+)
 
         Spacer(Modifier.height(18.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -768,7 +777,6 @@ private fun AddWalletSheet(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp),
-                border = BorderStroke(1.dp, BorderColor),
                 shape = RoundedCornerShape(8.dp),
             ) {
                 Text("Cancel", color = TextSecondary)

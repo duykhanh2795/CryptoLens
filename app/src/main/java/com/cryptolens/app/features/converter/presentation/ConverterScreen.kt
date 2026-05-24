@@ -1,6 +1,5 @@
 package com.cryptolens.app.features.converter.presentation
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -209,7 +208,6 @@ private fun ConverterCard(
         modifier = Modifier.fillMaxWidth(),
         color = SurfaceDark,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, BorderColor),
     ) {
         Column(Modifier.padding(14.dp)) {
             Text("Convert", color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -282,7 +280,13 @@ private fun AmountAssetRow(
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     placeholder = { Text("0", color = TextTertiary) },
-                )
+                                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                    unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                    disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                    errorBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+                ),
+)
             } else {
                 Text(
                     amount,
@@ -347,7 +351,6 @@ private fun QuickPairsSection(
                 OutlinedButton(
                     onClick = { onEvent(ConverterEvent.PairSelected(fromId, toId)) },
                     shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, BorderColor),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
                 ) {
                     Text(label)
@@ -365,7 +368,6 @@ private fun RateSection(state: ConverterUiState) {
         modifier = Modifier.fillMaxWidth(),
         color = SurfaceDark,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, BorderColor),
     ) {
         Column(Modifier.padding(14.dp)) {
             Text("Rate", color = TextPrimary, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -394,7 +396,6 @@ private fun MarketContextSection(state: ConverterUiState) {
         modifier = Modifier.fillMaxWidth(),
         color = SurfaceDark,
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, BorderColor),
     ) {
         Column(Modifier.padding(vertical = 8.dp)) {
             Text(
@@ -479,7 +480,13 @@ private fun AssetPickerSheet(
             singleLine = true,
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
             placeholder = { Text("Search coin or symbol", color = TextTertiary) },
-        )
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            disabledBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+            errorBorderColor = androidx.compose.ui.graphics.Color.Transparent,
+        ),
+)
         Spacer(Modifier.height(10.dp))
 
         LazyColumn(
