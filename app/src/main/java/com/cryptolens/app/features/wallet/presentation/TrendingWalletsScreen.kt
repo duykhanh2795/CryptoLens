@@ -233,10 +233,10 @@ fun WalletAvatar(
 ) {
     val colors = listOf(
         BinanceYellow,
-        Color(0xFF00D395),
-        Color(0xFF8B5CF6),
-        Color(0xFF38BDF8),
-        Color(0xFFFF6B6B),
+        Color(0xFF8A8F98),
+        Color(0xFF7C6FE8),
+        Color(0xFF56606B),
+        Color(0xFFFF7182),
     )
     val base = colors[abs(seed) % colors.size]
     Box(modifier = modifier, contentAlignment = Alignment.BottomEnd) {

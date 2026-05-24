@@ -180,7 +180,7 @@ private fun FloatingAiButton(
                     .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)), CircleShape)
                     .background(
                         Brush.linearGradient(
-                            colors = listOf(BinanceYellow, Color(0xFF7C5CFF), Color(0xFF18E6B3)),
+                            colors = listOf(BinanceYellow, Color(0xFF7C6FE8), Color(0xFF9EA4AD)),
                             start = Offset.Zero,
                             end = Offset(180f, 180f),
                         ),
@@ -600,7 +600,7 @@ private fun AiSidePanel(
                             .size(38.dp)
                             .background(
                                 Brush.linearGradient(
-                                    colors = listOf(Color(0xFF7C5CFF), Color(0xFF18E6B3)),
+                                colors = listOf(Color(0xFF7C6FE8), Color(0xFF9EA4AD)),
                                     start = Offset.Zero,
                                     end = Offset(120f, 120f),
                                 ),

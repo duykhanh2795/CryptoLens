@@ -186,10 +186,14 @@ private fun HomeTopBar(userName: String?, onRefresh: () -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
             Box(
-                modifier = Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(BinanceYellow),
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(SurfaceVariant)
+                    .border(1.dp, BorderColor, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("CL", color = Color(0xFF1A1400), fontWeight = FontWeight.ExtraBold, fontSize = 11.sp)
+                Text("CL", color = TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 11.sp)
             }
             Spacer(Modifier.width(10.dp))
             Column {
@@ -224,13 +228,13 @@ private fun PortfolioBanner() {
             .background(
                 Brush.horizontalGradient(
                     listOf(
-                        Color(0xFF101722),
-                        Color(0xFF0D1117),
-                        Color(0xFF121417),
+                        Color(0xFF1A1A1C),
+                        Color(0xFF0E0E10),
+                        Color(0xFF2A2A2D),
                     )
                 )
             )
-            .border(1.dp, Color.White.copy(alpha = 0.07f), RoundedCornerShape(18.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(18.dp))
             .padding(horizontal = 18.dp, vertical = 16.dp),
     ) {
         Column {
@@ -270,7 +274,8 @@ private fun PortfolioBanner() {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(GreenUp.copy(alpha = 0.12f))
+                        .background(Color.White.copy(alpha = 0.08f))
+                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 5.dp),
                 ) {
                     Text("+$0.00  0.00%", style = MaterialTheme.typography.labelMedium, color = GreenUp)
@@ -310,7 +315,7 @@ private fun PortfolioMiniMetric(label: String, value: String, icon: ImageVector,
             .border(1.dp, Color.White.copy(alpha = 0.06f), RoundedCornerShape(12.dp))
             .padding(horizontal = 10.dp, vertical = 9.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = BinanceYellow, modifier = Modifier.size(16.dp))
+        Icon(icon, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(16.dp))
         Spacer(Modifier.height(7.dp))
         Text(label, style = MaterialTheme.typography.labelSmall, color = TextTertiary)
         Spacer(Modifier.height(3.dp))
@@ -359,10 +364,10 @@ private fun ActionTile(
         modifier = modifier
             .height(72.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) BinanceYellow.copy(alpha = 0.12f) else SurfaceVariant)
+            .background(if (selected) Color.White.copy(alpha = 0.10f) else SurfaceVariant)
             .border(
                 1.dp,
-                if (selected) BinanceYellow.copy(alpha = 0.22f) else BorderColor,
+                if (selected) Color.White.copy(alpha = 0.12f) else BorderColor,
                 RoundedCornerShape(12.dp),
             )
             .clickable {}
@@ -374,16 +379,16 @@ private fun ActionTile(
             modifier = Modifier
                 .size(30.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(if (selected) BinanceYellow.copy(alpha = 0.18f) else SurfaceVariant),
+                .background(if (selected) Color.White.copy(alpha = 0.12f) else SurfaceDark),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = label, tint = BinanceYellow, modifier = Modifier.size(17.dp))
+            Icon(icon, contentDescription = label, tint = if (selected) TextPrimary else TextSecondary, modifier = Modifier.size(17.dp))
         }
         Spacer(Modifier.height(6.dp))
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
-            color = if (selected) BinanceYellow else TextSecondary,
+            color = if (selected) TextPrimary else TextSecondary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

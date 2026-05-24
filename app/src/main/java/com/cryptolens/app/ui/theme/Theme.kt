@@ -12,9 +12,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import com.cryptolens.app.features.settings.domain.model.AppTheme
 
-val BinanceYellow: Color get() = Color(0xFFF6C84C)
-val BinanceYellowDark: Color get() = Color(0xFFD8A90B)
-val BinanceYellowLight: Color get() = Color(0xFFFFDF7A)
+val BinanceYellow: Color get() = Color(0xFFE8ECEF)
+val BinanceYellowDark: Color get() = Color(0xFFB7BDC5)
+val BinanceYellowLight: Color get() = Color(0xFFF7F8FA)
 
 private data class CryptoPalette(
     val background: Color,
@@ -31,31 +31,31 @@ private data class CryptoPalette(
 )
 
 private val DarkPalette = CryptoPalette(
-    background = Color(0xFF07090D),
-    surface = Color(0xFF0D1117),
-    surfaceVariant = Color(0xFF151B23),
-    surfaceElevated = Color(0xFF0A0F14),
-    textPrimary = Color(0xFFF7F9FC),
-    textSecondary = Color(0xFF9AA6B5),
-    textTertiary = Color(0xFF667386),
-    greenSurface = Color(0xFF062117),
-    redSurface = Color(0xFF271014),
-    divider = Color(0xFF1A2230),
-    border = Color(0xFF202A38),
+    background = Color(0xFF050607),
+    surface = Color(0xFF111112),
+    surfaceVariant = Color(0xFF1B1C1E),
+    surfaceElevated = Color(0xFF171719),
+    textPrimary = Color(0xFFF4F5F6),
+    textSecondary = Color(0xFFA7ABB0),
+    textTertiary = Color(0xFF6E737A),
+    greenSurface = Color(0xFF13202A),
+    redSurface = Color(0xFF28161B),
+    divider = Color(0xFF222326),
+    border = Color(0xFF303136),
 )
 
 private val LightPalette = CryptoPalette(
-    background = Color(0xFFF7F9FC),
+    background = Color(0xFFF5F5F3),
     surface = Color(0xFFFFFFFF),
-    surfaceVariant = Color(0xFFF0F4F8),
+    surfaceVariant = Color(0xFFEDEDEA),
     surfaceElevated = Color(0xFFFFFFFF),
-    textPrimary = Color(0xFF0B1220),
-    textSecondary = Color(0xFF526071),
-    textTertiary = Color(0xFF8793A4),
-    greenSurface = Color(0xFFE7F8EF),
-    redSurface = Color(0xFFFDECEF),
-    divider = Color(0xFFE7ECF3),
-    border = Color(0xFFDDE5EE),
+    textPrimary = Color(0xFF101113),
+    textSecondary = Color(0xFF5D6269),
+    textTertiary = Color(0xFF8B8F95),
+    greenSurface = Color(0xFFE6F2F7),
+    redSurface = Color(0xFFFFECEF),
+    divider = Color(0xFFE1E1DE),
+    border = Color(0xFFD8D8D4),
 )
 
 private var activePalette by mutableStateOf(DarkPalette)
@@ -69,8 +69,8 @@ val TextPrimary: Color get() = activePalette.textPrimary
 val TextSecondary: Color get() = activePalette.textSecondary
 val TextTertiary: Color get() = activePalette.textTertiary
 
-val GreenUp: Color get() = Color(0xFF0ECB81)
-val RedDown: Color get() = Color(0xFFF6465D)
+val GreenUp: Color get() = Color(0xFF8EC8F6)
+val RedDown: Color get() = Color(0xFFFF7182)
 val GreenUpSurface: Color get() = activePalette.greenSurface
 val RedDownSurface: Color get() = activePalette.redSurface
 
@@ -79,10 +79,10 @@ val BorderColor: Color get() = activePalette.border
 
 private fun darkScheme(palette: CryptoPalette) = darkColorScheme(
     primary = BinanceYellow,
-    onPrimary = Color(0xFF1A1400),
+    onPrimary = Color(0xFF050607),
     primaryContainer = BinanceYellowDark,
     secondary = GreenUp,
-    onSecondary = Color(0xFF001A0F),
+    onSecondary = Color(0xFF071016),
     tertiary = RedDown,
     background = palette.background,
     onBackground = palette.textPrimary,
@@ -96,10 +96,10 @@ private fun darkScheme(palette: CryptoPalette) = darkColorScheme(
 
 private fun lightScheme(palette: CryptoPalette) = lightColorScheme(
     primary = BinanceYellowDark,
-    onPrimary = Color(0xFF1A1400),
+    onPrimary = Color(0xFF050607),
     primaryContainer = BinanceYellowLight,
     secondary = GreenUp,
-    onSecondary = Color(0xFF001A0F),
+    onSecondary = Color(0xFF071016),
     tertiary = RedDown,
     background = palette.background,
     onBackground = palette.textPrimary,
