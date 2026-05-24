@@ -12,6 +12,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,6 +47,10 @@ import com.cryptolens.app.features.wallet.presentation.TrendingWalletsScreen
 import com.cryptolens.app.features.wallet.presentation.WalletWatchlistScreen
 import com.cryptolens.app.features.watchlist.presentation.WatchlistScreen
 import com.cryptolens.app.ui.theme.*
+
+private val isLightNav: Boolean get() = BackgroundDark.luminance() > 0.5f
+private val selectedNavColor: Color get() = if (isLightNav) Color(0xFF1B1C1E) else BinanceYellow
+private val selectedNavIndicator: Color get() = if (isLightNav) Color(0xFFF0F0EC) else SurfaceVariant
 
 sealed class Screen(val route: String) {
     data object Splash          : Screen("splash")
@@ -172,11 +178,11 @@ fun CryptoLensNavHost(
                                 },
                                 label  = { Text(item.label, style = MaterialTheme.typography.labelSmall) },
                                 colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor   = BinanceYellow,
-                                    selectedTextColor   = BinanceYellow,
+                                    selectedIconColor   = selectedNavColor,
+                                    selectedTextColor   = selectedNavColor,
                                     unselectedIconColor = TextSecondary,
                                     unselectedTextColor = TextSecondary,
-                                    indicatorColor      = SurfaceVariant,
+                                    indicatorColor      = selectedNavIndicator,
                                 ),
                             )
                         }

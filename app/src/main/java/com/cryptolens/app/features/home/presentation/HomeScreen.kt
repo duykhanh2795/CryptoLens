@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,6 +35,38 @@ import com.cryptolens.app.features.wallet.domain.model.TrendingWallet
 import com.cryptolens.app.features.wallet.domain.model.WalletChain
 import com.cryptolens.app.features.wallet.presentation.TrendingWalletRow
 import com.cryptolens.app.ui.theme.*
+
+private val homeIsLight: Boolean get() = BackgroundDark.luminance() > 0.5f
+private val homeChromeSurface: Color get() = if (homeIsLight) Color(0xFFFFFFFF) else Color(0xFF18181A)
+private val homePanelSurface: Color get() = if (homeIsLight) Color(0xFFFFFFFF) else Color(0xFF121214)
+private val homeTileSurface: Color get() = if (homeIsLight) Color(0xFFFFFFFF) else Color(0xFF171719)
+private val homeInsetSurface: Color get() = if (homeIsLight) Color(0xFFF0F0EC) else SurfaceVariant
+private val homeActionTint: Color get() = if (homeIsLight) Color(0xFF1B1C1E) else BinanceYellow
+private val homeHeroTextPrimary: Color get() = if (homeIsLight) Color(0xFF151515) else TextPrimary
+private val homeHeroTextSecondary: Color get() = if (homeIsLight) Color(0xFF555A60) else TextSecondary
+private val homeHeroControlSurface: Color get() = if (homeIsLight) Color.Black.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.11f)
+private val homeSuccessText: Color get() = if (homeIsLight) Color(0xFF146D82) else GreenUp
+private val homeDangerText: Color get() = if (homeIsLight) Color(0xFFC44755) else RedDown
+
+private fun walletHeroBrush(): Brush = Brush.linearGradient(
+    colors = if (homeIsLight) {
+        listOf(Color(0xFFFEFEFC), Color(0xFFEDEBE5), Color(0xFFDAD7CF))
+    } else {
+        listOf(Color(0xFF242426), Color(0xFF121214), Color(0xFF0A0A0B))
+    },
+    start = androidx.compose.ui.geometry.Offset.Zero,
+    end = androidx.compose.ui.geometry.Offset(700f, 320f),
+)
+
+private fun referCardBrush(): Brush = Brush.linearGradient(
+    colors = if (homeIsLight) {
+        listOf(Color(0xFFFFFFFF), Color(0xFFF0EFEA), Color(0xFFE3E0D8))
+    } else {
+        listOf(Color(0xFF202022), Color(0xFF141416), Color(0xFF0F0F10))
+    },
+    start = androidx.compose.ui.geometry.Offset.Zero,
+    end = androidx.compose.ui.geometry.Offset(620f, 260f),
+)
 
 @Composable
 fun HomeScreen(
@@ -75,7 +108,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth().height(200.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(color = BinanceYellow, strokeWidth = 2.dp)
+                    CircularProgressIndicator(color = homeActionTint, strokeWidth = 2.dp)
                 }
                 uiState.error != null -> ErrorBanner(
                     message = uiState.error!!,
@@ -126,7 +159,7 @@ private fun TrendingWalletsHomeSection(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFF121214))
+            .background(homePanelSurface)
             .padding(bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -160,7 +193,7 @@ private fun MarketMoveSection(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFF121214))
+            .background(homePanelSurface)
             .padding(bottom = 10.dp),
     ) {
         SectionHeader(title = title, onSeeAll = onSeeAll)
@@ -190,14 +223,18 @@ private fun HomeTopBar(userName: String?, onRefresh: () -> Unit) {
                 .clip(CircleShape)
                 .background(
                     Brush.linearGradient(
-                        listOf(Color(0xFF3A3A3C), Color(0xFF171719)),
+                        if (homeIsLight) {
+                            listOf(Color(0xFF2C2D30), Color(0xFF111214))
+                        } else {
+                            listOf(Color(0xFF3A3A3C), Color(0xFF171719))
+                        },
                     )
                 ),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 userName?.firstOrNull()?.uppercaseChar()?.toString() ?: "C",
-                color = TextPrimary,
+                color = Color.White,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 13.sp,
             )
@@ -207,7 +244,7 @@ private fun HomeTopBar(userName: String?, onRefresh: () -> Unit) {
                 .weight(1f)
                 .height(42.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF18181A))
+                .background(homeChromeSurface)
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -230,7 +267,7 @@ private fun HeaderIconButton(
         modifier = Modifier
             .size(40.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF18181A))
+            .background(homeChromeSurface)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -252,7 +289,7 @@ private fun BankingDashboardGrid() {
                 modifier = Modifier.weight(1f),
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    listOf(Color(0xFF7C6FE8), GreenUp, BinanceYellow, RedDown).forEach { color ->
+                    listOf(Color(0xFF7C6FE8), homeSuccessText, homeActionTint, homeDangerText).forEach { color ->
                         Box(Modifier.size(12.dp).clip(CircleShape).background(color))
                     }
                 }
@@ -292,13 +329,7 @@ private fun WalletHeroCard() {
             .fillMaxWidth()
             .height(154.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(Color(0xFF242426), Color(0xFF121214), Color(0xFF0A0A0B)),
-                    start = androidx.compose.ui.geometry.Offset.Zero,
-                    end = androidx.compose.ui.geometry.Offset(700f, 320f),
-                )
-            )
+            .background(walletHeroBrush())
             .padding(14.dp),
     ) {
         Box(
@@ -311,8 +342,8 @@ private fun WalletHeroCard() {
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color.White.copy(alpha = 0.18f),
-                            Color.White.copy(alpha = 0.055f),
+                            if (homeIsLight) Color.Black.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.18f),
+                            if (homeIsLight) Color.Black.copy(alpha = 0.025f) else Color.White.copy(alpha = 0.055f),
                             Color.Transparent,
                         )
                     )
@@ -323,18 +354,18 @@ private fun WalletHeroCard() {
                 .align(Alignment.TopEnd)
                 .size(30.dp)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.11f)),
+                .background(homeHeroControlSurface),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(17.dp))
+            Icon(Icons.Default.Add, contentDescription = null, tint = homeHeroTextPrimary, modifier = Modifier.size(17.dp))
         }
 
         Column(modifier = Modifier.align(Alignment.CenterStart)) {
-            Text("Wallet", color = TextPrimary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+            Text("Wallet", color = homeHeroTextPrimary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(26.dp))
-            Text("$0.00", color = TextPrimary, style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.SemiBold)
+            Text("$0.00", color = homeHeroTextPrimary, style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
-            Text("Portfolio value", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+            Text("Portfolio value", color = homeHeroTextSecondary, style = MaterialTheme.typography.labelMedium)
         }
 
         Row(
@@ -357,15 +388,15 @@ private fun BankingInfoCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-            modifier = modifier
+        modifier = modifier
             .height(92.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFF171719))
+            .background(homeTileSurface)
             .padding(12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(SurfaceVariant),
+                modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(homeInsetSurface),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(15.dp))
@@ -387,12 +418,12 @@ private fun SmallServiceCard(label: String, icon: ImageVector, modifier: Modifie
         modifier = modifier
             .height(76.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFF171719))
+            .background(homeTileSurface)
             .padding(12.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Box(
-            modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(SurfaceVariant),
+            modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(homeInsetSurface),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(15.dp))
@@ -407,7 +438,7 @@ private fun MiniActionButton(icon: ImageVector) {
         modifier = Modifier
             .size(38.dp)
             .clip(RoundedCornerShape(13.dp))
-            .background(Color(0xFF171719))
+            .background(homeTileSurface)
             .clickable {},
         contentAlignment = Alignment.Center,
     ) {
@@ -422,13 +453,7 @@ private fun ReferCard(modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .height(112.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(Color(0xFF202022), Color(0xFF141416), Color(0xFF0F0F10)),
-                    start = androidx.compose.ui.geometry.Offset.Zero,
-                    end = androidx.compose.ui.geometry.Offset(620f, 260f),
-                )
-            )
+            .background(referCardBrush())
             .padding(12.dp),
     ) {
         Column(
@@ -448,7 +473,7 @@ private fun ReferCard(modifier: Modifier = Modifier) {
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White.copy(alpha = 0.10f))
+                    .background(if (homeIsLight) Color.Black.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.10f))
                     .padding(horizontal = 10.dp, vertical = 6.dp),
             ) {
                 Text("Learn more", color = TextPrimary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
@@ -463,8 +488,8 @@ private fun ReferCard(modifier: Modifier = Modifier) {
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            Color.White.copy(alpha = 0.15f),
-                            Color.White.copy(alpha = 0.04f),
+                            if (homeIsLight) Color.Black.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.15f),
+                            if (homeIsLight) Color.Black.copy(alpha = 0.025f) else Color.White.copy(alpha = 0.04f),
                             Color.Transparent,
                         )
                     )
@@ -476,7 +501,7 @@ private fun ReferCard(modifier: Modifier = Modifier) {
                 .offset(x = (-8).dp, y = (-4).dp)
                 .size(38.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color.White.copy(alpha = 0.10f)),
+                .background(if (homeIsLight) Color.Black.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.10f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Default.ArrowOutward, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(18.dp))
@@ -687,9 +712,9 @@ private fun TrendingSectionHeader(onSeeAll: () -> Unit) {
             Text("Live prices and momentum", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
         }
         TextButton(onClick = onSeeAll, contentPadding = PaddingValues(0.dp)) {
-            Text("See All", color = BinanceYellow, style = MaterialTheme.typography.labelLarge)
+            Text("See All", color = homeActionTint, style = MaterialTheme.typography.labelLarge)
             Icon(Icons.Default.ChevronRight, contentDescription = null,
-                tint = BinanceYellow, modifier = Modifier.size(16.dp))
+                tint = homeActionTint, modifier = Modifier.size(16.dp))
         }
     }
 }
@@ -704,9 +729,9 @@ private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
             fontWeight = FontWeight.Bold, color = TextPrimary)
         Spacer(Modifier.weight(1f))
         TextButton(onClick = onSeeAll, contentPadding = PaddingValues(0.dp)) {
-            Text("More", color = BinanceYellow, style = MaterialTheme.typography.labelLarge)
+            Text("More", color = homeActionTint, style = MaterialTheme.typography.labelLarge)
             Icon(Icons.Default.ChevronRight, contentDescription = null,
-                tint = BinanceYellow, modifier = Modifier.size(16.dp))
+                tint = homeActionTint, modifier = Modifier.size(16.dp))
         }
     }
 }
@@ -719,7 +744,7 @@ private fun TrendingRow(coins: List<Coin>, onCoinClick: (String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFF121214))
+            .background(homePanelSurface)
             .padding(vertical = 12.dp),
     ) {
         LazyRow(
@@ -739,7 +764,7 @@ private fun TrendingCoinCard(coin: Coin, onClick: () -> Unit) {
         modifier = Modifier
             .width(142.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFF1A1A1D))
+            .background(homeTileSurface)
             .clickable(onClick = onClick)
             .padding(12.dp),
     ) {
@@ -792,7 +817,7 @@ private fun CompactCoinRow(coin: Coin, onCoinClick: () -> Unit, modifier: Modifi
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF171719))
+            .background(homeTileSurface)
             .clickable(onClick = onCoinClick)
             .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -823,13 +848,13 @@ private fun PercentPill(text: String, positive: Boolean) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(99.dp))
-            .background((if (positive) GreenUp else RedDown).copy(alpha = 0.12f))
+            .background(if (positive) GreenUpSurface else RedDownSurface)
             .padding(horizontal = 7.dp, vertical = 3.dp),
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall,
-            color = if (positive) GreenUp else RedDown,
+            color = if (positive) homeSuccessText else homeDangerText,
             fontWeight = FontWeight.SemiBold,
         )
     }
@@ -850,8 +875,8 @@ private fun ErrorBanner(message: String, onRetry: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         OutlinedButton(
             onClick = onRetry,
-            border  = BorderStroke(1.dp, BinanceYellow),
-            colors  = ButtonDefaults.outlinedButtonColors(contentColor = BinanceYellow),
+            border  = BorderStroke(1.dp, homeActionTint),
+            colors  = ButtonDefaults.outlinedButtonColors(contentColor = homeActionTint),
             shape   = RoundedCornerShape(8.dp),
         ) { Text("Retry") }
     }
@@ -872,11 +897,11 @@ private fun AiInsightBanner() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier.size(44.dp).clip(CircleShape)
-                    .background(BinanceYellow.copy(alpha = 0.15f)),
+                    .background(homeActionTint.copy(alpha = if (homeIsLight) 0.08f else 0.15f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Default.AutoAwesome, contentDescription = null,
-                    tint = BinanceYellow, modifier = Modifier.size(22.dp))
+                    tint = homeActionTint, modifier = Modifier.size(22.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
@@ -885,7 +910,7 @@ private fun AiInsightBanner() {
                 Text("Get AI-powered Buy/Sell signals in Vietnamese",
                     style = MaterialTheme.typography.labelSmall, color = TextSecondary)
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = BinanceYellow)
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = homeActionTint)
         }
     }
 }
