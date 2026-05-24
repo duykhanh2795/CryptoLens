@@ -12,9 +12,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import com.cryptolens.app.features.settings.domain.model.AppTheme
 
-val BinanceYellow: Color get() = Color(0xFFF0B90B)
-val BinanceYellowDark: Color get() = Color(0xFFD4A200)
-val BinanceYellowLight: Color get() = Color(0xFFF5CC3D)
+val BinanceYellow: Color get() = Color(0xFFF6C84C)
+val BinanceYellowDark: Color get() = Color(0xFFD8A90B)
+val BinanceYellowLight: Color get() = Color(0xFFFFDF7A)
 
 private data class CryptoPalette(
     val background: Color,
@@ -31,31 +31,31 @@ private data class CryptoPalette(
 )
 
 private val DarkPalette = CryptoPalette(
-    background = Color(0xFF0A0D12),
-    surface = Color(0xFF121820),
-    surfaceVariant = Color(0xFF1A222D),
-    surfaceElevated = Color(0xFF10161D),
-    textPrimary = Color(0xFFF4F7FB),
-    textSecondary = Color(0xFF96A0AE),
-    textTertiary = Color(0xFF687384),
-    greenSurface = Color(0xFF08251B),
-    redSurface = Color(0xFF2A1015),
-    divider = Color(0xFF202936),
-    border = Color(0xFF273241),
+    background = Color(0xFF07090D),
+    surface = Color(0xFF0D1117),
+    surfaceVariant = Color(0xFF151B23),
+    surfaceElevated = Color(0xFF0A0F14),
+    textPrimary = Color(0xFFF7F9FC),
+    textSecondary = Color(0xFF9AA6B5),
+    textTertiary = Color(0xFF667386),
+    greenSurface = Color(0xFF062117),
+    redSurface = Color(0xFF271014),
+    divider = Color(0xFF1A2230),
+    border = Color(0xFF202A38),
 )
 
 private val LightPalette = CryptoPalette(
-    background = Color(0xFFF6F8FB),
+    background = Color(0xFFF7F9FC),
     surface = Color(0xFFFFFFFF),
-    surfaceVariant = Color(0xFFEDF2F7),
+    surfaceVariant = Color(0xFFF0F4F8),
     surfaceElevated = Color(0xFFFFFFFF),
-    textPrimary = Color(0xFF111827),
-    textSecondary = Color(0xFF5D6676),
-    textTertiary = Color(0xFF8792A2),
-    greenSurface = Color(0xFFE8F7F0),
+    textPrimary = Color(0xFF0B1220),
+    textSecondary = Color(0xFF526071),
+    textTertiary = Color(0xFF8793A4),
+    greenSurface = Color(0xFFE7F8EF),
     redSurface = Color(0xFFFDECEF),
-    divider = Color(0xFFE5EAF1),
-    border = Color(0xFFD8E0EA),
+    divider = Color(0xFFE7ECF3),
+    border = Color(0xFFDDE5EE),
 )
 
 private var activePalette by mutableStateOf(DarkPalette)

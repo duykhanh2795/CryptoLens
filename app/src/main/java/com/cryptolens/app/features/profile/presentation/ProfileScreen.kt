@@ -63,8 +63,9 @@ fun ProfileScreen(
         ) {
             // ── Top Bar ────────────────────────────────────────────────────
             Row(
-                modifier = Modifier.fillMaxWidth().background(SurfaceElevated)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                modifier = Modifier.fillMaxWidth()
+                    .background(BackgroundDark)
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("Profile", style = MaterialTheme.typography.titleLarge,
@@ -81,7 +82,12 @@ fun ProfileScreen(
 
             // ── Avatar & Account Info ──────────────────────────────────────
             Column(
-                modifier = Modifier.fillMaxWidth().background(SurfaceDark)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(SurfaceDark)
+                    .border(1.dp, BorderColor.copy(alpha = 0.85f), RoundedCornerShape(18.dp))
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -139,7 +145,7 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
 
             // ── Account Section ────────────────────────────────────────────
             ProfileSectionHeader("Account")
@@ -245,11 +251,11 @@ fun ProfileScreen(
             Spacer(Modifier.height(16.dp))
 
             // ── Logout Button ──────────────────────────────────────────────
-            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
                 OutlinedButton(
                     onClick  = { viewModel.onEvent(ProfileEvent.ShowLogoutDialog) },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape    = RoundedCornerShape(8.dp),
+                    shape    = RoundedCornerShape(14.dp),
                     enabled  = !uiState.isLoading,
                     border   = BorderStroke(1.dp, RedDown),
                     colors   = ButtonDefaults.outlinedButtonColors(contentColor = RedDown),
@@ -519,7 +525,7 @@ private fun ProfileSectionHeader(title: String) {
         text     = title.uppercase(),
         style    = MaterialTheme.typography.labelSmall,
         color    = TextTertiary,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp),
         letterSpacing = 1.sp,
     )
 }
@@ -536,13 +542,16 @@ private fun ProfileMenuItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier.size(36.dp).clip(RoundedCornerShape(8.dp))
+            modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp))
                 .background(SurfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
@@ -563,6 +572,4 @@ private fun ProfileMenuItem(
         Icon(Icons.Default.ChevronRight, contentDescription = null,
             tint = TextTertiary, modifier = Modifier.size(18.dp))
     }
-    HorizontalDivider(color = DividerColor, thickness = 0.5.dp,
-        modifier = Modifier.padding(start = 66.dp))
 }

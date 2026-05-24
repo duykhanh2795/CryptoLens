@@ -48,7 +48,7 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
-            .padding(horizontal = 12.dp)
+            .padding(horizontal = 16.dp)
     ) {
         // ── Top Bar ────────────────────────────────────────────────────────
         HomeTopBar(
@@ -60,7 +60,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // ── Portfolio Banner ───────────────────────────────────────────
             PortfolioBanner()
@@ -124,9 +124,9 @@ private fun TrendingWalletsHomeSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor, RoundedCornerShape(16.dp))
+            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
             .padding(bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -159,9 +159,9 @@ private fun MarketMoveSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor, RoundedCornerShape(16.dp))
+            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
             .padding(bottom = 10.dp),
     ) {
         SectionHeader(title = title, onSeeAll = onSeeAll)
@@ -181,12 +181,12 @@ private fun HomeTopBar(userName: String?, onRefresh: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 4.dp),
+            .padding(top = 10.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
             Box(
-                modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(BinanceYellow),
+                modifier = Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(BinanceYellow),
                 contentAlignment = Alignment.Center,
             ) {
                 Text("CL", color = Color(0xFF1A1400), fontWeight = FontWeight.ExtraBold, fontSize = 11.sp)
@@ -220,24 +220,24 @@ private fun PortfolioBanner() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(18.dp))
             .background(
                 Brush.horizontalGradient(
                     listOf(
-                        Color(0xFF171F2A),
-                        Color(0xFF111820),
-                        Color(0xFF17150E),
+                        Color(0xFF101722),
+                        Color(0xFF0D1117),
+                        Color(0xFF121417),
                     )
                 )
             )
-            .border(1.dp, BinanceYellow.copy(alpha = 0.18f), RoundedCornerShape(22.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.07f), RoundedCornerShape(18.dp))
             .padding(horizontal = 18.dp, vertical = 16.dp),
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("CryptoLens Balance", style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+                        Text("Portfolio Value", style = MaterialTheme.typography.labelMedium, color = TextSecondary)
                         Spacer(Modifier.width(8.dp))
                         BalanceChip("USD")
                     }
@@ -252,9 +252,9 @@ private fun PortfolioBanner() {
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(Color.White.copy(alpha = 0.08f))
-                        .border(1.dp, Color.White.copy(alpha = 0.10f), RoundedCornerShape(14.dp)),
+                        .border(1.dp, Color.White.copy(alpha = 0.10f), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -331,9 +331,9 @@ private fun QuickActionsRow() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(SurfaceVariant)
-            .border(1.dp, BorderColor, RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(14.dp))
+            .background(SurfaceDark)
+            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
             .padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -358,12 +358,12 @@ private fun ActionTile(
     Column(
         modifier = modifier
             .height(72.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (selected) BinanceYellow.copy(alpha = 0.14f) else SurfaceDark)
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (selected) BinanceYellow.copy(alpha = 0.12f) else SurfaceVariant)
             .border(
                 1.dp,
                 if (selected) BinanceYellow.copy(alpha = 0.22f) else BorderColor,
-                RoundedCornerShape(14.dp),
+                RoundedCornerShape(12.dp),
             )
             .clickable {}
             .padding(horizontal = 6.dp, vertical = 10.dp),
@@ -435,9 +435,9 @@ private fun TrendingRow(coins: List<Coin>, onCoinClick: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor, RoundedCornerShape(18.dp))
+            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
             .padding(vertical = 12.dp),
     ) {
         LazyRow(
@@ -456,9 +456,9 @@ private fun TrendingCoinCard(coin: Coin, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .width(142.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceVariant)
-            .border(1.dp, BorderColor, RoundedCornerShape(16.dp))
+            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(12.dp),
     ) {
@@ -510,9 +510,9 @@ private fun CompactCoinRow(coin: Coin, onCoinClick: () -> Unit, modifier: Modifi
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(13.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(SurfaceVariant)
-            .border(1.dp, BorderColor, RoundedCornerShape(13.dp))
+            .border(1.dp, BorderColor, RoundedCornerShape(12.dp))
             .clickable(onClick = onCoinClick)
             .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -584,9 +584,9 @@ private fun AiInsightBanner() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceVariant)
-            .border(1.dp, BorderColor, RoundedCornerShape(16.dp))
+            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
             .clickable {}
             .padding(16.dp),
     ) {

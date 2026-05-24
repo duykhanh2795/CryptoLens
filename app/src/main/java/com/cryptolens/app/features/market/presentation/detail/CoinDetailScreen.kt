@@ -170,7 +170,12 @@ private fun CoinDetailContent(
             onWatchlistToggle = onWatchlistToggle,
         )
 
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 14.dp),
+        ) {
             PriceHeader(
                 displayPrice = displayPrice,
                 displayPct   = displayPct,
@@ -202,8 +207,11 @@ private fun CoinDetailContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(top = 8.dp)
                     .height(280.dp)
-                    .background(SurfaceDark),
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(SurfaceDark)
+                    .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp)),
             ) {
                 if (isKlinesLoading) {
                     CircularProgressIndicator(
@@ -233,9 +241,9 @@ private fun CoinDetailContent(
             }
 
             IntervalSelector(selected = selectedInterval, onSelect = onIntervalChange)
-            HorizontalDivider(color = DividerColor)
+            Spacer(Modifier.height(10.dp))
             QuickStatsRow(coin = coin)
-            HorizontalDivider(color = DividerColor)
+            Spacer(Modifier.height(10.dp))
             if (portfolioAsset != null) {
                 YourHoldingsSection(
                     asset = portfolioAsset,
@@ -243,10 +251,10 @@ private fun CoinDetailContent(
                     currentPrice = displayPrice,
                     onOpenPortfolio = onOpenPortfolio,
                 )
-                HorizontalDivider(color = DividerColor)
+                Spacer(Modifier.height(10.dp))
             }
             MarketInfoSection(coin = coin, coinDetail = coinDetail)
-            HorizontalDivider(color = DividerColor)
+            Spacer(Modifier.height(10.dp))
             CoinNewsSection(
                 symbol = coin.symbol,
                 news = relatedNews,
@@ -254,7 +262,7 @@ private fun CoinDetailContent(
                 error = newsError,
                 onSeeAll = { onSeeAllNews(coin.symbol) },
             )
-            HorizontalDivider(color = DividerColor)
+            Spacer(Modifier.height(10.dp))
 
             if (coinDetail.description.isNotBlank()) {
                 AboutSection(description = coinDetail.description)
@@ -278,7 +286,10 @@ private fun ChartControlsRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -410,7 +421,10 @@ private fun FuturesSentimentPanel(sentiment: FuturesSentiment) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -502,7 +516,10 @@ private fun FuturesInfoPanel(info: FuturesMarketInfo) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -575,7 +592,10 @@ private fun ChartNotice(message: String) {
         style = MaterialTheme.typography.labelMedium,
         modifier = Modifier
             .fillMaxWidth()
-            .background(SurfaceDark)
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(BinanceYellow.copy(alpha = 0.08f))
+            .border(1.dp, BinanceYellow.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
             .padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
@@ -588,7 +608,10 @@ private fun AlertQuickActionsRow(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         Text(
@@ -630,9 +653,12 @@ private fun AlertQuickActionButton(
     OutlinedButton(
         onClick = onClick,
         modifier = modifier.height(40.dp),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, BinanceYellow.copy(alpha = 0.8f)),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = BinanceYellow),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, BorderColor.copy(alpha = 0.95f)),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = SurfaceVariant.copy(alpha = 0.55f),
+            contentColor = BinanceYellow,
+        ),
         contentPadding = PaddingValues(horizontal = 8.dp),
     ) {
         Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -653,8 +679,8 @@ private fun CoinDetailTopBar(
     Row(
         modifier          = Modifier
             .fillMaxWidth()
-            .background(SurfaceElevated)
-            .padding(horizontal = 4.dp, vertical = 4.dp),
+            .background(BackgroundDark)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
@@ -715,7 +741,10 @@ private fun PriceHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(top = 4.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.78f), RoundedCornerShape(16.dp))
             .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
         if (isLive) {
@@ -799,7 +828,10 @@ private fun IntervalSelector(
     Row(
         modifier              = Modifier
             .fillMaxWidth()
+            .padding(top = 8.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceAround,
     ) {
@@ -831,7 +863,9 @@ private fun QuickStatsRow(coin: Coin) {
     Row(
         modifier              = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -877,7 +911,9 @@ private fun YourHoldingsSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -965,7 +1001,9 @@ private fun MarketInfoSection(coin: Coin, coinDetail: CoinDetail) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
         Text(
@@ -1050,7 +1088,9 @@ private fun AboutSection(description: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
         Text(
@@ -1092,9 +1132,9 @@ private fun AboutSection(description: String) {
 @Composable
 private fun BuySellBar(symbol: String, onOpenPortfolio: () -> Unit) {
     Surface(
-        color           = SurfaceElevated,
+        color           = BackgroundDark,
         tonalElevation  = 0.dp,
-        shadowElevation = 8.dp,
+        shadowElevation = 0.dp,
     ) {
         Row(
             modifier = Modifier
@@ -1106,7 +1146,7 @@ private fun BuySellBar(symbol: String, onOpenPortfolio: () -> Unit) {
             Button(
                 onClick  = onOpenPortfolio,
                 modifier = Modifier.weight(1f).height(48.dp),
-                shape    = RoundedCornerShape(8.dp),
+                shape    = RoundedCornerShape(12.dp),
                 colors   = ButtonDefaults.buttonColors(
                     containerColor = GreenUp,
                     contentColor   = Color.White,
@@ -1120,9 +1160,12 @@ private fun BuySellBar(symbol: String, onOpenPortfolio: () -> Unit) {
             OutlinedButton(
                 onClick  = onOpenPortfolio,
                 modifier = Modifier.weight(1f).height(48.dp),
-                shape    = RoundedCornerShape(8.dp),
-                border   = BorderStroke(1.dp, RedDown),
-                colors   = ButtonDefaults.outlinedButtonColors(contentColor = RedDown),
+                shape    = RoundedCornerShape(12.dp),
+                border   = BorderStroke(1.dp, RedDown.copy(alpha = 0.72f)),
+                colors   = ButtonDefaults.outlinedButtonColors(
+                    containerColor = SurfaceDark,
+                    contentColor = RedDown,
+                ),
             ) {
                 Icon(Icons.Default.Remove, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
@@ -1145,7 +1188,9 @@ private fun CoinNewsSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(vertical = 10.dp),
     ) {
         Row(

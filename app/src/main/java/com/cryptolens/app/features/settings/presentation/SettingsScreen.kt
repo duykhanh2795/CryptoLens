@@ -68,8 +68,8 @@ fun SettingsScreen(
             Row(
                 modifier          = Modifier
                     .fillMaxWidth()
-                    .background(SurfaceElevated)
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                    .background(BackgroundDark)
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onNavigateBack) {
@@ -113,6 +113,7 @@ private fun SettingsContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
     ) {
         // ── Display ────────────────────────────────────────────────────────
         SettingsSectionHeader("Display")
@@ -211,7 +212,7 @@ private fun SettingsSectionHeader(title: String) {
         color     = TextTertiary,
         modifier  = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 6.dp),
+            .padding(start = 4.dp, end = 4.dp, top = 20.dp, bottom = 8.dp),
         letterSpacing = 1.sp,
     )
 }
@@ -391,7 +392,10 @@ private fun ToggleSettingItem(
     Row(
         modifier          = Modifier
             .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .clickable { onCheckedChange(!checked) }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -399,7 +403,7 @@ private fun ToggleSettingItem(
         Box(
             modifier         = Modifier
                 .size(36.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(10.dp))
                 .background(SurfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
@@ -423,11 +427,6 @@ private fun ToggleSettingItem(
             ),
         )
     }
-    HorizontalDivider(
-        color    = DividerColor,
-        thickness = 0.5.dp,
-        modifier  = Modifier.padding(start = 66.dp),
-    )
 }
 
 // ── Info Setting ──────────────────────────────────────────────────────────────
@@ -441,14 +440,17 @@ private fun InfoSettingItem(
     Row(
         modifier          = Modifier
             .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier         = Modifier
                 .size(36.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(10.dp))
                 .background(SurfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
@@ -469,11 +471,6 @@ private fun InfoSettingItem(
             color = TextSecondary,
         )
     }
-    HorizontalDivider(
-        color    = DividerColor,
-        thickness = 0.5.dp,
-        modifier  = Modifier.padding(start = 66.dp),
-    )
 }
 
 // ── Settings Row (clickable with trailing) ────────────────────────────────────
@@ -489,7 +486,10 @@ private fun SettingsRow(
     Row(
         modifier          = Modifier
             .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -497,7 +497,7 @@ private fun SettingsRow(
         Box(
             modifier         = Modifier
                 .size(36.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(10.dp))
                 .background(SurfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
@@ -512,11 +512,6 @@ private fun SettingsRow(
         }
         trailing()
     }
-    HorizontalDivider(
-        color    = DividerColor,
-        thickness = 0.5.dp,
-        modifier  = Modifier.padding(start = 66.dp),
-    )
 }
 
 // ── Generic Selection Dialog ──────────────────────────────────────────────────

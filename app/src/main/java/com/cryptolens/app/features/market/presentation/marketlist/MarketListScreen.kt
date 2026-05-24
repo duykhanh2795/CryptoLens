@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -53,16 +54,23 @@ fun MarketListScreen(
         Row(
             modifier          = Modifier
                 .fillMaxWidth()
-                .background(SurfaceElevated)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .background(BackgroundDark)
+                .padding(horizontal = 18.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text       = "Markets",
-                style      = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color      = TextPrimary,
-            )
+            Column {
+                Text(
+                    text = "Markets",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                )
+                Text(
+                    text = "Live crypto prices",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextTertiary,
+                )
+            }
             Spacer(Modifier.weight(1f))
             IconButton(onClick = onNavigateToWatchlist) {
                 Icon(
@@ -80,10 +88,11 @@ fun MarketListScreen(
         Row(
             modifier          = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .padding(horizontal = 18.dp, vertical = 6.dp)
+                .clip(RoundedCornerShape(14.dp))
                 .background(SurfaceVariant)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -147,7 +156,7 @@ fun MarketListScreen(
                     color     = BinanceYellow,
                 )
             },
-            divider = { HorizontalDivider(color = DividerColor) },
+            divider = {},
         ) {
             tabs.forEach { (tab, label) ->
                 Tab(
@@ -168,7 +177,7 @@ fun MarketListScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
             Text("Name",       style = MaterialTheme.typography.labelSmall, color = TextTertiary,
                 modifier = Modifier.weight(1f))
@@ -177,7 +186,7 @@ fun MarketListScreen(
             Text("24h Change", style = MaterialTheme.typography.labelSmall, color = TextTertiary,
                 modifier = Modifier.width(80.dp), textAlign = TextAlign.End)
         }
-        HorizontalDivider(color = DividerColor)
+        HorizontalDivider(color = DividerColor.copy(alpha = 0.7f))
 
         // ── Content ────────────────────────────────────────────────────────
         when {
@@ -191,14 +200,16 @@ fun MarketListScreen(
                     onRetry = { viewModel.onEvent(MarketListEvent.Refresh) },
                 )
             else ->
-                LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
+                LazyColumn(
+                    contentPadding = PaddingValues(start = 10.dp, end = 10.dp, bottom = 88.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     items(filteredCoins, key = { it.id }) { coin ->
                         CoinListItem(
                             coin          = coin,
                             isWatchlisted = coin.id in uiState.watchlistedIds,
                             onClick       = { onCoinClick(coin.id) },
                         )
-                        HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
                     }
                 }
         }
@@ -218,8 +229,11 @@ private fun CoinListItem(
     Row(
         modifier          = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(SurfaceDark)
+            .border(1.dp, BorderColor, RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Coin icon + name
@@ -291,7 +305,7 @@ private fun CoinListItem(
         Box(
             modifier         = Modifier
                 .width(80.dp)
-                .clip(RoundedCornerShape(4.dp))
+                .clip(RoundedCornerShape(9.dp))
                 .background(if (isPositive) GreenUpSurface else RedDownSurface)
                 .padding(vertical = 8.dp),
             contentAlignment = Alignment.Center,

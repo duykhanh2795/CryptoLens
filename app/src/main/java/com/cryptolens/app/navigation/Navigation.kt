@@ -148,7 +148,7 @@ fun CryptoLensNavHost(
                     exit    = slideOutVertically { it } + fadeOut(tween(200)),
                 ) {
                     NavigationBar(
-                        containerColor = SurfaceElevated,
+                        containerColor = BackgroundDark,
                         tonalElevation = 0.dp,
                     ) {
                         bottomNavItems.forEach { item ->
@@ -176,7 +176,7 @@ fun CryptoLensNavHost(
                                     selectedTextColor   = BinanceYellow,
                                     unselectedIconColor = TextSecondary,
                                     unselectedTextColor = TextSecondary,
-                                    indicatorColor      = BinanceYellow.copy(alpha = 0.12f),
+                                    indicatorColor      = SurfaceVariant,
                                 ),
                             )
                         }

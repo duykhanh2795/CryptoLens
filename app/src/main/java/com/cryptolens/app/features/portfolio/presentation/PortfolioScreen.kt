@@ -106,12 +106,12 @@ fun PortfolioScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .background(BackgroundDark)
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = 16.dp),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp, bottom = 4.dp),
+                    .padding(top = 14.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("Portfolio", style = MaterialTheme.typography.titleLarge,
@@ -161,27 +161,33 @@ fun PortfolioScreen(
 
                     TabRow(
                         selectedTabIndex = PortfolioTab.entries.indexOf(uiState.selectedTab),
-                        containerColor   = BackgroundDark,
+                        containerColor   = SurfaceDark,
                         contentColor     = BinanceYellow,
+                        modifier = Modifier
+                            .padding(top = 12.dp, bottom = 10.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(14.dp)),
                         indicator = { tabs ->
                             val idx = PortfolioTab.entries.indexOf(uiState.selectedTab)
-                    TabRowDefaults.SecondaryIndicator(
-                        modifier = Modifier.tabIndicatorOffset(tabs[idx]),
-                        height = 2.dp,
-                        color = BinanceYellow,
-                    )
-                },
-                divider = { HorizontalDivider(color = DividerColor) },
+                            TabRowDefaults.SecondaryIndicator(
+                                modifier = Modifier.tabIndicatorOffset(tabs[idx]),
+                                height = 2.dp,
+                                color = BinanceYellow,
+                            )
+                        },
+                        divider = {},
                     ) {
                         PortfolioTab.entries.forEach { tab ->
+                            val selected = uiState.selectedTab == tab
                             Tab(
-                                selected = uiState.selectedTab == tab,
+                                selected = selected,
                                 onClick  = { viewModel.onEvent(PortfolioEvent.TabSelected(tab)) },
                                 text = {
                                     Text(
                                         tab.name.lowercase().replaceFirstChar { it.uppercase() },
-                                        color = if (uiState.selectedTab == tab) BinanceYellow else TextSecondary,
+                                        color = if (selected) TextPrimary else TextSecondary,
                                         style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                                     )
                                 }
                             )
@@ -344,9 +350,9 @@ private fun PortfolioTimelineCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 12.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor, RoundedCornerShape(16.dp))
+            .border(1.dp, BorderColor.copy(alpha = 0.78f), RoundedCornerShape(14.dp))
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -464,9 +470,9 @@ private fun PortfolioSummaryCard(summary: PortfolioSummary) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(SurfaceDark)
-            .border(1.dp, BorderColor, RoundedCornerShape(18.dp))
+            .border(1.dp, BorderColor.copy(alpha = 0.78f), RoundedCornerShape(16.dp))
             .padding(horizontal = 20.dp, vertical = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
