@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.automirrored.filled.SendToMobile
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -63,10 +64,9 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // ── Portfolio Banner ───────────────────────────────────────────
-            PortfolioBanner()
+            BankingDashboardGrid()
 
             // ── Quick Actions ──────────────────────────────────────────────
-            QuickActionsRow()
 
             // ── Market Overview ────────────────────────────────────────────
             when {
@@ -181,43 +181,252 @@ private fun HomeTopBar(userName: String?, onRefresh: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 8.dp),
+            .padding(top = 10.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceVariant)
-                    .border(1.dp, BorderColor, RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("CL", color = TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 11.sp)
-            }
-            Spacer(Modifier.width(10.dp))
-            Column {
-                Text(
-                    if (userName != null) "Hello, $userName" else "CryptoLens",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
-                )
-                if (userName != null) {
-                    Text("Market dashboard", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-                }
-            }
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(SurfaceVariant)
+                .border(1.dp, Color.White.copy(alpha = 0.10f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                userName?.firstOrNull()?.uppercaseChar()?.toString() ?: "C",
+                color = TextPrimary,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 13.sp,
+            )
         }
-        IconButton(onClick = onRefresh) {
-            Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TextSecondary)
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .height(42.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(SurfaceDark)
+                .border(1.dp, BorderColor.copy(alpha = 0.75f), RoundedCornerShape(12.dp))
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Default.Search, contentDescription = null, tint = TextTertiary, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Search assets, wallets", color = TextTertiary, style = MaterialTheme.typography.labelLarge)
         }
-        IconButton(onClick = {}) {
-            Icon(Icons.Default.NotificationsNone, contentDescription = "Notifications", tint = TextPrimary)
-        }
+        HeaderIconButton(icon = Icons.Default.Refresh, contentDescription = "Refresh", onClick = onRefresh)
+        HeaderIconButton(icon = Icons.Default.NotificationsNone, contentDescription = "Notifications", onClick = {})
+    }
+}
+
+@Composable
+private fun HeaderIconButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.75f), RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = contentDescription, tint = TextSecondary, modifier = Modifier.size(18.dp))
     }
 }
 
 // ── Portfolio Banner ──────────────────────────────────────────────────────────
+
+@Composable
+private fun BankingDashboardGrid() {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        WalletHeroCard()
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            BankingInfoCard(
+                title = "Transactions",
+                subtitle = "Synced activity",
+                icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                modifier = Modifier.weight(1f),
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    listOf(Color(0xFF7C6FE8), GreenUp, BinanceYellow, RedDown).forEach { color ->
+                        Box(Modifier.size(12.dp).clip(CircleShape).background(color))
+                    }
+                }
+            }
+            BankingInfoCard(
+                title = "Cashflow",
+                subtitle = "Portfolio sources",
+                icon = Icons.Default.AccountBalanceWallet,
+                modifier = Modifier.weight(1f),
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy((-6).dp)) {
+                    MiniAssetCoin("B", Color(0xFF3A3A3D))
+                    MiniAssetCoin("E", Color(0xFF555A62))
+                    MiniAssetCoin("U", Color(0xFF757B84))
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            SmallServiceCard("Convert", Icons.Default.SwapHoriz, Modifier.weight(1f))
+            SmallServiceCard("AI Services", Icons.Default.AutoAwesome, Modifier.weight(1f))
+            ReferCard(Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun WalletHeroCard() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(170.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(Color(0xFF313133), Color(0xFF171719), Color(0xFF0D0D0E)),
+                    start = androidx.compose.ui.geometry.Offset.Zero,
+                    end = androidx.compose.ui.geometry.Offset(820f, 360f),
+                )
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.11f), RoundedCornerShape(22.dp))
+            .padding(16.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(30.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.08f))
+                .border(1.dp, Color.White.copy(alpha = 0.10f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(17.dp))
+        }
+
+        Column(modifier = Modifier.align(Alignment.CenterStart)) {
+            Text("Wallet", color = TextPrimary, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(24.dp))
+            Text("$0.00", color = TextPrimary, style = MaterialTheme.typography.displayLarge, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(4.dp))
+            Text("Portfolio value", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+        }
+
+        Row(
+            modifier = Modifier.align(Alignment.BottomEnd),
+            horizontalArrangement = Arrangement.spacedBy((-7).dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            MiniAssetCoin("B", Color(0xFF4A4A4D))
+            MiniAssetCoin("E", Color(0xFF6D737C))
+        }
+    }
+}
+
+@Composable
+private fun BankingInfoCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .height(104.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(16.dp))
+            .padding(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(SurfaceVariant),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(15.dp))
+            }
+            Spacer(Modifier.weight(1f))
+            Icon(Icons.Default.MoreHoriz, contentDescription = null, tint = TextTertiary, modifier = Modifier.size(18.dp))
+        }
+        Spacer(Modifier.height(9.dp))
+        Text(title, color = TextPrimary, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+        Text(subtitle, color = TextTertiary, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+        Spacer(Modifier.weight(1f))
+        content()
+    }
+}
+
+@Composable
+private fun SmallServiceCard(label: String, icon: ImageVector, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .height(86.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(SurfaceDark)
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(16.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Box(
+            modifier = Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(SurfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(15.dp))
+        }
+        Text(label, color = TextPrimary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, maxLines = 1)
+    }
+}
+
+@Composable
+private fun ReferCard(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .height(86.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(Color(0xFF252527), Color(0xFF121214)),
+                    start = androidx.compose.ui.geometry.Offset.Zero,
+                    end = androidx.compose.ui.geometry.Offset(240f, 180f),
+                )
+            )
+            .border(1.dp, BorderColor.copy(alpha = 0.72f), RoundedCornerShape(16.dp))
+            .padding(12.dp),
+    ) {
+        Column(Modifier.align(Alignment.TopStart)) {
+            Text("Refer", color = TextPrimary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+            Text("Earn", color = TextTertiary, style = MaterialTheme.typography.labelSmall)
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(34.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(Color.White.copy(alpha = 0.08f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Default.ArrowOutward, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun MiniAssetCoin(text: String, color: Color) {
+    Box(
+        modifier = Modifier
+            .size(26.dp)
+            .clip(CircleShape)
+            .background(color)
+            .border(1.dp, Color.Black.copy(alpha = 0.35f), CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, color = Color.White, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+    }
+}
 
 @Composable
 private fun PortfolioBanner() {
