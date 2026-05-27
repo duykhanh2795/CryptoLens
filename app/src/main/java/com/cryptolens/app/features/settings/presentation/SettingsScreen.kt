@@ -113,10 +113,9 @@ private fun SettingsContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp)
     ) {
         // ── Display ────────────────────────────────────────────────────────
-        SettingsSectionHeader("Display")
+        SettingsSectionHeader("General")
 
         CurrencySettingItem(
             current  = settings.currency,
@@ -139,6 +138,7 @@ private fun SettingsContent(
         )
 
         // ── Privacy ────────────────────────────────────────────────────────
+        SettingsDivider()
         SettingsSectionHeader("Privacy")
 
         ToggleSettingItem(
@@ -158,6 +158,7 @@ private fun SettingsContent(
         )
 
         // ── Notifications ──────────────────────────────────────────────────
+        SettingsDivider()
         SettingsSectionHeader("Notifications")
 
         ToggleSettingItem(
@@ -169,6 +170,7 @@ private fun SettingsContent(
         )
 
         // ── Data ───────────────────────────────────────────────────────────
+        SettingsDivider()
         SettingsSectionHeader("Data")
 
         InfoSettingItem(
@@ -184,6 +186,7 @@ private fun SettingsContent(
         )
 
         // ── About ──────────────────────────────────────────────────────────
+        SettingsDivider()
         SettingsSectionHeader("About")
 
         InfoSettingItem(
@@ -207,13 +210,22 @@ private fun SettingsContent(
 @Composable
 private fun SettingsSectionHeader(title: String) {
     Text(
-        text      = title.uppercase(),
-        style     = MaterialTheme.typography.labelSmall,
-        color     = TextTertiary,
+        text      = title,
+        style     = MaterialTheme.typography.titleSmall,
+        color     = TextSecondary,
+        fontWeight = FontWeight.Medium,
         modifier  = Modifier
             .fillMaxWidth()
-            .padding(start = 4.dp, end = 4.dp, top = 20.dp, bottom = 8.dp),
-        letterSpacing = 1.sp,
+            .padding(start = 24.dp, end = 24.dp, top = 22.dp, bottom = 12.dp),
+    )
+}
+
+@Composable
+private fun SettingsDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(top = 14.dp),
+        color = DividerColor.copy(alpha = 0.55f),
+        thickness = 0.6.dp,
     )
 }
 
@@ -235,7 +247,7 @@ private fun CurrencySettingItem(
                 Text(
                     text  = "${current.symbol} ${current.code}",
                     style = MaterialTheme.typography.labelMedium,
-                    color = BinanceYellow,
+                    color = TextSecondary,
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(Icons.Default.ChevronRight, contentDescription = null,
@@ -280,7 +292,7 @@ private fun ThemeSettingItem(
                 Text(
                     text  = current.displayName,
                     style = MaterialTheme.typography.labelMedium,
-                    color = BinanceYellow,
+                    color = TextSecondary,
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(Icons.Default.ChevronRight, contentDescription = null,
@@ -319,7 +331,7 @@ private fun LanguageSettingItem(
                 Text(
                     text  = current.displayName,
                     style = MaterialTheme.typography.labelMedium,
-                    color = BinanceYellow,
+                    color = TextSecondary,
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(Icons.Default.ChevronRight, contentDescription = null,
@@ -358,7 +370,7 @@ private fun PriceFormatSettingItem(
                 Text(
                     text  = current.displayName,
                     style = MaterialTheme.typography.labelMedium,
-                    color = BinanceYellow,
+                    color = TextSecondary,
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(Icons.Default.ChevronRight, contentDescription = null,
@@ -392,34 +404,17 @@ private fun ToggleSettingItem(
     Row(
         modifier          = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(SurfaceDark)
-                        .clickable { onCheckedChange(!checked) }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .clickable { onCheckedChange(!checked) }
+            .padding(horizontal = 24.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier         = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(SurfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null,
-                tint = TextSecondary, modifier = Modifier.size(18.dp))
-        }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium, color = TextPrimary)
-            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-        }
+        Text(title, style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Normal, color = TextPrimary, modifier = Modifier.weight(1f))
         Switch(
             checked         = checked,
             onCheckedChange = onCheckedChange,
             colors          = SwitchDefaults.colors(
-                checkedThumbColor   = Color(0xFF1A1400),
+                checkedThumbColor   = Color.White,
                 checkedTrackColor   = BinanceYellow,
                 uncheckedThumbColor = TextTertiary,
                 uncheckedTrackColor = SurfaceVariant,
@@ -439,34 +434,22 @@ private fun InfoSettingItem(
     Row(
         modifier          = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(SurfaceDark)
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 24.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier         = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(SurfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null,
-                tint = TextSecondary, modifier = Modifier.size(18.dp))
-        }
-        Spacer(Modifier.width(14.dp))
         Text(
             text       = title,
-            style      = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
+            style      = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Normal,
             color      = TextPrimary,
             modifier   = Modifier.weight(1f),
         )
         Text(
             text  = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = TextSecondary,
+            textAlign = TextAlign.End,
+            modifier = Modifier.widthIn(max = 180.dp),
         )
     }
 }
@@ -484,29 +467,12 @@ private fun SettingsRow(
     Row(
         modifier          = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(SurfaceDark)
-                        .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier         = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(SurfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null,
-                tint = TextSecondary, modifier = Modifier.size(18.dp))
-        }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium, color = TextPrimary)
-            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-        }
+        Text(title, style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Normal, color = TextPrimary, modifier = Modifier.weight(1f))
         trailing()
     }
 }
