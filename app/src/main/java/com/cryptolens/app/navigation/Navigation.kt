@@ -50,7 +50,7 @@ import com.cryptolens.app.ui.theme.*
 
 private val isLightNav: Boolean get() = BackgroundDark.luminance() > 0.5f
 private val selectedNavColor: Color get() = if (isLightNav) Color(0xFF1B1C1E) else BinanceYellow
-private val selectedNavIndicator: Color get() = if (isLightNav) Color(0xFFF0F0EC) else SurfaceVariant
+private val selectedNavIndicator: Color get() = if (isLightNav) AppAccentContainer else SurfaceVariant
 
 sealed class Screen(val route: String) {
     data object Splash          : Screen("splash")

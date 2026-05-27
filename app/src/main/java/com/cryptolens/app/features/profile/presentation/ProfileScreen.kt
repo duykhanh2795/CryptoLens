@@ -1,11 +1,13 @@
-package com.cryptolens.app.features.profile.presentation
+﻿package com.cryptolens.app.features.profile.presentation
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -39,6 +41,7 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -58,228 +61,26 @@ fun ProfileScreen(
         },
         containerColor = BackgroundDark,
     ) { padding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
-        ) {
-            // ── Top Bar ────────────────────────────────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .background(BackgroundDark)
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Profile", style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold, color = TextPrimary)
-                Spacer(Modifier.weight(1f))
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color    = BinanceYellow,
-                        strokeWidth = 2.dp,
-                    )
-                }
-            }
-
-            // ── Avatar & Account Info ──────────────────────────────────────
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(SurfaceDark)
-                                        .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                // Avatar circle with initials
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(BinanceYellow),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val initials = uiState.user?.displayName
-                        ?.split(" ")
-                        ?.take(2)
-                        ?.mapNotNull { it.firstOrNull()?.uppercaseChar() }
-                        ?.joinToString("")
-                        ?.ifBlank { uiState.user?.email?.firstOrNull()?.uppercaseChar()?.toString() ?: "?" }
-                        ?: "?"
-                    Text(
-                        text       = initials,
-                        color      = Color(0xFF1A1400),
-                        fontSize   = 28.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                }
-
-                Spacer(Modifier.height(14.dp))
-
-                Text(
-                    text       = uiState.user?.displayName?.ifBlank { "CryptoLens User" } ?: "CryptoLens User",
-                    style      = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color      = TextPrimary,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text  = uiState.user?.email ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary,
-                )
-                Spacer(Modifier.height(12.dp))
-
-                // Verified badge
-                Row(
-                    modifier = Modifier.clip(RoundedCornerShape(99.dp))
-                        .background(GreenUpSurface)
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(Icons.Default.VerifiedUser, contentDescription = null,
-                        tint = GreenUp, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Verified Account", color = GreenUp,
-                        style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
-                }
-            }
-
-            Spacer(Modifier.height(10.dp))
-
-            // ── Account Section ────────────────────────────────────────────
-            ProfileSectionHeader("Account")
-            ProfileMenuItem(
-                icon        = Icons.Outlined.Person,
-                label       = "Edit Profile",
-                subtitle    = "Name, avatar",
-                onClick     = { viewModel.onEvent(ProfileEvent.ComingSoon("Edit profile")) },
-            )
-            ProfileMenuItem(
-                icon        = Icons.Outlined.Lock,
-                label       = "Change Password",
-                subtitle    = "Update your password",
-                onClick     = { viewModel.onEvent(ProfileEvent.ShowChangePasswordDialog) },
-            )
-            ProfileMenuItem(
-                icon        = Icons.Outlined.NotificationsNone,
-                label       = "Notifications",
-                subtitle    = "Price alerts, news",
-                onClick     = onNavigateToAlerts,
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            // ── Portfolio Section ──────────────────────────────────────────
-            ProfileSectionHeader("Portfolio")
-            ProfileMenuItem(
-                icon     = Icons.Outlined.AccountBalance,
-                label    = "Connected Exchanges",
-                subtitle = "Import trades from Binance & more",
-                onClick  = onNavigateToExchanges,
-                trailing = {
-                    Box(
-                        modifier = androidx.compose.ui.Modifier
-                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp))
-                            .background(BinanceYellow.copy(alpha = 0.15f))
-                            .padding(horizontal = 6.dp, vertical = 2.dp),
-                    ) {
-                        Text("NEW", color = BinanceYellow,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold)
-                    }
-                },
-            )
-            ProfileMenuItem(
-                icon     = Icons.Outlined.AccountBalanceWallet,
-                label    = "Wallet Watchlist",
-                subtitle = "Track public wallets and whale balances",
-                onClick  = onNavigateToWalletWatchlist,
-            )
-            ProfileMenuItem(
-                icon     = Icons.Outlined.FileDownload,
-                label    = "Export Data",
-                subtitle = "Download your transaction history",
-                onClick  = { viewModel.onEvent(ProfileEvent.ComingSoon("Export data")) },
-            )
-            ProfileMenuItem(
-                icon     = Icons.Outlined.DeleteForever,
-                label    = "Clear Portfolio",
-                subtitle = "Remove all assets and transactions",
-                iconTint = RedDown,
-                onClick  = { viewModel.onEvent(ProfileEvent.ShowClearPortfolioDialog) },
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            // ── App Section ────────────────────────────────────────────────
-            ProfileSectionHeader("App")
-            ProfileMenuItem(
-                icon     = Icons.Outlined.SwapHoriz,
-                label    = "Converter",
-                subtitle = "Convert crypto and USD with live prices",
-                onClick  = onNavigateToConverter,
-            )
-            ProfileMenuItem(
-                icon     = Icons.Outlined.Settings,
-                label    = "Settings",
-                subtitle = "Currency, theme, language, notifications",
-                onClick  = onNavigateToSettings,
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            // ── About Section ──────────────────────────────────────────────
-            ProfileSectionHeader("About")
-            ProfileMenuItem(
-                icon     = Icons.Outlined.Info,
-                label    = "About CryptoLens",
-                subtitle = "Version ${uiState.appVersion}",
-                onClick  = { viewModel.onEvent(ProfileEvent.ComingSoon("About CryptoLens")) },
-            )
-            ProfileMenuItem(
-                icon     = Icons.Outlined.Shield,
-                label    = "Privacy Policy",
-                onClick  = { viewModel.onEvent(ProfileEvent.ComingSoon("Privacy Policy")) },
-            )
-            ProfileMenuItem(
-                icon     = Icons.Outlined.Description,
-                label    = "Terms of Service",
-                onClick  = { viewModel.onEvent(ProfileEvent.ComingSoon("Terms of Service")) },
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            // ── Logout Button ──────────────────────────────────────────────
-            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                OutlinedButton(
-                    onClick  = { viewModel.onEvent(ProfileEvent.ShowLogoutDialog) },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape    = RoundedCornerShape(14.dp),
-                    enabled  = !uiState.isLoading,
-                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = RedDown),
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Log Out", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            // App info footer
-            Text(
-                text      = "CryptoLens v${uiState.appVersion}\nPowered by Binance • CoinGecko • Gemini AI",
-                style     = MaterialTheme.typography.labelSmall,
-                color     = TextTertiary,
-                textAlign = TextAlign.Center,
-                modifier  = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-            )
-
-            Spacer(Modifier.height(80.dp))
-        }
+        BinanceProfileContent(
+            uiState = uiState,
+            modifier = Modifier.padding(padding),
+            onEditProfile = { viewModel.onEvent(ProfileEvent.ComingSoon("Edit profile")) },
+            onVerify = { viewModel.onEvent(ProfileEvent.ComingSoon("Identity verification")) },
+            onSecurity = { viewModel.onEvent(ProfileEvent.ShowChangePasswordDialog) },
+            onTwitter = { viewModel.onEvent(ProfileEvent.ComingSoon("Twitter link")) },
+            onNavigateToExchanges = onNavigateToExchanges,
+            onNavigateToSettings = onNavigateToSettings,
+            onNavigateToAlerts = onNavigateToAlerts,
+            onNavigateToWalletWatchlist = onNavigateToWalletWatchlist,
+            onNavigateToConverter = onNavigateToConverter,
+            onExportData = { viewModel.onEvent(ProfileEvent.ComingSoon("Export data")) },
+            onClearPortfolio = { viewModel.onEvent(ProfileEvent.ShowClearPortfolioDialog) },
+            onLogout = { viewModel.onEvent(ProfileEvent.ShowLogoutDialog) },
+            onBack = { backDispatcher?.onBackPressed() },
+        )
     }
 
-    // ── Logout Confirmation Dialog ─────────────────────────────────────────
+    // â”€â”€ Logout Confirmation Dialog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (uiState.showLogoutDialog) {
         AlertDialog(
             onDismissRequest  = { viewModel.onEvent(ProfileEvent.DismissLogoutDialog) },
@@ -370,7 +171,414 @@ fun ProfileScreen(
     }
 }
 
-// ── Shared Components ──────────────────────────────────────────────────────────
+// â”€â”€ Shared Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+@Composable
+private fun BinanceProfileContent(
+    uiState: ProfileUiState,
+    modifier: Modifier = Modifier,
+    onEditProfile: () -> Unit,
+    onVerify: () -> Unit,
+    onSecurity: () -> Unit,
+    onTwitter: () -> Unit,
+    onNavigateToExchanges: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToAlerts: () -> Unit,
+    onNavigateToWalletWatchlist: () -> Unit,
+    onNavigateToConverter: () -> Unit,
+    onExportData: () -> Unit,
+    onClearPortfolio: () -> Unit,
+    onLogout: () -> Unit,
+    onBack: () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(BackgroundDark)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 18.dp),
+    ) {
+        BinanceProfileTopBar(isLoading = uiState.isLoading, onBack = onBack)
+        AccountInfoCard(state = uiState, onEditProfile = onEditProfile)
+
+        Spacer(Modifier.height(22.dp))
+
+        BinanceProfileRow(Icons.Outlined.Person, "Verification", "Not verified", onVerify)
+        BinanceProfileRow(Icons.Outlined.Security, "Security", onClick = onSecurity)
+        BinanceProfileRow(Icons.Outlined.AccountBalance, "Connected Exchanges", "Binance", onNavigateToExchanges)
+        BinanceProfileRow(Icons.Outlined.AccountBalanceWallet, "Wallet Watchlist", "On-chain", onNavigateToWalletWatchlist)
+        BinanceProfileRow(Icons.Outlined.NotificationsNone, "Alerts", "Price rules", onNavigateToAlerts)
+        BinanceProfileRow(Icons.Outlined.SwapHoriz, "Converter", "Live rates", onNavigateToConverter)
+        BinanceProfileRow(Icons.Outlined.Settings, "Settings", "Theme, currency", onNavigateToSettings)
+        BinanceProfileRow(Icons.Default.Close, "Twitter", "Unlinked", onTwitter)
+
+        Spacer(Modifier.height(18.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            CompactProfileAction(
+                label = "Export",
+                icon = Icons.Outlined.FileDownload,
+                onClick = onExportData,
+                modifier = Modifier.weight(1f),
+            )
+            CompactProfileAction(
+                label = "Clear Portfolio",
+                icon = Icons.Outlined.DeleteForever,
+                contentColor = RedDown,
+                onClick = onClearPortfolio,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Spacer(Modifier.height(220.dp))
+
+        Button(
+            onClick = onLogout,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(58.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = SurfaceVariant,
+                contentColor = TextPrimary,
+            ),
+            enabled = !uiState.isLoading,
+        ) {
+            Text("Log Out", fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+        }
+
+        Text(
+            text = "CryptoLens v${uiState.appVersion}",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 18.dp),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelSmall,
+            color = TextTertiary,
+        )
+
+        Spacer(Modifier.height(88.dp))
+    }
+}
+
+@Composable
+private fun BinanceProfileTopBar(isLoading: Boolean, onBack: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 18.dp, bottom = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onBack),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+                tint = TextPrimary,
+                modifier = Modifier.size(26.dp),
+            )
+        }
+        Text(
+            text = "Account Info",
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary,
+        )
+        Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    color = BinanceYellow,
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Outlined.ManageAccounts,
+                    contentDescription = null,
+                    tint = TextPrimary,
+                    modifier = Modifier.size(27.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccountInfoCard(
+    state: ProfileUiState,
+    onEditProfile: () -> Unit,
+) {
+    val user = state.user
+    val displayName = user?.displayName?.ifBlank { null }
+        ?: user?.email?.substringBefore("@")?.ifBlank { null }
+        ?: "CryptoLens User"
+    val email = user?.email.orEmpty()
+    val uid = user?.id.orEmpty().profileUid()
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .background(SurfaceDark),
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .clip(RoundedCornerShape(bottomStart = 18.dp))
+                .background(SurfaceVariant)
+                .padding(horizontal = 18.dp, vertical = 10.dp),
+        ) {
+            Text(
+                text = "Standard",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = TextPrimary,
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ProfileAvatar(name = displayName, onClick = onEditProfile)
+                Spacer(Modifier.width(20.dp))
+                Text(
+                    text = displayName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+            }
+
+            Spacer(Modifier.height(26.dp))
+
+            AccountInfoLine(
+                label = "CryptoLens UID",
+                value = uid,
+                trailingIcon = Icons.Outlined.ContentCopy,
+            )
+            Spacer(Modifier.height(18.dp))
+            AccountInfoLine(
+                label = "Registration info",
+                value = email.ifBlank { "Not available" },
+                trailingIcon = Icons.Outlined.Visibility,
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 20.dp),
+                color = DividerColor,
+            )
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = "Upgrade to Pro 1",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Sync exchanges and wallet activity to level up",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.72f)
+                            .height(7.dp)
+                            .clip(RoundedCornerShape(99.dp))
+                            .background(SurfaceVariant),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.08f)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(99.dp))
+                                .background(BinanceYellow),
+                        )
+                    }
+                }
+                TextButton(onClick = onEditProfile, contentPadding = PaddingValues(0.dp)) {
+                    Text(
+                        text = "Benefits",
+                        color = BinanceYellow,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = BinanceYellow,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileAvatar(name: String, onClick: () -> Unit) {
+    val initial = name.firstOrNull()?.uppercaseChar()?.toString() ?: "C"
+
+    Box(
+        modifier = Modifier
+            .size(64.dp)
+            .clip(CircleShape)
+            .background(BinanceYellow),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = initial,
+            color = Color(0xFF111214),
+            fontSize = 24.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(SurfaceVariant)
+                .clickable(onClick = onClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Edit,
+                contentDescription = "Edit profile",
+                tint = TextPrimary,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccountInfoLine(
+    label: String,
+    value: String,
+    trailingIcon: ImageVector,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = label,
+            modifier = Modifier.width(142.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextSecondary,
+        )
+        Text(
+            text = value,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.End,
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextPrimary,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.width(10.dp))
+        Icon(
+            imageVector = trailingIcon,
+            contentDescription = null,
+            tint = TextTertiary,
+            modifier = Modifier.size(19.dp),
+        )
+    }
+}
+
+@Composable
+private fun BinanceProfileRow(
+    icon: ImageVector,
+    title: String,
+    trailingText: String? = null,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = TextPrimary,
+            modifier = Modifier.size(25.dp),
+        )
+        Spacer(Modifier.width(20.dp))
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = TextPrimary,
+        )
+        if (trailingText != null) {
+            Text(
+                text = trailingText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+                maxLines = 1,
+            )
+            Spacer(Modifier.width(8.dp))
+        }
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = TextTertiary,
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+@Composable
+private fun CompactProfileAction(
+    label: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    contentColor: Color = TextPrimary,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = modifier
+            .height(52.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(SurfaceDark)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = label,
+            color = contentColor,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
+    }
+}
+
+private fun String.profileUid(): String {
+    val compact = filter { it.isLetterOrDigit() }
+    return if (compact.length >= 9) compact.takeLast(9) else compact.ifBlank { "000000000" }
+}
 
 @Composable
 private fun ChangePasswordDialog(
@@ -514,56 +722,3 @@ private fun PasswordTextField(
     )
 }
 
-@Composable
-private fun ProfileSectionHeader(title: String) {
-    Text(
-        text     = title.uppercase(),
-        style    = MaterialTheme.typography.labelSmall,
-        color    = TextTertiary,
-        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp),
-        letterSpacing = 1.sp,
-    )
-}
-
-@Composable
-private fun ProfileMenuItem(
-    icon: ImageVector,
-    label: String,
-    subtitle: String? = null,
-    iconTint: Color = TextSecondary,
-    trailing: (@Composable () -> Unit)? = null,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(SurfaceDark)
-                        .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp))
-                .background(SurfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
-        }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium, color = TextPrimary)
-            if (subtitle != null) {
-                Text(subtitle, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-            }
-        }
-        if (trailing != null) {
-            trailing()
-            Spacer(Modifier.width(4.dp))
-        }
-        Icon(Icons.Default.ChevronRight, contentDescription = null,
-            tint = TextTertiary, modifier = Modifier.size(18.dp))
-    }
-}

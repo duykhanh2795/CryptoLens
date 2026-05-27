@@ -37,20 +37,20 @@ import com.cryptolens.app.features.wallet.presentation.TrendingWalletRow
 import com.cryptolens.app.ui.theme.*
 
 private val homeIsLight: Boolean get() = BackgroundDark.luminance() > 0.5f
-private val homeChromeSurface: Color get() = if (homeIsLight) Color(0xFFFFFFFF) else Color(0xFF18181A)
-private val homePanelSurface: Color get() = if (homeIsLight) Color(0xFFFFFFFF) else Color(0xFF121214)
-private val homeTileSurface: Color get() = if (homeIsLight) Color(0xFFFFFFFF) else Color(0xFF171719)
-private val homeInsetSurface: Color get() = if (homeIsLight) Color(0xFFF0F0EC) else SurfaceVariant
+private val homeChromeSurface: Color get() = if (homeIsLight) SurfaceDark else Color(0xFF18181A)
+private val homePanelSurface: Color get() = if (homeIsLight) SurfaceDark else Color(0xFF121214)
+private val homeTileSurface: Color get() = if (homeIsLight) SurfaceDark else Color(0xFF171719)
+private val homeInsetSurface: Color get() = if (homeIsLight) SurfaceVariant else SurfaceVariant
 private val homeActionTint: Color get() = if (homeIsLight) Color(0xFF1B1C1E) else BinanceYellow
 private val homeHeroTextPrimary: Color get() = if (homeIsLight) Color(0xFF151515) else TextPrimary
 private val homeHeroTextSecondary: Color get() = if (homeIsLight) Color(0xFF555A60) else TextSecondary
 private val homeHeroControlSurface: Color get() = if (homeIsLight) Color.Black.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.11f)
-private val homeSuccessText: Color get() = if (homeIsLight) Color(0xFF146D82) else GreenUp
+private val homeSuccessText: Color get() = GreenUp
 private val homeDangerText: Color get() = if (homeIsLight) Color(0xFFC44755) else RedDown
 
 private fun walletHeroBrush(): Brush = Brush.linearGradient(
     colors = if (homeIsLight) {
-        listOf(Color(0xFFFEFEFC), Color(0xFFEDEBE5), Color(0xFFDAD7CF))
+        listOf(Color(0xFFFFFFFF), Color(0xFFF1F4F7), Color(0xFFE6ECF2))
     } else {
         listOf(Color(0xFF242426), Color(0xFF121214), Color(0xFF0A0A0B))
     },
@@ -60,7 +60,7 @@ private fun walletHeroBrush(): Brush = Brush.linearGradient(
 
 private fun referCardBrush(): Brush = Brush.linearGradient(
     colors = if (homeIsLight) {
-        listOf(Color(0xFFFFFFFF), Color(0xFFF0EFEA), Color(0xFFE3E0D8))
+        listOf(Color(0xFFFFFFFF), Color(0xFFF2F5F8), Color(0xFFE7EDF3))
     } else {
         listOf(Color(0xFF202022), Color(0xFF141416), Color(0xFF0F0F10))
     },
@@ -157,20 +157,15 @@ private fun TrendingWalletsHomeSection(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(homePanelSurface)
-            .padding(bottom = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         SectionHeader(title = "Trending Addresses", onSeeAll = onSeeAll)
         wallets.forEach { wallet ->
-            Surface(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
-                color = SurfaceVariant,
-                shape = RoundedCornerShape(10.dp),
+                    .padding(horizontal = 16.dp),
             ) {
                 TrendingWalletRow(
                     wallet = wallet,
@@ -191,19 +186,15 @@ private fun MarketMoveSection(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(homePanelSurface)
-            .padding(bottom = 10.dp),
+            .fillMaxWidth(),
     ) {
-        SectionHeader(title = title, onSeeAll = onSeeAll)
+        MarketMoveHeader(title = title, onSeeAll = onSeeAll)
         coins.forEachIndexed { index, coin ->
-            CompactCoinRow(
+            BinanceMarketMoveRow(
                 coin = coin,
                 onCoinClick = { onCoinClick(coin.id) },
-                modifier = Modifier.padding(horizontal = 10.dp),
             )
-            if (index != coins.lastIndex) Spacer(Modifier.height(8.dp))
+            if (index != coins.lastIndex) Spacer(Modifier.height(2.dp))
         }
     }
 }
@@ -729,6 +720,33 @@ private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
 // ── Trending Horizontal Scroll ────────────────────────────────────────────────
 
 @Composable
+private fun MarketMoveHeader(title: String, onSeeAll: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary,
+        )
+        Spacer(Modifier.weight(1f))
+        TextButton(onClick = onSeeAll, contentPadding = PaddingValues(0.dp)) {
+            Text("More", color = TextPrimary, style = MaterialTheme.typography.labelLarge)
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextPrimary,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun TrendingRow(coins: List<Coin>, onCoinClick: (String) -> Unit) {
     Column(
         modifier = Modifier
@@ -799,35 +817,61 @@ private fun TrendingCoinCard(coin: Coin, onClick: () -> Unit) {
     }
 }
 
-// ── Compact Coin Row ──────────────────────────────────────────────────────────
+// ── Binance Market Move Row ───────────────────────────────────────────────────
 
 @Composable
-private fun CompactCoinRow(coin: Coin, onCoinClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun BinanceMarketMoveRow(coin: Coin, onCoinClick: () -> Unit, modifier: Modifier = Modifier) {
+    val changeColor = if (coin.isPositive) homeSuccessText else homeDangerText
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(homeTileSurface)
             .clickable(onClick = onCoinClick)
-            .padding(horizontal = 12.dp, vertical = 11.dp),
+            .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AsyncImage(
             model = coin.imageUrl, contentDescription = coin.name,
-            modifier = Modifier.size(36.dp).clip(CircleShape),
+            modifier = Modifier.size(32.dp).clip(CircleShape),
         )
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(coin.symbol, style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold, color = TextPrimary)
-            Text(coin.name, style = MaterialTheme.typography.labelSmall, color = TextSecondary, maxLines = 1)
+            Text(
+                text = coin.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = coin.symbol,
+                style = MaterialTheme.typography.labelMedium,
+                color = TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
-        Column(horizontalAlignment = Alignment.End) {
-            Text("$${coin.currentPrice.formatPrice()}", style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Medium, color = TextPrimary)
-            PercentPill(
+        Spacer(Modifier.width(12.dp))
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
                 text = "${if (coin.isPositive) "+" else ""}${"%.2f".format(coin.priceChangePercent24h)}%",
-                positive = coin.isPositive,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = changeColor,
+                maxLines = 1,
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                text = "$${coin.currentPrice.formatPrice()}",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Normal,
+                color = TextSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

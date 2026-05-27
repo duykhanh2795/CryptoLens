@@ -5,7 +5,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -90,7 +89,7 @@ fun MarketListScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 18.dp, vertical = 6.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(SurfaceVariant)
+                .background(SurfaceDark)
                                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -106,7 +105,7 @@ fun MarketListScreen(
                 onValueChange = { viewModel.onEvent(MarketListEvent.SearchQueryChanged(it)) },
                 modifier      = Modifier.weight(1f),
                 textStyle     = MaterialTheme.typography.bodyMedium.copy(color = TextPrimary),
-                cursorBrush   = SolidColor(BinanceYellow),
+                cursorBrush   = SolidColor(AppAccent),
                 singleLine    = true,
                 decorationBox = { innerTextField ->
                     if (uiState.searchQuery.isEmpty()) {
@@ -146,13 +145,13 @@ fun MarketListScreen(
         ScrollableTabRow(
             selectedTabIndex = selectedTabIndex,
             containerColor   = BackgroundDark,
-            contentColor     = BinanceYellow,
+            contentColor     = AppAccent,
             edgePadding      = 16.dp,
             indicator        = { tabPositions ->
                 TabRowDefaults.SecondaryIndicator(
                     modifier  = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
                     height    = 2.dp,
-                    color     = BinanceYellow,
+                    color     = AppAccent,
                 )
             },
             divider = {},
@@ -164,7 +163,7 @@ fun MarketListScreen(
                     text     = {
                         Text(
                             text  = label,
-                            color = if (uiState.selectedTab == tab) BinanceYellow else TextSecondary,
+                            color = if (uiState.selectedTab == tab) TextPrimary else TextSecondary,
                             style = MaterialTheme.typography.labelLarge,
                         )
                     },
@@ -185,7 +184,7 @@ fun MarketListScreen(
             Text("24h Change", style = MaterialTheme.typography.labelSmall, color = TextTertiary,
                 modifier = Modifier.width(80.dp), textAlign = TextAlign.End)
         }
-        HorizontalDivider(color = DividerColor.copy(alpha = 0.7f))
+        Spacer(Modifier.height(2.dp))
 
         // ── Content ────────────────────────────────────────────────────────
         when {
@@ -200,8 +199,8 @@ fun MarketListScreen(
                 )
             else ->
                 LazyColumn(
-                    contentPadding = PaddingValues(start = 10.dp, end = 10.dp, bottom = 88.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(start = 18.dp, end = 18.dp, bottom = 88.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
                     items(filteredCoins, key = { it.id }) { coin ->
                         CoinListItem(
@@ -228,10 +227,8 @@ private fun CoinListItem(
     Row(
         modifier          = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(SurfaceDark)
-                        .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 12.dp),
+            .clickable(onClick = onClick)
+            .padding(vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Coin icon + name
@@ -248,7 +245,7 @@ private fun CoinListItem(
                         modifier = Modifier
                             .size(8.dp)
                             .clip(CircleShape)
-                            .background(BinanceYellow)
+                            .background(AppAccent)
                             .align(Alignment.TopEnd),
                     )
                 }
@@ -283,10 +280,11 @@ private fun CoinListItem(
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
             ) { price ->
                 Text(
-                    text  = "$${price.formatPrice()}",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = TextPrimary,
-                )
+                text  = "$${price.formatPrice()}",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Medium,
+                color = TextPrimary,
+            )
             }
             Text(
                 text  = "${if (coin.priceChange24h >= 0) "+" else "-"}$${
@@ -347,8 +345,8 @@ private fun MarketErrorState(message: String, onRetry: () -> Unit) {
         Button(
             onClick = onRetry,
             colors  = ButtonDefaults.buttonColors(
-                containerColor = BinanceYellow,
-                contentColor   = Color(0xFF1A1400),
+                containerColor = AppAccent,
+                contentColor   = BackgroundDark,
             ),
             shape = RoundedCornerShape(8.dp),
         ) {
