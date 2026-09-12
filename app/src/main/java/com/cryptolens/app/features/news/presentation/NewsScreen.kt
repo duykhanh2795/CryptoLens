@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,7 +43,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -55,9 +55,9 @@ import com.cryptolens.app.R
 import com.cryptolens.app.features.news.domain.model.NewsFilter
 import com.cryptolens.app.features.news.domain.model.NewsItem
 import com.cryptolens.app.features.news.domain.model.NewsSentiment
+import com.cryptolens.app.ui.theme.AppAccent
 import com.cryptolens.app.ui.theme.BackgroundDark
 import com.cryptolens.app.ui.theme.BinanceYellow
-import com.cryptolens.app.ui.theme.BorderColor
 import com.cryptolens.app.ui.theme.DividerColor
 import com.cryptolens.app.ui.theme.GreenUp
 import com.cryptolens.app.ui.theme.GreenUpSurface
@@ -84,6 +84,7 @@ fun NewsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .navigationBarsPadding()
                 .background(BackgroundDark),
         ) {
             NewsTopBar(
@@ -102,7 +103,7 @@ fun NewsScreen(
                 singleLine = true,
                 placeholder = { Text(stringResource(R.string.news_search)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(8.dp),
                         colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
                 unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -234,7 +235,7 @@ fun NewsPreviewSection(
 private fun NewsList(news: List<NewsItem>) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 12.dp),
+        contentPadding = PaddingValues(start = 0.dp, top = 12.dp, end = 0.dp, bottom = 28.dp),
     ) {
         items(news, key = { it.id }) { item ->
             NewsRow(item = item, compact = false)
@@ -340,7 +341,7 @@ private fun NewsError(message: String, onRetry: () -> Unit) {
         Button(
             onClick = onRetry,
             shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow, contentColor = Color(0xFF1A1400)),
+            colors = ButtonDefaults.buttonColors(containerColor = AppAccent, contentColor = BackgroundDark),
         ) {
             Text(stringResource(R.string.common_retry), fontWeight = FontWeight.Bold)
         }

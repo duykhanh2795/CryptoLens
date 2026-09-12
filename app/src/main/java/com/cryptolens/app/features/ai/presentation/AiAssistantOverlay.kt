@@ -72,6 +72,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cryptolens.app.features.ai.domain.model.AiChatMessage
 import com.cryptolens.app.features.ai.domain.model.AiMessageRole
+import com.cryptolens.app.ui.theme.AppAccent
 import com.cryptolens.app.ui.theme.BackgroundDark
 import com.cryptolens.app.ui.theme.BinanceYellow
 import com.cryptolens.app.ui.theme.BorderColor
@@ -307,7 +308,7 @@ private fun PromptStartContent(
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 26.dp, vertical = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
             Text(
@@ -348,10 +349,10 @@ private fun PromptCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         color = Color(0xFF202024),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(8.dp),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 18.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.Top,
         ) {
             PromptBadge(prompt.label)
@@ -408,7 +409,7 @@ private fun ChatMessages(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start,
                 ) {
-                    Surface(color = SurfaceVariant, shape = RoundedCornerShape(16.dp)) {
+                    Surface(color = SurfaceVariant, shape = RoundedCornerShape(8.dp)) {
                         Row(
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -433,12 +434,7 @@ private fun ChatMessageBubble(message: AiChatMessage) {
     ) {
         Surface(
             color = if (isUser) BinanceYellow.copy(alpha = 0.18f) else Color(0xFF202024),
-            shape = RoundedCornerShape(
-                topStart = 18.dp,
-                topEnd = 18.dp,
-                bottomStart = if (isUser) 18.dp else 4.dp,
-                bottomEnd = if (isUser) 4.dp else 18.dp,
-            ),
+            shape = RoundedCornerShape(8.dp),
             modifier = Modifier.fillMaxWidth(0.86f),
         ) {
             Text(
@@ -462,8 +458,9 @@ private fun ChatComposer(
         color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 26.dp, vertical = 18.dp),
-        shape = RoundedCornerShape(24.dp),
+                    .padding(horizontal = 26.dp, vertical = 18.dp)
+                    .border(1.dp, BorderColor, RoundedCornerShape(8.dp)),
+        shape = RoundedCornerShape(8.dp),
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             OutlinedTextField(
@@ -503,7 +500,7 @@ private fun ChatComposer(
                 }
                 Spacer(Modifier.weight(1f))
                 Surface(
-                    color = if (value.isNotBlank() && !isSending) BinanceYellow else SurfaceVariant,
+                    color = if (value.isNotBlank() && !isSending) AppAccent else SurfaceVariant,
                     shape = CircleShape,
                     modifier = Modifier
                         .size(44.dp)
@@ -513,7 +510,7 @@ private fun ChatComposer(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = "Send",
-                            tint = if (value.isNotBlank() && !isSending) Color(0xFF1A1400) else TextTertiary,
+                            tint = if (value.isNotBlank() && !isSending) BackgroundDark else TextTertiary,
                         )
                     }
                 }
@@ -543,7 +540,7 @@ private fun AiInlineError(
 ) {
     Surface(
         color = Color(0xFF32161B),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 26.dp),
@@ -617,9 +614,10 @@ private fun AiSidePanel(
 
                 Surface(
                     color = Color.Transparent,
-                    shape = RoundedCornerShape(13.dp),
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .border(1.dp, BorderColor, RoundedCornerShape(8.dp))
                         .padding(horizontal = 18.dp, vertical = 16.dp),
                 ) {
                     Row(
