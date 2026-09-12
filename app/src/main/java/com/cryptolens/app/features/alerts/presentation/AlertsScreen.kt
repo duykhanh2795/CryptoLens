@@ -80,9 +80,10 @@ import com.cryptolens.app.features.alerts.domain.model.AlertValueType
 import com.cryptolens.app.features.alerts.domain.model.PriceAlert
 import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.ui.theme.AppAccent
+import com.cryptolens.app.ui.theme.AppAccentContainer
 import com.cryptolens.app.ui.theme.BackgroundDark
 import com.cryptolens.app.ui.theme.BinanceYellow
-import com.cryptolens.app.ui.theme.BorderColor
 import com.cryptolens.app.ui.theme.DividerColor
 import com.cryptolens.app.ui.theme.GreenUp
 import com.cryptolens.app.ui.theme.GreenUpSurface
@@ -140,14 +141,20 @@ fun AlertsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { viewModel.onEvent(AlertsEvent.ShowCreateSheet()) },
-                containerColor = BinanceYellow,
-                contentColor = Color(0xFF1A1400),
+                containerColor = AppAccent,
+                contentColor = BackgroundDark,
             ) {
                 Icon(Icons.Default.AddAlert, contentDescription = "Create alert")
             }
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).background(BackgroundDark)) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .navigationBarsPadding()
+                .background(BackgroundDark)
+        ) {
             AlertsTopBar(onNavigateBack = onNavigateBack)
 
             if (uiState.isLoading) {
@@ -157,7 +164,7 @@ fun AlertsScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     item {
@@ -593,10 +600,15 @@ private fun CreateAlertSheet(
                 enabled = !state.isSaving,
                 modifier = Modifier.weight(1f).height(48.dp),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow, contentColor = Color(0xFF1A1400)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AppAccent,
+                    contentColor = BackgroundDark,
+                    disabledContainerColor = AppAccentContainer,
+                    disabledContentColor = TextTertiary,
+                ),
             ) {
                 if (state.isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color(0xFF1A1400))
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = BackgroundDark)
                 } else {
                     Text("Save", fontWeight = FontWeight.Bold)
                 }

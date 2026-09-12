@@ -65,6 +65,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .navigationBarsPadding()
         ) {
             // ── Top Bar ────────────────────────────────────────────────────
             Row(
@@ -114,6 +115,7 @@ private fun SettingsContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
     ) {
         // ── Display ────────────────────────────────────────────────────────
@@ -493,7 +495,7 @@ private fun <T> SelectionDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(SurfaceDark)
                 .padding(vertical = 8.dp),
         ) {

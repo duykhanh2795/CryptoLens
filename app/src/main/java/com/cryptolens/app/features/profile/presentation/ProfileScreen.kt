@@ -197,6 +197,7 @@ private fun BinanceProfileContent(
         modifier = modifier
             .fillMaxSize()
             .background(BackgroundDark)
+            .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 18.dp),
     ) {
@@ -239,7 +240,7 @@ private fun BinanceProfileContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(58.dp),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = SurfaceVariant,
                 contentColor = TextPrimary,
@@ -327,13 +328,13 @@ private fun AccountInfoCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(SurfaceDark),
     ) {
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .clip(RoundedCornerShape(bottomStart = 18.dp))
+                .clip(RoundedCornerShape(bottomStart = 8.dp))
                 .background(SurfaceVariant)
                 .padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
@@ -510,7 +511,7 @@ private fun BinanceProfileRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -558,7 +559,7 @@ private fun CompactProfileAction(
     Row(
         modifier = modifier
             .height(52.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(SurfaceDark)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp),
@@ -650,8 +651,8 @@ private fun ChangePasswordDialog(
                 onClick = { onEvent(ProfileEvent.SubmitChangePassword) },
                 enabled = canSubmit,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = BinanceYellow,
-                    contentColor = Color(0xFF1A1400),
+                    containerColor = AppAccent,
+                    contentColor = BackgroundDark,
                     disabledContainerColor = SurfaceVariant,
                     disabledContentColor = TextTertiary,
                 ),
@@ -660,7 +661,7 @@ private fun ChangePasswordDialog(
                 if (state.isChangingPassword) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
-                        color = Color(0xFF1A1400),
+                        color = BackgroundDark,
                         strokeWidth = 2.dp,
                     )
                 } else {

@@ -62,9 +62,9 @@ import com.cryptolens.app.R
 import com.cryptolens.app.core.domain.util.formatLargeNumber
 import com.cryptolens.app.core.domain.util.formatMoney
 import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.ui.theme.AppAccent
 import com.cryptolens.app.ui.theme.BackgroundDark
 import com.cryptolens.app.ui.theme.BinanceYellow
-import com.cryptolens.app.ui.theme.BorderColor
 import com.cryptolens.app.ui.theme.DividerColor
 import com.cryptolens.app.ui.theme.GreenUp
 import com.cryptolens.app.ui.theme.GreenUpSurface
@@ -177,8 +177,11 @@ private fun ConverterContent(
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
-        modifier = modifier.fillMaxSize().background(BackgroundDark),
-        contentPadding = PaddingValues(16.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+            .background(BackgroundDark),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -544,10 +547,10 @@ private fun AssetPickerRow(
 private fun AssetIcon(asset: ConverterAsset?, size: Int) {
     if (asset?.isFiat == true) {
         Box(
-            modifier = Modifier.size(size.dp).clip(CircleShape).background(BinanceYellow),
+            modifier = Modifier.size(size.dp).clip(CircleShape).background(AppAccent),
             contentAlignment = Alignment.Center,
         ) {
-            Text("$", color = Color(0xFF1A1400), fontWeight = FontWeight.ExtraBold, fontSize = (size * 0.48).sp)
+            Text("$", color = BackgroundDark, fontWeight = FontWeight.ExtraBold, fontSize = (size * 0.48).sp)
         }
     } else {
         AsyncImage(
