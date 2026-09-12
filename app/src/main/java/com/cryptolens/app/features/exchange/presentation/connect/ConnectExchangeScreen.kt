@@ -70,6 +70,7 @@ fun ConnectExchangeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .navigationBarsPadding()
                 .padding(padding)
         ) {
             // ── Top Bar ────────────────────────────────────────────────────
@@ -161,7 +162,7 @@ private fun StepIndicator(currentStep: ConnectStep) {
         modifier            = Modifier
             .fillMaxWidth()
             .background(SurfaceDark)
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 24.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment   = Alignment.CenterVertically,
     ) {
@@ -177,7 +178,7 @@ private fun StepIndicator(currentStep: ConnectStep) {
                         .background(
                             when {
                                 isDone    -> GreenUp
-                                isCurrent -> BinanceYellow
+                                isCurrent -> AppAccent
                                 else      -> SurfaceVariant
                             }
                         ),
@@ -193,7 +194,7 @@ private fun StepIndicator(currentStep: ConnectStep) {
                     } else {
                         Text(
                             text       = "${idx + 1}",
-                            color      = if (isCurrent) Color(0xFF1A1400) else TextTertiary,
+                            color      = if (isCurrent) BackgroundDark else TextTertiary,
                             fontWeight = FontWeight.Bold,
                             fontSize   = 13.sp,
                         )
@@ -205,7 +206,7 @@ private fun StepIndicator(currentStep: ConnectStep) {
                     style = MaterialTheme.typography.labelSmall,
                     color = when {
                         isDone    -> GreenUp
-                        isCurrent -> BinanceYellow
+                        isCurrent -> AppAccent
                         else      -> TextTertiary
                     },
                 )
@@ -233,6 +234,7 @@ private fun SelectExchangeStep(onExchangeSelected: (ExchangeType) -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .navigationBarsPadding()
             .padding(24.dp),
     ) {
         Text(
@@ -353,6 +355,8 @@ private fun EnterKeysStep(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .imePadding()
+            .navigationBarsPadding()
             .padding(24.dp),
     ) {
         // Exchange badge
@@ -509,24 +513,24 @@ private fun EnterKeysStep(
             enabled  = !uiState.isValidating,
             shape    = RoundedCornerShape(8.dp),
             colors   = ButtonDefaults.buttonColors(
-                containerColor         = BinanceYellow,
-                contentColor           = Color(0xFF1A1400),
-                disabledContainerColor = BinanceYellow.copy(alpha = 0.5f),
-                disabledContentColor   = Color(0xFF1A1400).copy(alpha = 0.5f),
+                containerColor         = AppAccent,
+                contentColor           = BackgroundDark,
+                disabledContainerColor = AppAccentContainer,
+                disabledContentColor   = TextTertiary,
             ),
         ) {
             if (uiState.isValidating) {
                 CircularProgressIndicator(
                     modifier    = Modifier.size(20.dp),
-                    color       = Color(0xFF1A1400),
+                    color       = BackgroundDark,
                     strokeWidth = 2.dp,
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Validating...", fontWeight = FontWeight.Bold)
+                Text("Validating...", style = MaterialTheme.typography.labelLarge)
             } else {
                 Icon(Icons.Default.Verified, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Validate & Connect", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("Validate & Connect", style = MaterialTheme.typography.labelLarge)
             }
         }
     }
@@ -545,6 +549,7 @@ private fun ValidatedStep(
         modifier            = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .navigationBarsPadding()
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -658,24 +663,24 @@ private fun ValidatedStep(
             enabled  = !uiState.isSaving,
             shape    = RoundedCornerShape(8.dp),
             colors   = ButtonDefaults.buttonColors(
-                containerColor         = BinanceYellow,
-                contentColor           = Color(0xFF1A1400),
-                disabledContainerColor = BinanceYellow.copy(alpha = 0.5f),
-                disabledContentColor   = Color(0xFF1A1400).copy(alpha = 0.5f),
+                containerColor         = AppAccent,
+                contentColor           = BackgroundDark,
+                disabledContainerColor = AppAccentContainer,
+                disabledContentColor   = TextTertiary,
             ),
         ) {
             if (uiState.isSaving) {
                 CircularProgressIndicator(
                     modifier    = Modifier.size(20.dp),
-                    color       = Color(0xFF1A1400),
+                    color       = BackgroundDark,
                     strokeWidth = 2.dp,
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Saving...", fontWeight = FontWeight.Bold)
+                Text("Saving...", style = MaterialTheme.typography.labelLarge)
             } else {
                 Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Save & Connect", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("Save & Connect", style = MaterialTheme.typography.labelLarge)
             }
         }
 

@@ -59,7 +59,10 @@ fun ManageExchangeScreen(
         containerColor = BackgroundDark,
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .navigationBarsPadding()
         ) {
             // ── Top Bar ────────────────────────────────────────────────────
             Row(
@@ -94,7 +97,7 @@ fun ManageExchangeScreen(
                 EmptyExchangeState(onConnectNew = onConnectNew)
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     // Info header
@@ -157,7 +160,7 @@ private fun ExchangeConnectionCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(SurfaceDark)
                         .padding(16.dp),
     ) {
@@ -254,8 +257,8 @@ private fun ExchangeConnectionCard(
                 modifier = Modifier.weight(1f).height(40.dp),
                 shape    = RoundedCornerShape(8.dp),
                 colors   = ButtonDefaults.buttonColors(
-                    containerColor         = BinanceYellow,
-                    contentColor           = Color(0xFF1A1400),
+                    containerColor         = AppAccent,
+                    contentColor           = BackgroundDark,
                     disabledContainerColor = SurfaceVariant,
                     disabledContentColor   = TextTertiary,
                 ),
@@ -264,7 +267,7 @@ private fun ExchangeConnectionCard(
                     CircularProgressIndicator(
                         modifier    = Modifier.size(16.dp),
                         strokeWidth = 2.dp,
-                        color       = Color(0xFF1A1400),
+                        color       = BackgroundDark,
                     )
                     Spacer(Modifier.width(6.dp))
                     Text("Syncing...", style = MaterialTheme.typography.labelMedium,
@@ -385,8 +388,8 @@ private fun SyncResultDialog(result: SyncResult, onDismiss: () -> Unit) {
             Button(
                 onClick = onDismiss,
                 colors  = ButtonDefaults.buttonColors(
-                    containerColor = BinanceYellow,
-                    contentColor   = Color(0xFF1A1400),
+                    containerColor = AppAccent,
+                    contentColor   = BackgroundDark,
                 ),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth(),
@@ -431,13 +434,13 @@ private fun EmptyExchangeState(onConnectNew: () -> Unit) {
             modifier = Modifier.fillMaxWidth().height(52.dp),
             shape    = RoundedCornerShape(8.dp),
             colors   = ButtonDefaults.buttonColors(
-                containerColor = BinanceYellow,
-                contentColor   = Color(0xFF1A1400),
+                containerColor = AppAccent,
+                contentColor   = BackgroundDark,
             ),
         ) {
             Icon(Icons.Default.Link, contentDescription = null, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
-            Text("Connect Exchange", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text("Connect Exchange", style = MaterialTheme.typography.labelLarge)
         }
     }
 }

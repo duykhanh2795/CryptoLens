@@ -113,6 +113,7 @@ fun PortfolioScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .background(BackgroundDark)
+                .navigationBarsPadding()
                 .padding(horizontal = 16.dp),
         ) {
             Row(
@@ -172,7 +173,7 @@ fun PortfolioScreen(
                         contentColor     = BinanceYellow,
                         modifier = Modifier
                             .padding(top = 12.dp, bottom = 10.dp)
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             ,
                         indicator = { tabs ->
                             val idx = PortfolioTab.entries.indexOf(uiState.selectedTab)
@@ -1347,7 +1348,7 @@ private fun AssetsTab(
         EmptyPortfolioState(Icons.Outlined.AccountBalanceWallet, "No assets yet", "Tap + to record your first buy")
         return
     }
-    LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
+    LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
         items(assets, key = { it.id }) { asset ->
             AssetItem(
                 asset = asset,
@@ -1373,7 +1374,7 @@ private fun AssetItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(SurfaceDark)
                         .combinedClickable(onClick = onCoinClick, onLongClick = { showDialog = true })
             .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -1431,7 +1432,7 @@ private fun TransactionsTab(
         return
     }
     val fmt = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()) }
-    LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
+    LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
         items(transactions, key = { it.id }) { tx ->
             TransactionItem(
                 tx = tx,
@@ -1457,7 +1458,7 @@ private fun TransactionItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(SurfaceDark)
                         .combinedClickable(onClick = { showDialog = true }, onLongClick = { showDialog = true })
             .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -1536,7 +1537,13 @@ private fun AddTransactionSheet(
             }
         }
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 32.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp)
+        ) {
             Text("Add Transaction", style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold, color = TextPrimary)
             Spacer(Modifier.height(20.dp))
