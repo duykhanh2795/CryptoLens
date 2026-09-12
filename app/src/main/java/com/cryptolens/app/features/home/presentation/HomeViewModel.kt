@@ -8,6 +8,8 @@ import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
 import com.cryptolens.app.features.market.data.remote.MarketCache
 import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.features.market.domain.usecase.GetTopCoinsUseCase
+import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.features.settings.domain.usecase.ObserveSettingsUseCase
 import com.cryptolens.app.features.wallet.domain.model.TrendingWallet
 import com.cryptolens.app.features.wallet.domain.usecase.GetTrendingWalletsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,6 +19,7 @@ import javax.inject.Inject
 
 data class HomeUiState(
     val user: AuthUser?           = null,
+    val settings: AppSettings     = AppSettings(),
     val trendingCoins: List<Coin> = emptyList(),
     val topGainers: List<Coin>    = emptyList(),
     val topLosers: List<Coin>     = emptyList(),
@@ -30,6 +33,7 @@ class HomeViewModel @Inject constructor(
     private val getTopCoins: GetTopCoinsUseCase,
     private val getTrendingWallets: GetTrendingWalletsUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
     private val marketCache: MarketCache,
 ) : ViewModel() {
 
@@ -38,6 +42,7 @@ class HomeViewModel @Inject constructor(
 
     init {
         _uiState.update { it.copy(user = getCurrentUser()) }
+        observeAppSettings()
         loadMarketData()
         loadTrendingWallets()
     }
@@ -80,6 +85,14 @@ class HomeViewModel @Inject constructor(
                             state.copy(isLoading = false)
                     }
                 }
+            }
+        }
+    }
+
+    private fun observeAppSettings() {
+        viewModelScope.launch {
+            observeSettings().collect { settings ->
+                _uiState.update { it.copy(settings = settings) }
             }
         }
     }

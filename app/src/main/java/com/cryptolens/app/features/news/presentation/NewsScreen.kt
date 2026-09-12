@@ -44,12 +44,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cryptolens.app.R
 import com.cryptolens.app.features.news.domain.model.NewsFilter
 import com.cryptolens.app.features.news.domain.model.NewsItem
 import com.cryptolens.app.features.news.domain.model.NewsSentiment
@@ -74,7 +76,8 @@ fun NewsScreen(
     viewModel: NewsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val title = uiState.currencySymbol?.let { "$it News" } ?: "Crypto News"
+    val title = uiState.currencySymbol?.let { stringResource(R.string.news_symbol_title, it) }
+        ?: stringResource(R.string.news_crypto_title)
 
     Scaffold(containerColor = BackgroundDark) { padding ->
         Column(
@@ -97,7 +100,7 @@ fun NewsScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .height(52.dp),
                 singleLine = true,
-                placeholder = { Text("Search news") },
+                placeholder = { Text(stringResource(R.string.news_search)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 shape = RoundedCornerShape(12.dp),
                         colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
@@ -117,7 +120,7 @@ fun NewsScreen(
                     FilterChip(
                         selected = uiState.filter == filter,
                         onClick = { viewModel.onEvent(NewsEvent.FilterChanged(filter)) },
-                        label = { Text(filter.label) },
+                        label = { Text(newsFilterLabel(filter)) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = BinanceYellow.copy(alpha = 0.16f),
                             selectedLabelColor = BinanceYellow,
@@ -156,7 +159,7 @@ private fun NewsTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
-            Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back", tint = TextPrimary)
+            Icon(Icons.Default.ArrowBackIosNew, contentDescription = stringResource(R.string.action_back), tint = TextPrimary)
         }
         Text(
             title,
@@ -166,14 +169,14 @@ private fun NewsTopBar(
             modifier = Modifier.weight(1f),
         )
         IconButton(onClick = onRefresh) {
-            Icon(Icons.Default.Refresh, contentDescription = "Refresh news", tint = TextSecondary)
+            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.news_refresh), tint = TextSecondary)
         }
     }
 }
 
 @Composable
 fun NewsPreviewSection(
-    title: String = "News Feed",
+    title: String? = null,
     onSeeAll: () -> Unit,
     viewModel: NewsPreviewViewModel = hiltViewModel(),
 ) {
@@ -190,14 +193,14 @@ fun NewsPreviewSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                title,
+                title ?: stringResource(R.string.news_feed),
                 color = TextPrimary,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
             )
             Text(
-                "See All",
+                stringResource(R.string.common_see_all),
                 color = BinanceYellow,
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.clickable(onClick = onSeeAll),
@@ -210,7 +213,7 @@ fun NewsPreviewSection(
                 CircularProgressIndicator(color = BinanceYellow, strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
             }
             uiState.news.isEmpty() -> Text(
-                uiState.error ?: "No news available yet.",
+                uiState.error ?: stringResource(R.string.news_unavailable),
                 color = TextSecondary,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -316,7 +319,7 @@ private fun SentimentBadge(sentiment: NewsSentiment) {
         shape = RoundedCornerShape(99.dp),
     ) {
         Text(
-            sentiment.label,
+            newsSentimentLabel(sentiment),
             color = color,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
@@ -339,7 +342,7 @@ private fun NewsError(message: String, onRetry: () -> Unit) {
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow, contentColor = Color(0xFF1A1400)),
         ) {
-            Text("Retry", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.common_retry), fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -347,8 +350,25 @@ private fun NewsError(message: String, onRetry: () -> Unit) {
 @Composable
 private fun EmptyNews() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("No news matches this filter.", color = TextSecondary, textAlign = TextAlign.Center)
+        Text(stringResource(R.string.news_empty), color = TextSecondary, textAlign = TextAlign.Center)
     }
+}
+
+@Composable
+private fun newsFilterLabel(filter: NewsFilter): String = when (filter) {
+    NewsFilter.ALL -> stringResource(R.string.news_filter_all)
+    NewsFilter.BULLISH -> stringResource(R.string.news_filter_bullish)
+    NewsFilter.BEARISH -> stringResource(R.string.news_filter_bearish)
+    NewsFilter.IMPORTANT -> stringResource(R.string.news_filter_important)
+    NewsFilter.HOT -> stringResource(R.string.news_filter_hot)
+}
+
+@Composable
+private fun newsSentimentLabel(sentiment: NewsSentiment): String = when (sentiment) {
+    NewsSentiment.BULLISH -> stringResource(R.string.news_filter_bullish)
+    NewsSentiment.BEARISH -> stringResource(R.string.news_filter_bearish)
+    NewsSentiment.IMPORTANT -> stringResource(R.string.news_filter_important)
+    NewsSentiment.NEUTRAL -> stringResource(R.string.news_sentiment_neutral)
 }
 
 private fun Long.relativeTime(): String =

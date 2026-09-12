@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cryptolens.app.R
 import com.cryptolens.app.features.settings.domain.model.AppCurrency
 import com.cryptolens.app.features.settings.domain.model.AppLanguage
 import com.cryptolens.app.features.settings.domain.model.AppSettings
@@ -75,13 +77,13 @@ fun SettingsScreen(
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         Icons.Default.ArrowBackIosNew,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.action_back),
                         tint     = TextPrimary,
                         modifier = Modifier.size(20.dp),
                     )
                 }
                 Text(
-                    text       = "Settings",
+                    text       = stringResource(R.string.settings_title),
                     style      = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color      = TextPrimary,
@@ -115,7 +117,7 @@ private fun SettingsContent(
             .verticalScroll(rememberScrollState())
     ) {
         // ── Display ────────────────────────────────────────────────────────
-        SettingsSectionHeader("General")
+        SettingsSectionHeader(stringResource(R.string.settings_general))
 
         CurrencySettingItem(
             current  = settings.currency,
@@ -139,11 +141,11 @@ private fun SettingsContent(
 
         // ── Privacy ────────────────────────────────────────────────────────
         SettingsDivider()
-        SettingsSectionHeader("Privacy")
+        SettingsSectionHeader(stringResource(R.string.settings_privacy))
 
         ToggleSettingItem(
             icon    = Icons.Default.Visibility,
-            title   = "Show Portfolio Value",
+            title   = stringResource(R.string.settings_show_portfolio_value),
             subtitle = "Hide/show balance on Home screen",
             checked  = settings.showPortfolioValue,
             onCheckedChange = { onEvent(SettingsEvent.ShowPortfolioValueChanged(it)) },
@@ -151,7 +153,7 @@ private fun SettingsContent(
 
         ToggleSettingItem(
             icon    = Icons.Default.Fingerprint,
-            title   = "Biometric Lock",
+            title   = stringResource(R.string.settings_biometric_lock),
             subtitle = "Require fingerprint to open app",
             checked  = settings.biometricLock,
             onCheckedChange = { onEvent(SettingsEvent.BiometricLockChanged(it)) },
@@ -159,11 +161,11 @@ private fun SettingsContent(
 
         // ── Notifications ──────────────────────────────────────────────────
         SettingsDivider()
-        SettingsSectionHeader("Notifications")
+        SettingsSectionHeader(stringResource(R.string.settings_notifications))
 
         ToggleSettingItem(
             icon    = Icons.Default.NotificationsNone,
-            title   = "Push Notifications",
+            title   = stringResource(R.string.settings_push_notifications),
             subtitle = "Price alerts and market updates",
             checked  = settings.enableNotifications,
             onCheckedChange = { onEvent(SettingsEvent.NotificationsChanged(it)) },
@@ -171,33 +173,33 @@ private fun SettingsContent(
 
         // ── Data ───────────────────────────────────────────────────────────
         SettingsDivider()
-        SettingsSectionHeader("Data")
+        SettingsSectionHeader(stringResource(R.string.settings_data))
 
         InfoSettingItem(
             icon    = Icons.Default.CloudSync,
-            title   = "Data Source",
+            title   = stringResource(R.string.settings_data_source),
             value   = "Binance · CoinGecko",
         )
 
         InfoSettingItem(
             icon    = Icons.Default.Timer,
-            title   = "Price Refresh",
-            value   = "Realtime (WebSocket)",
+            title   = stringResource(R.string.settings_price_refresh),
+            value   = stringResource(R.string.settings_realtime_websocket),
         )
 
         // ── About ──────────────────────────────────────────────────────────
         SettingsDivider()
-        SettingsSectionHeader("About")
+        SettingsSectionHeader(stringResource(R.string.settings_about))
 
         InfoSettingItem(
             icon  = Icons.Default.Info,
-            title = "Version",
+            title = stringResource(R.string.settings_version),
             value = "1.0.0",
         )
 
         InfoSettingItem(
             icon  = Icons.Default.Code,
-            title = "Built with",
+            title = stringResource(R.string.settings_built_with),
             value = "Kotlin · Compose · Supabase",
         )
 
@@ -240,7 +242,7 @@ private fun CurrencySettingItem(
 
     SettingsRow(
         icon     = Icons.Default.AttachMoney,
-        title    = "Currency",
+        title    = stringResource(R.string.settings_currency),
         subtitle = current.displayName,
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -259,7 +261,7 @@ private fun CurrencySettingItem(
 
     if (showDialog) {
         SelectionDialog(
-            title     = "Select Currency",
+            title     = stringResource(R.string.settings_select_currency),
             items     = AppCurrency.entries.map { it to "${it.symbol} ${it.displayName}" },
             selected  = current,
             onSelect  = { onSelect(it); showDialog = false },
@@ -285,12 +287,12 @@ private fun ThemeSettingItem(
 
     SettingsRow(
         icon     = icon,
-        title    = "Theme",
-        subtitle = current.displayName,
+        title    = stringResource(R.string.settings_theme),
+        subtitle = current.localizedDisplayName(),
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text  = current.displayName,
+                    text  = current.localizedDisplayName(),
                     style = MaterialTheme.typography.labelMedium,
                     color = TextSecondary,
                 )
@@ -304,8 +306,8 @@ private fun ThemeSettingItem(
 
     if (showDialog) {
         SelectionDialog(
-            title     = "Select Theme",
-            items     = AppTheme.entries.map { it to it.displayName },
+            title     = stringResource(R.string.settings_select_theme),
+            items     = AppTheme.entries.map { it to it.localizedDisplayName() },
             selected  = current,
             onSelect  = { onSelect(it); showDialog = false },
             onDismiss = { showDialog = false },
@@ -324,12 +326,12 @@ private fun LanguageSettingItem(
 
     SettingsRow(
         icon     = Icons.Default.Language,
-        title    = "Language",
-        subtitle = current.displayName,
+        title    = stringResource(R.string.settings_language),
+        subtitle = current.localizedDisplayName(),
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text  = current.displayName,
+                    text  = current.localizedDisplayName(),
                     style = MaterialTheme.typography.labelMedium,
                     color = TextSecondary,
                 )
@@ -343,8 +345,8 @@ private fun LanguageSettingItem(
 
     if (showDialog) {
         SelectionDialog(
-            title     = "Select Language",
-            items     = AppLanguage.entries.map { it to it.displayName },
+            title     = stringResource(R.string.settings_select_language),
+            items     = AppLanguage.entries.map { it to it.localizedDisplayName() },
             selected  = current,
             onSelect  = { onSelect(it); showDialog = false },
             onDismiss = { showDialog = false },
@@ -363,12 +365,12 @@ private fun PriceFormatSettingItem(
 
     SettingsRow(
         icon     = Icons.Default.Numbers,
-        title    = "Price Format",
-        subtitle = current.displayName,
+        title    = stringResource(R.string.settings_price_format),
+        subtitle = current.localizedDisplayName(),
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text  = current.displayName,
+                    text  = current.localizedDisplayName(),
                     style = MaterialTheme.typography.labelMedium,
                     color = TextSecondary,
                 )
@@ -382,8 +384,8 @@ private fun PriceFormatSettingItem(
 
     if (showDialog) {
         SelectionDialog(
-            title     = "Price Display Format",
-            items     = PriceDisplayFormat.entries.map { it to it.displayName },
+            title     = stringResource(R.string.settings_select_price_format),
+            items     = PriceDisplayFormat.entries.map { it to it.localizedDisplayName() },
             selected  = current,
             onSelect  = { onSelect(it); showDialog = false },
             onDismiss = { showDialog = false },
@@ -547,8 +549,27 @@ private fun <T> SelectionDialog(
                     .align(Alignment.End)
                     .padding(end = 12.dp, bottom = 4.dp),
             ) {
-                Text("Cancel", color = TextSecondary)
+                Text(stringResource(R.string.action_cancel), color = TextSecondary)
             }
         }
     }
+}
+
+@Composable
+private fun AppTheme.localizedDisplayName(): String = when (this) {
+    AppTheme.DARK -> stringResource(R.string.theme_dark)
+    AppTheme.LIGHT -> stringResource(R.string.theme_light)
+    AppTheme.SYSTEM -> stringResource(R.string.theme_system)
+}
+
+@Composable
+private fun AppLanguage.localizedDisplayName(): String = when (this) {
+    AppLanguage.ENGLISH -> stringResource(R.string.language_english)
+    AppLanguage.VIETNAMESE -> stringResource(R.string.language_vietnamese)
+}
+
+@Composable
+private fun PriceDisplayFormat.localizedDisplayName(): String = when (this) {
+    PriceDisplayFormat.FULL -> stringResource(R.string.price_format_full)
+    PriceDisplayFormat.COMPACT -> stringResource(R.string.price_format_compact)
 }

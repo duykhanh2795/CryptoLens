@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cryptolens.app.R
 import com.cryptolens.app.ui.theme.*
 
 @Composable
@@ -91,10 +93,10 @@ fun ProfileScreen(
                 Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null,
                     tint = RedDown, modifier = Modifier.size(32.dp))
             },
-            title = { Text("Log Out?", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) },
+            title = { Text(stringResource(R.string.profile_logout_title), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) },
             text  = {
                 Text(
-                    "Are you sure you want to log out? Your portfolio data will remain saved locally.",
+                    stringResource(R.string.profile_logout_message),
                     textAlign = TextAlign.Center,
                 )
             },
@@ -107,7 +109,7 @@ fun ProfileScreen(
                     ),
                     shape = RoundedCornerShape(8.dp),
                 ) {
-                    Text("Log Out", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_logout), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -116,7 +118,7 @@ fun ProfileScreen(
                     shape   = RoundedCornerShape(8.dp),
                     colors  = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             },
         )
@@ -132,10 +134,10 @@ fun ProfileScreen(
                 Icon(Icons.Outlined.DeleteForever, contentDescription = null,
                     tint = RedDown, modifier = Modifier.size(32.dp))
             },
-            title = { Text("Clear Portfolio?", fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) },
+            title = { Text(stringResource(R.string.profile_clear_title), fontWeight = FontWeight.Bold, textAlign = TextAlign.Center) },
             text = {
                 Text(
-                    "This removes all tracked assets and transactions for your account. Connected exchanges stay linked and can be synced again.",
+                    stringResource(R.string.profile_clear_message),
                     textAlign = TextAlign.Center,
                 )
             },
@@ -148,7 +150,7 @@ fun ProfileScreen(
                     ),
                     shape = RoundedCornerShape(8.dp),
                 ) {
-                    Text("Clear", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_clear), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -157,7 +159,7 @@ fun ProfileScreen(
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             },
         )
@@ -203,26 +205,26 @@ private fun BinanceProfileContent(
 
         Spacer(Modifier.height(22.dp))
 
-        BinanceProfileRow(Icons.Outlined.Person, "Verification", "Not verified", onVerify)
-        BinanceProfileRow(Icons.Outlined.Security, "Security", onClick = onSecurity)
-        BinanceProfileRow(Icons.Outlined.AccountBalance, "Connected Exchanges", "Binance", onNavigateToExchanges)
-        BinanceProfileRow(Icons.Outlined.AccountBalanceWallet, "Wallet Watchlist", "On-chain", onNavigateToWalletWatchlist)
-        BinanceProfileRow(Icons.Outlined.NotificationsNone, "Alerts", "Price rules", onNavigateToAlerts)
-        BinanceProfileRow(Icons.Outlined.SwapHoriz, "Converter", "Live rates", onNavigateToConverter)
-        BinanceProfileRow(Icons.Outlined.Settings, "Settings", "Theme, currency", onNavigateToSettings)
-        BinanceProfileRow(Icons.Default.Close, "Twitter", "Unlinked", onTwitter)
+        BinanceProfileRow(Icons.Outlined.Person, stringResource(R.string.profile_verification), stringResource(R.string.profile_not_verified), onVerify)
+        BinanceProfileRow(Icons.Outlined.Security, stringResource(R.string.profile_security), onClick = onSecurity)
+        BinanceProfileRow(Icons.Outlined.AccountBalance, stringResource(R.string.profile_connected_exchanges), stringResource(R.string.profile_binance), onNavigateToExchanges)
+        BinanceProfileRow(Icons.Outlined.AccountBalanceWallet, stringResource(R.string.profile_wallet_watchlist), stringResource(R.string.profile_on_chain), onNavigateToWalletWatchlist)
+        BinanceProfileRow(Icons.Outlined.NotificationsNone, stringResource(R.string.profile_alerts), stringResource(R.string.profile_price_rules), onNavigateToAlerts)
+        BinanceProfileRow(Icons.Outlined.SwapHoriz, stringResource(R.string.profile_converter), stringResource(R.string.profile_live_rates), onNavigateToConverter)
+        BinanceProfileRow(Icons.Outlined.Settings, stringResource(R.string.profile_settings), stringResource(R.string.profile_theme_currency), onNavigateToSettings)
+        BinanceProfileRow(Icons.Default.Close, stringResource(R.string.profile_twitter), stringResource(R.string.profile_unlinked), onTwitter)
 
         Spacer(Modifier.height(18.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             CompactProfileAction(
-                label = "Export",
+                label = stringResource(R.string.profile_export),
                 icon = Icons.Outlined.FileDownload,
                 onClick = onExportData,
                 modifier = Modifier.weight(1f),
             )
             CompactProfileAction(
-                label = "Clear Portfolio",
+                label = stringResource(R.string.profile_clear_portfolio),
                 icon = Icons.Outlined.DeleteForever,
                 contentColor = RedDown,
                 onClick = onClearPortfolio,
@@ -244,7 +246,7 @@ private fun BinanceProfileContent(
             ),
             enabled = !uiState.isLoading,
         ) {
-            Text("Log Out", fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+            Text(stringResource(R.string.action_logout), fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
         }
 
         Text(
@@ -284,7 +286,7 @@ private fun BinanceProfileTopBar(isLoading: Boolean, onBack: () -> Unit) {
             )
         }
         Text(
-            text = "Account Info",
+            text = stringResource(R.string.profile_account_info),
             modifier = Modifier.weight(1f),
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.titleLarge,
@@ -662,7 +664,7 @@ private fun ChangePasswordDialog(
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text("Save", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_save), fontWeight = FontWeight.Bold)
                 }
             }
         },
@@ -673,7 +675,7 @@ private fun ChangePasswordDialog(
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
         },
     )

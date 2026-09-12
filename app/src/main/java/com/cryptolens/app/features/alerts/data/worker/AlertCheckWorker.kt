@@ -16,16 +16,19 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.cryptolens.app.MainActivity
 import com.cryptolens.app.R
-import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.core.domain.util.formatMoney
 import com.cryptolens.app.features.alerts.domain.model.AlertFrequency
 import com.cryptolens.app.features.alerts.domain.model.AlertType
 import com.cryptolens.app.features.alerts.domain.model.AlertValueType
 import com.cryptolens.app.features.alerts.domain.model.PriceAlert
 import com.cryptolens.app.features.alerts.domain.usecase.GetActiveAlertsUseCase
 import com.cryptolens.app.features.alerts.domain.usecase.MarkAlertTriggeredUseCase
+import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.features.settings.domain.repository.SettingsRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -37,6 +40,7 @@ class AlertCheckWorker @AssistedInject constructor(
     @Assisted params: WorkerParameters,
     private val getActiveAlerts: GetActiveAlertsUseCase,
     private val markAlertTriggered: MarkAlertTriggeredUseCase,
+    private val settingsRepository: SettingsRepository,
     private val okHttpClient: OkHttpClient,
 ) : CoroutineWorker(appContext, params) {
 
@@ -59,7 +63,7 @@ class AlertCheckWorker @AssistedInject constructor(
                 val currentValue = valuesByAlertId[alert.id] ?: return@forEach
                 if (alert.isTriggered(currentValue)) {
                     markAlertTriggered(alert, currentValue)
-                    sendNotification(alert, currentValue)
+                    sendNotification(alert, currentValue, settingsRepository.observeSettings().first())
                 }
             }
 
@@ -122,7 +126,11 @@ class AlertCheckWorker @AssistedInject constructor(
         }
     }.getOrDefault(emptyMap())
 
-    private fun sendNotification(alert: PriceAlert, currentValue: Double): Boolean {
+    private fun sendNotification(
+        alert: PriceAlert,
+        currentValue: Double,
+        settings: AppSettings,
+    ): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val hasPermission = ContextCompat.checkSelfPermission(
                 applicationContext,
@@ -142,11 +150,11 @@ class AlertCheckWorker @AssistedInject constructor(
         )
 
         val target = if (alert.valueType == AlertValueType.PERCENT) {
-            "${alert.condition.movementLabel.lowercase()} ${alert.targetPrice.formatPrice()}%"
+            "${alert.condition.movementLabel.lowercase()} ${"%.2f".format(alert.targetPrice)}%"
         } else {
-            "${alert.condition.label.lowercase()} ${formatMetric(alert.type, alert.targetPrice)}"
+            "${alert.condition.label.lowercase()} ${formatMetric(alert.type, alert.targetPrice, settings)}"
         }
-        val body = "${alert.name} ${alert.type.label} $target. Current: ${formatMetric(alert.type, currentValue)}" +
+        val body = "${alert.name} ${alert.type.label} $target. Current: ${formatMetric(alert.type, currentValue, settings)}" +
             if (alert.frequency == AlertFrequency.PERSISTENT) " (persistent)" else ""
 
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
@@ -167,17 +175,14 @@ class AlertCheckWorker @AssistedInject constructor(
         }.getOrDefault(false)
     }
 
-    private fun formatMetric(type: AlertType, value: Double): String = when (type) {
-        AlertType.PRICE_LIMIT -> "$${value.formatPrice()}"
-        AlertType.VOLUME -> "$${value.formatCompactUsd()}"
-        AlertType.MARKET_CAP -> "$${value.formatCompactUsd()}"
-    }
-
-    private fun Double.formatCompactUsd(): String = when {
-        this >= 1_000_000_000 -> "%.2fB".format(this / 1_000_000_000)
-        this >= 1_000_000 -> "%.2fM".format(this / 1_000_000)
-        this >= 1_000 -> "%.2fK".format(this / 1_000)
-        else -> "%.2f".format(this)
+    private fun formatMetric(
+        type: AlertType,
+        value: Double,
+        settings: AppSettings,
+    ): String = when (type) {
+        AlertType.PRICE_LIMIT -> settings.formatMoney(value)
+        AlertType.VOLUME -> settings.formatMoney(value, compact = true)
+        AlertType.MARKET_CAP -> settings.formatMoney(value, compact = true)
     }
 
     private fun ensureNotificationChannel() {

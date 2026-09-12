@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.features.market.domain.usecase.GetTopCoinsUseCase
+import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.features.settings.domain.usecase.ObserveSettingsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +35,7 @@ enum class ConverterPickerTarget {
 
 data class ConverterUiState(
     val isLoading: Boolean = true,
+    val settings: AppSettings = AppSettings(),
     val assets: List<ConverterAsset> = emptyList(),
     val fromAsset: ConverterAsset? = null,
     val toAsset: ConverterAsset? = null,
@@ -82,13 +85,23 @@ sealed class ConverterEvent {
 @HiltViewModel
 class ConverterViewModel @Inject constructor(
     private val getTopCoins: GetTopCoinsUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConverterUiState())
     val uiState: StateFlow<ConverterUiState> = _uiState.asStateFlow()
 
     init {
+        observeAppSettings()
         loadAssets()
+    }
+
+    private fun observeAppSettings() {
+        viewModelScope.launch {
+            observeSettings().collect { settings ->
+                _uiState.update { it.copy(settings = settings) }
+            }
+        }
     }
 
     fun onEvent(event: ConverterEvent) {

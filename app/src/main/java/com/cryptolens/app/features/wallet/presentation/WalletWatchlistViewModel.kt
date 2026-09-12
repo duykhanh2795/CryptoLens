@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetTopCoinsUseCase
+import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.features.settings.domain.usecase.ObserveSettingsUseCase
 import com.cryptolens.app.features.wallet.domain.model.TrendingWalletDetail
 import com.cryptolens.app.features.wallet.domain.model.WalletChain
 import com.cryptolens.app.features.wallet.domain.model.WalletConnectionEvent
@@ -32,6 +34,7 @@ import javax.inject.Inject
 data class WalletWatchlistUiState(
     val wallets: List<WalletWatchListItem> = emptyList(),
     val portfolios: Map<String, ConnectedWalletPortfolioUiState> = emptyMap(),
+    val settings: AppSettings = AppSettings(),
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isLoadingPortfolios: Boolean = false,
@@ -78,6 +81,7 @@ class WalletWatchlistViewModel @Inject constructor(
     private val refreshWallets: RefreshWalletWatchlistUseCase,
     private val getConnectedWalletPortfolios: GetConnectedWalletPortfoliosUseCase,
     private val getTopCoins: GetTopCoinsUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
 ) : ViewModel() {
 
     private val userId = getCurrentUser()?.id.orEmpty()
@@ -93,11 +97,20 @@ class WalletWatchlistViewModel @Inject constructor(
     val effect: SharedFlow<WalletWatchlistEffect> = _effect.asSharedFlow()
 
     init {
+        observeAppSettings()
         observeWalletList()
         observeNativePrices()
         combineWalletsWithPrices()
         observeWalletConnection()
         refreshAll()
+    }
+
+    private fun observeAppSettings() {
+        viewModelScope.launch {
+            observeSettings().collect { settings ->
+                _uiState.update { it.copy(settings = settings) }
+            }
+        }
     }
 
     fun onEvent(event: WalletWatchlistEvent) {

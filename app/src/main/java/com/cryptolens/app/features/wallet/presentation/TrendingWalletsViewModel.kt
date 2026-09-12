@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
+import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.features.settings.domain.usecase.ObserveSettingsUseCase
 import com.cryptolens.app.features.wallet.domain.model.TrendingWallet
 import com.cryptolens.app.features.wallet.domain.model.TrendingWalletDetail
 import com.cryptolens.app.features.wallet.domain.usecase.AddWalletToWatchlistUseCase
@@ -23,6 +25,7 @@ import javax.inject.Inject
 
 data class TrendingWalletsUiState(
     val wallets: List<TrendingWallet> = emptyList(),
+    val settings: AppSettings = AppSettings(),
     val query: String = "",
     val isLoading: Boolean = true,
     val error: String? = null,
@@ -43,13 +46,23 @@ sealed class TrendingWalletsEvent {
 @HiltViewModel
 class TrendingWalletsViewModel @Inject constructor(
     private val getTrendingWallets: GetTrendingWalletsUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TrendingWalletsUiState())
     val uiState: StateFlow<TrendingWalletsUiState> = _uiState.asStateFlow()
 
     init {
+        observeAppSettings()
         load()
+    }
+
+    private fun observeAppSettings() {
+        viewModelScope.launch {
+            observeSettings().collect { settings ->
+                _uiState.update { it.copy(settings = settings) }
+            }
+        }
     }
 
     fun onEvent(event: TrendingWalletsEvent) {
@@ -82,6 +95,7 @@ enum class WalletDetailTab {
 
 data class TrendingWalletDetailUiState(
     val detail: TrendingWalletDetail? = null,
+    val settings: AppSettings = AppSettings(),
     val selectedTab: WalletDetailTab = WalletDetailTab.ASSETS,
     val isLoading: Boolean = true,
     val isAddingToWatchlist: Boolean = false,
@@ -103,6 +117,7 @@ class TrendingWalletDetailViewModel @Inject constructor(
     private val getDetail: GetTrendingWalletDetailUseCase,
     private val addWallet: AddWalletToWatchlistUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -116,7 +131,16 @@ class TrendingWalletDetailViewModel @Inject constructor(
     val effect: SharedFlow<TrendingWalletDetailEffect> = _effect.asSharedFlow()
 
     init {
+        observeAppSettings()
         load()
+    }
+
+    private fun observeAppSettings() {
+        viewModelScope.launch {
+            observeSettings().collect { settings ->
+                _uiState.update { it.copy(settings = settings) }
+            }
+        }
     }
 
     fun onEvent(event: TrendingWalletDetailEvent) {

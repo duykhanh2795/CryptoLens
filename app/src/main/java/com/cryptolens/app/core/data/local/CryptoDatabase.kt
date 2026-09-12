@@ -17,7 +17,9 @@ import com.cryptolens.app.features.portfolio.data.local.entity.TransactionEntity
 import com.cryptolens.app.features.wallet.data.local.dao.WalletWatchDao
 import com.cryptolens.app.features.wallet.data.local.entity.WalletWatchEntity
 import com.cryptolens.app.features.watchlist.data.local.dao.WatchlistDao
+import com.cryptolens.app.features.watchlist.data.local.entity.WatchlistComparePresetEntity
 import com.cryptolens.app.features.watchlist.data.local.entity.WatchlistEntity
+import com.cryptolens.app.features.watchlist.data.local.entity.WatchlistGroupEntity
 
 @Database(
     entities = [
@@ -28,8 +30,10 @@ import com.cryptolens.app.features.watchlist.data.local.entity.WatchlistEntity
         PriceAlertEntity::class,
         PortfolioSnapshotEntity::class,
         WalletWatchEntity::class,
+        WatchlistGroupEntity::class,
+        WatchlistComparePresetEntity::class,
     ],
-    version      = 8,
+    version      = 10,
     exportSchema = true,
 )
 abstract class CryptoDatabase : RoomDatabase() {
@@ -94,6 +98,21 @@ object CryptoDatabaseMigrations {
         }
     }
 
+    val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            createCurrentTablesIfMissing(db)
+            createWatchlistGroupsTableIfMissing(db)
+            addWatchlistGroupColumnsIfMissing(db)
+        }
+    }
+
+    val MIGRATION_9_10 = object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            createCurrentTablesIfMissing(db)
+            createWatchlistComparePresetsTableIfMissing(db)
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
@@ -102,6 +121,8 @@ object CryptoDatabaseMigrations {
         MIGRATION_5_6,
         MIGRATION_6_7,
         MIGRATION_7_8,
+        MIGRATION_8_9,
+        MIGRATION_9_10,
     )
 
     private fun createCurrentTablesIfMissing(db: SupportSQLiteDatabase) {
@@ -165,13 +186,53 @@ object CryptoDatabaseMigrations {
                 `name` TEXT NOT NULL,
                 `imageUrl` TEXT NOT NULL,
                 `addedAt` INTEGER NOT NULL,
+                `groupIds` TEXT NOT NULL DEFAULT 'spot',
+                `isPinned` INTEGER NOT NULL DEFAULT 0,
+                `sortIndex` INTEGER NOT NULL DEFAULT 0,
                 PRIMARY KEY(`coinId`)
             )
             """.trimIndent()
         )
+        addWatchlistGroupColumnsIfMissing(db)
+        createWatchlistGroupsTableIfMissing(db)
+        createWatchlistComparePresetsTableIfMissing(db)
         createPriceAlertsTableIfMissing(db)
         createPortfolioSnapshotsTableIfMissing(db)
         createWalletWatchlistTableIfMissing(db)
+    }
+
+    private fun createWatchlistGroupsTableIfMissing(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `watchlist_groups` (
+                `id` TEXT NOT NULL,
+                `name` TEXT NOT NULL,
+                `createdAt` INTEGER NOT NULL,
+                `sortIndex` INTEGER NOT NULL,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent()
+        )
+    }
+
+    private fun createWatchlistComparePresetsTableIfMissing(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `watchlist_compare_presets` (
+                `id` TEXT NOT NULL,
+                `name` TEXT NOT NULL,
+                `coinIds` TEXT NOT NULL,
+                `createdAt` INTEGER NOT NULL,
+                PRIMARY KEY(`id`)
+            )
+            """.trimIndent()
+        )
+    }
+
+    private fun addWatchlistGroupColumnsIfMissing(db: SupportSQLiteDatabase) {
+        addColumnIfMissing(db, "watchlist", "groupIds", "TEXT NOT NULL DEFAULT 'spot'")
+        addColumnIfMissing(db, "watchlist", "isPinned", "INTEGER NOT NULL DEFAULT 0")
+        addColumnIfMissing(db, "watchlist", "sortIndex", "INTEGER NOT NULL DEFAULT 0")
     }
 
     private fun createPriceAlertsTableIfMissing(db: SupportSQLiteDatabase) {

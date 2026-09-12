@@ -10,4 +10,12 @@ data class WatchlistEntity(
     val name: String,
     val imageUrl: String,
     val addedAt: Long = System.currentTimeMillis(),
+    val groupIds: String = WatchlistDefaults.DEFAULT_GROUP_ID,
+    val isPinned: Boolean = false,
+    val sortIndex: Int = 0,
 )
+
+object WatchlistDefaults {
+    const val DEFAULT_GROUP_ID = "spot"
+    const val DEFAULT_GROUP_NAME = "Spot"
+}

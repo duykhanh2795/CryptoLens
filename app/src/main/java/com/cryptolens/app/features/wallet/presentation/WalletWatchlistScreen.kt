@@ -59,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,8 +67,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.net.toUri
+import com.cryptolens.app.R
 import com.cryptolens.app.core.domain.util.formatLargeNumber
+import com.cryptolens.app.core.domain.util.formatMoney
 import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.features.settings.domain.model.AppSettings
 import com.cryptolens.app.features.wallet.domain.model.TrendingWalletDetail
 import com.cryptolens.app.features.wallet.domain.model.WalletAsset
 import com.cryptolens.app.features.wallet.domain.model.WalletChain
@@ -153,6 +157,7 @@ fun WalletWatchlistScreen(
                 WalletList(
                     wallets = uiState.wallets,
                     portfolios = uiState.portfolios,
+                    settings = uiState.settings,
                     onDelete = { viewModel.onEvent(WalletWatchlistEvent.DeleteWallet(it)) },
                     onWalletDetailsClick = onWalletDetailsClick,
                     onAssetClick = onAssetClick,
@@ -249,6 +254,7 @@ private fun EmptyWallets() {
 private fun WalletList(
     wallets: List<WalletWatchListItem>,
     portfolios: Map<String, ConnectedWalletPortfolioUiState>,
+    settings: AppSettings,
     onDelete: (String) -> Unit,
     onWalletDetailsClick: (WalletChain, String) -> Unit,
     onAssetClick: (String) -> Unit,
@@ -265,6 +271,7 @@ private fun WalletList(
             WalletCard(
                 item = item,
                 portfolio = portfolios[item.wallet.id],
+                settings = settings,
                 onDelete = onDelete,
                 onWalletDetailsClick = onWalletDetailsClick,
                 onAssetClick = onAssetClick,
@@ -293,6 +300,7 @@ private fun WalletScopeNotice() {
 private fun WalletCard(
     item: WalletWatchListItem,
     portfolio: ConnectedWalletPortfolioUiState?,
+    settings: AppSettings,
     onDelete: (String) -> Unit,
     onWalletDetailsClick: (WalletChain, String) -> Unit,
     onAssetClick: (String) -> Unit,
@@ -359,7 +367,7 @@ private fun WalletCard(
                 )
                 WalletMetric(
                     label = "Native value",
-                    value = item.nativeValueUsd?.let { "$${it.formatLargeNumber()}" } ?: "Price unavailable",
+                    value = item.nativeValueUsd?.let { settings.formatMoney(it, compact = true) } ?: "Price unavailable",
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -401,6 +409,7 @@ private fun WalletCard(
             ConnectedWalletPortfolioSection(
                 portfolio = portfolio,
                 nativeFallbackValueUsd = item.nativeValueUsd,
+                settings = settings,
                 onViewDetails = { onWalletDetailsClick(wallet.chain, wallet.address) },
                 onAssetClick = onAssetClick,
             )
@@ -412,6 +421,7 @@ private fun WalletCard(
 private fun ConnectedWalletPortfolioSection(
     portfolio: ConnectedWalletPortfolioUiState?,
     nativeFallbackValueUsd: Double?,
+    settings: AppSettings,
     onViewDetails: () -> Unit,
     onAssetClick: (String) -> Unit,
 ) {
@@ -435,6 +445,7 @@ private fun ConnectedWalletPortfolioSection(
             WalletPortfolioLoaded(
                 detail = portfolio.detail,
                 fallbackValueUsd = nativeFallbackValueUsd,
+                settings = settings,
                 onViewDetails = onViewDetails,
                 onAssetClick = onAssetClick,
             )
@@ -449,7 +460,7 @@ private fun ConnectedWalletPortfolioSection(
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     WalletMetric(
                         label = "Portfolio value",
-                        value = nativeFallbackValueUsd?.let { "$${it.formatLargeNumber()}" } ?: "Unavailable",
+                        value = nativeFallbackValueUsd?.let { settings.formatMoney(it, compact = true) } ?: "Unavailable",
                         modifier = Modifier.weight(1f),
                     )
                     WalletMetric(
@@ -459,7 +470,7 @@ private fun ConnectedWalletPortfolioSection(
                     )
                 }
                 TextButton(onClick = onViewDetails, modifier = Modifier.align(Alignment.End)) {
-                    Text("Open details", color = BinanceYellow, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.wallet_open_details), color = BinanceYellow, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -470,6 +481,7 @@ private fun ConnectedWalletPortfolioSection(
 private fun WalletPortfolioLoaded(
     detail: TrendingWalletDetail,
     fallbackValueUsd: Double?,
+    settings: AppSettings,
     onViewDetails: () -> Unit,
     onAssetClick: (String) -> Unit,
 ) {
@@ -484,7 +496,7 @@ private fun WalletPortfolioLoaded(
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             WalletMetric(
                 label = "Portfolio value",
-                value = totalValue?.let { "$${it.formatLargeNumber()}" } ?: "Unavailable",
+                value = totalValue?.let { settings.formatMoney(it, compact = true) } ?: "Unavailable",
                 modifier = Modifier.weight(1f),
             )
             WalletMetric(
@@ -510,7 +522,11 @@ private fun WalletPortfolioLoaded(
         if (topAssets.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 topAssets.forEach { asset ->
-                    WalletAssetPreviewRow(asset = asset, onAssetClick = onAssetClick)
+                    WalletAssetPreviewRow(
+                        asset = asset,
+                        settings = settings,
+                        onAssetClick = onAssetClick,
+                    )
                 }
             }
         }
@@ -531,7 +547,7 @@ private fun WalletPortfolioLoaded(
                 )
             }
             TextButton(onClick = onViewDetails) {
-                Text("Open details", color = BinanceYellow, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.wallet_open_details), color = BinanceYellow, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -540,6 +556,7 @@ private fun WalletPortfolioLoaded(
 @Composable
 private fun WalletAssetPreviewRow(
     asset: WalletAsset,
+    settings: AppSettings,
     onAssetClick: (String) -> Unit,
 ) {
     val clickableModifier = asset.coinId?.let { coinId ->
@@ -587,7 +604,7 @@ private fun WalletAssetPreviewRow(
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                asset.valueUsd?.let { "$${it.formatLargeNumber()}" } ?: "-",
+                asset.valueUsd?.let { settings.formatMoney(it, compact = true) } ?: "-",
                 color = TextPrimary,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
@@ -707,7 +724,7 @@ private fun AddWalletSheet(
                             color = Color(0xFF1A1400),
                         )
                     } else {
-                        Text("Connect MetaMask", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.wallet_connect_metamask), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -715,7 +732,7 @@ private fun AddWalletSheet(
 
         Spacer(Modifier.height(18.dp))
 
-        Text("Chain", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+        Text(stringResource(R.string.wallet_chain), color = TextSecondary, style = MaterialTheme.typography.labelMedium)
         Spacer(Modifier.height(8.dp))
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -740,8 +757,8 @@ private fun AddWalletSheet(
             value = state.labelInput,
             onValueChange = { onEvent(WalletWatchlistEvent.LabelChanged(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Label") },
-            placeholder = { Text("${state.selectedChain.label} wallet") },
+            label = { Text(stringResource(R.string.wallet_label)) },
+            placeholder = { Text(stringResource(R.string.wallet_default_label, state.selectedChain.label)) },
             singleLine = true,
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
             focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -756,7 +773,7 @@ private fun AddWalletSheet(
             value = state.addressInput,
             onValueChange = { onEvent(WalletWatchlistEvent.AddressChanged(it)) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Public wallet address") },
+            label = { Text(stringResource(R.string.wallet_public_address)) },
             singleLine = true,
             isError = state.inputError != null,
             supportingText = state.inputError?.let { message ->
@@ -779,7 +796,7 @@ private fun AddWalletSheet(
                     .height(48.dp),
                 shape = RoundedCornerShape(8.dp),
             ) {
-                Text("Cancel", color = TextSecondary)
+                Text(stringResource(R.string.action_cancel), color = TextSecondary)
             }
             Button(
                 onClick = { onEvent(WalletWatchlistEvent.AddWallet) },
@@ -800,7 +817,7 @@ private fun AddWalletSheet(
                         color = Color(0xFF1A1400),
                     )
                 } else {
-                    Text("Add", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.common_add), fontWeight = FontWeight.Bold)
                 }
             }
         }

@@ -19,6 +19,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextAlign
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cryptolens.app.R
 import com.cryptolens.app.features.auth.presentation.login.CryptoTextField
 import com.cryptolens.app.ui.theme.*
 
@@ -77,10 +79,10 @@ fun RegisterScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Filled.ArrowBackIosNew, contentDescription = "Back", tint = TextPrimary, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Filled.ArrowBackIosNew, contentDescription = stringResource(R.string.action_back), tint = TextPrimary, modifier = Modifier.size(20.dp))
                 }
                 Text(
-                    text       = "Create Account",
+                    text       = stringResource(R.string.auth_create_account),
                     style      = MaterialTheme.typography.titleMedium,
                     color      = TextPrimary,
                     fontWeight = FontWeight.SemiBold,
@@ -102,9 +104,9 @@ fun RegisterScreen(
                         Text("CL", color = Color(0xFF1A1400), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                     }
                     Spacer(Modifier.height(12.dp))
-                    Text("Join CryptoLens", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text(stringResource(R.string.auth_join_title), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     Spacer(Modifier.height(4.dp))
-                    Text("Start your smart crypto journey", style = MaterialTheme.typography.bodyMedium, color = TextSecondary, textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.auth_join_subtitle), style = MaterialTheme.typography.bodyMedium, color = TextSecondary, textAlign = TextAlign.Center)
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -113,7 +115,7 @@ fun RegisterScreen(
                 CryptoTextField(
                     value           = uiState.displayName,
                     onValueChange   = { viewModel.onEvent(RegisterEvent.DisplayNameChanged(it)) },
-                    label           = "Full Name",
+                    label           = stringResource(R.string.auth_full_name),
                     leadingIcon     = Icons.Outlined.Person,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
@@ -130,7 +132,7 @@ fun RegisterScreen(
                 CryptoTextField(
                     value           = uiState.email,
                     onValueChange   = { viewModel.onEvent(RegisterEvent.EmailChanged(it)) },
-                    label           = "Email",
+                    label           = stringResource(R.string.auth_email),
                     leadingIcon     = Icons.Outlined.Email,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
@@ -146,7 +148,7 @@ fun RegisterScreen(
                 CryptoTextField(
                     value             = uiState.password,
                     onValueChange     = { viewModel.onEvent(RegisterEvent.PasswordChanged(it)) },
-                    label             = "Password",
+                    label             = stringResource(R.string.auth_password),
                     leadingIcon       = Icons.Outlined.Lock,
                     isPassword        = true,
                     isPasswordVisible = uiState.isPasswordVisible,
@@ -170,7 +172,7 @@ fun RegisterScreen(
                 CryptoTextField(
                     value             = uiState.confirmPassword,
                     onValueChange     = { viewModel.onEvent(RegisterEvent.ConfirmPasswordChanged(it)) },
-                    label             = "Confirm Password",
+                    label             = stringResource(R.string.auth_confirm_password),
                     leadingIcon       = Icons.Outlined.LockOpen,
                     isPassword        = true,
                     isPasswordVisible = uiState.isConfirmVisible,
@@ -209,7 +211,7 @@ fun RegisterScreen(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text  = "I agree to the Terms of Service and Privacy Policy",
+                        text  = stringResource(R.string.auth_accept_terms),
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary,
                     )
@@ -239,7 +241,7 @@ fun RegisterScreen(
                             strokeWidth = 2.dp,
                         )
                     } else {
-                        Text("Create Account", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.auth_create_account), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -251,9 +253,9 @@ fun RegisterScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment     = Alignment.CenterVertically,
                 ) {
-                    Text("Already have an account? ", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+                    Text("${stringResource(R.string.auth_have_account)} ", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
                     TextButton(onClick = onNavigateBack, contentPadding = PaddingValues(0.dp)) {
-                        Text("Log In", color = BinanceYellow, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.auth_login), color = BinanceYellow, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
 
@@ -278,10 +280,10 @@ private fun PasswordStrengthBar(password: String) {
         else -> 1
     }
     val (label, color) = when (strength) {
-        4    -> "Strong" to GreenUp
-        3    -> "Good"   to Color(0xFF87CEEB)
-        2    -> "Fair"   to BinanceYellow
-        else -> "Weak"   to RedDown
+        4    -> stringResource(R.string.auth_strength_strong) to GreenUp
+        3    -> stringResource(R.string.auth_strength_good)   to Color(0xFF87CEEB)
+        2    -> stringResource(R.string.auth_strength_fair)   to BinanceYellow
+        else -> stringResource(R.string.auth_strength_weak)   to RedDown
     }
 
     Column(modifier = Modifier.padding(top = 8.dp)) {
@@ -298,7 +300,7 @@ private fun PasswordStrengthBar(password: String) {
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            text  = "Password strength: $label",
+            text  = stringResource(R.string.auth_password_strength, label),
             style = MaterialTheme.typography.labelSmall,
             color = color,
         )

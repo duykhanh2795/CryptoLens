@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -57,8 +58,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.cryptolens.app.R
 import com.cryptolens.app.core.domain.util.formatLargeNumber
-import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.core.domain.util.formatMoney
+import com.cryptolens.app.features.settings.domain.model.AppSettings
 import com.cryptolens.app.ui.theme.BackgroundDark
 import com.cryptolens.app.ui.theme.BinanceYellow
 import com.cryptolens.app.ui.theme.BorderColor
@@ -142,12 +145,12 @@ private fun ConverterTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
-            Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back", tint = TextPrimary)
+            Icon(Icons.Default.ArrowBackIosNew, contentDescription = stringResource(R.string.action_back), tint = TextPrimary)
         }
         Icon(Icons.Default.CurrencyExchange, contentDescription = null, tint = BinanceYellow)
         Spacer(Modifier.width(8.dp))
         Text(
-            "Converter",
+            stringResource(R.string.converter_title),
             color = TextPrimary,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
@@ -161,7 +164,7 @@ private fun ConverterTopBar(
             )
         } else {
             IconButton(onClick = onRefresh) {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh prices", tint = TextSecondary)
+                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.converter_refresh_prices), tint = TextSecondary)
             }
         }
     }
@@ -210,10 +213,10 @@ private fun ConverterCard(
         shape = RoundedCornerShape(8.dp),
     ) {
         Column(Modifier.padding(14.dp)) {
-            Text("Convert", color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.converter_convert), color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(12.dp))
             AmountAssetRow(
-                label = "From",
+                label = stringResource(R.string.converter_from),
                 amount = state.amountInput,
                 asset = state.fromAsset,
                 amountEditable = true,
@@ -232,12 +235,12 @@ private fun ConverterCard(
                         .clip(CircleShape)
                         .background(SurfaceVariant),
                 ) {
-                    Icon(Icons.Default.SwapVert, contentDescription = "Swap assets", tint = BinanceYellow)
+                    Icon(Icons.Default.SwapVert, contentDescription = stringResource(R.string.converter_swap_assets), tint = BinanceYellow)
                 }
             }
 
             AmountAssetRow(
-                label = "To",
+                label = stringResource(R.string.converter_to),
                 amount = state.convertedAmount.formatAmount(),
                 asset = state.toAsset,
                 amountEditable = false,
@@ -344,7 +347,7 @@ private fun QuickPairsSection(
     if (pairs.isEmpty()) return
 
     Column {
-        Text("Quick pairs", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.converter_quick_pairs), color = TextSecondary, style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(8.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(pairs, key = { "${it.second}-${it.third}" }) { (label, fromId, toId) ->
@@ -370,7 +373,7 @@ private fun RateSection(state: ConverterUiState) {
         shape = RoundedCornerShape(8.dp),
     ) {
         Column(Modifier.padding(14.dp)) {
-            Text("Rate", color = TextPrimary, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.converter_rate), color = TextPrimary, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(10.dp))
             RateRow("1 ${from.symbol}", "${state.directRate.formatAmount()} ${to.symbol}")
             HorizontalDivider(color = DividerColor, modifier = Modifier.padding(vertical = 8.dp))
@@ -399,14 +402,14 @@ private fun MarketContextSection(state: ConverterUiState) {
     ) {
         Column(Modifier.padding(vertical = 8.dp)) {
             Text(
-                "Market context",
+                stringResource(R.string.converter_market_context),
                 color = TextPrimary,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
             )
             assets.forEachIndexed { index, asset ->
-                MarketContextRow(asset = asset)
+                MarketContextRow(asset = asset, settings = state.settings)
                 if (index < assets.lastIndex) {
                     HorizontalDivider(color = DividerColor, modifier = Modifier.padding(start = 58.dp))
                 }
@@ -416,7 +419,7 @@ private fun MarketContextSection(state: ConverterUiState) {
 }
 
 @Composable
-private fun MarketContextRow(asset: ConverterAsset) {
+private fun MarketContextRow(asset: ConverterAsset, settings: AppSettings) {
     val changeColor = if (asset.isPositive) GreenUp else RedDown
     val changeBg = if (asset.isPositive) GreenUpSurface else RedDownSurface
     Row(
@@ -430,7 +433,7 @@ private fun MarketContextRow(asset: ConverterAsset) {
             Text(asset.name, color = TextSecondary, style = MaterialTheme.typography.labelSmall, maxLines = 1)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(asset.priceUsd.formatUsd(), color = TextPrimary, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+            Text(settings.formatMoney(asset.priceUsd), color = TextPrimary, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
             if (!asset.isFiat) {
                 Box(
                     modifier = Modifier
@@ -462,14 +465,14 @@ private fun AssetPickerSheet(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (state.pickerTarget == ConverterPickerTarget.FROM) "Select source" else "Select target",
+                if (state.pickerTarget == ConverterPickerTarget.FROM) stringResource(R.string.converter_select_source) else stringResource(R.string.converter_select_target),
                 color = TextPrimary,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = { onEvent(ConverterEvent.HidePicker) }) {
-                Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close), tint = TextSecondary)
             }
         }
 
@@ -479,7 +482,7 @@ private fun AssetPickerSheet(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
-            placeholder = { Text("Search coin or symbol", color = TextTertiary) },
+            placeholder = { Text(stringResource(R.string.converter_search_coin), color = TextTertiary) },
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
             focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
             unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -495,6 +498,7 @@ private fun AssetPickerSheet(
             items(state.filteredAssets, key = { it.id }) { asset ->
                 AssetPickerRow(
                     asset = asset,
+                    settings = state.settings,
                     selected = asset.id == state.fromAsset?.id || asset.id == state.toAsset?.id,
                     onClick = { onEvent(ConverterEvent.AssetSelected(asset.id)) },
                 )
@@ -508,6 +512,7 @@ private fun AssetPickerSheet(
 @Composable
 private fun AssetPickerRow(
     asset: ConverterAsset,
+    settings: AppSettings,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -525,9 +530,9 @@ private fun AssetPickerRow(
             Text(asset.name, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(asset.priceUsd.formatUsd(), color = TextPrimary, style = MaterialTheme.typography.labelMedium)
+            Text(settings.formatMoney(asset.priceUsd), color = TextPrimary, style = MaterialTheme.typography.labelMedium)
             if (selected) {
-                Text("Selected", color = BinanceYellow, style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(R.string.common_selected), color = BinanceYellow, style = MaterialTheme.typography.labelSmall)
             } else if (asset.rank > 0) {
                 Text("#${asset.rank}", color = TextTertiary, style = MaterialTheme.typography.labelSmall)
             }
@@ -564,12 +569,12 @@ private fun ConverterError(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("Unable to load converter", color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.converter_unable_to_load), color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text(message.orEmpty(), color = TextSecondary, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
         Spacer(Modifier.height(14.dp))
         TextButton(onClick = onRetry) {
-            Text("Retry", color = BinanceYellow)
+            Text(stringResource(R.string.common_retry), color = BinanceYellow)
         }
     }
 }
@@ -579,12 +584,6 @@ private fun Double.formatAmount(): String = when {
     this >= 1_000_000 -> formatLargeNumber()
     this >= 1.0 -> "%.6f".format(this).trimTrailingZeroes()
     else -> "%.10f".format(this).trimTrailingZeroes()
-}
-
-private fun Double.formatUsd(): String = if (this >= 1_000_000) {
-    "$${formatLargeNumber()}"
-} else {
-    "$${formatPrice()}"
 }
 
 private fun Double.formatPercentText(): String = "${"%.2f".format(this)}%"

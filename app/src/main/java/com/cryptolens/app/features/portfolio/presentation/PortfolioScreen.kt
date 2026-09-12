@@ -19,9 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -30,12 +33,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.cryptolens.app.core.domain.util.formatLargeNumber
-import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.core.domain.util.formatMoney
+import com.cryptolens.app.core.domain.util.formatSignedMoney
 import com.cryptolens.app.features.portfolio.domain.model.*
+import com.cryptolens.app.features.settings.domain.model.AppSettings
 import com.cryptolens.app.ui.theme.*
 import kotlinx.coroutines.launch
 import java.io.OutputStreamWriter
@@ -153,10 +160,10 @@ fun PortfolioScreen(
                     CircularProgressIndicator(color = BinanceYellow)
                 }
                 else -> {
-                    uiState.summary?.let { PortfolioSummaryCard(it) }
-                    PortfolioTimelineCard(
+                    PortfolioHeroSection(
+                        summary = uiState.summary,
                         snapshots = uiState.snapshots,
-                        currentSummary = uiState.summary,
+                        settings = uiState.settings,
                     )
 
                     TabRow(
@@ -197,11 +204,13 @@ fun PortfolioScreen(
                     when (uiState.selectedTab) {
                         PortfolioTab.ASSETS -> AssetsTab(
                             assets = uiState.summary?.assets ?: emptyList(),
+                            settings = uiState.settings,
                             onCoinClick = onCoinClick,
                             onDelete = { viewModel.onEvent(PortfolioEvent.DeleteAsset(it)) },
                         )
                         PortfolioTab.TRANSACTIONS -> TransactionsTab(
                             transactions = uiState.transactions,
+                            settings = uiState.settings,
                             onDelete = { viewModel.onEvent(PortfolioEvent.DeleteTransaction(it)) },
                         )
                     }
@@ -212,6 +221,7 @@ fun PortfolioScreen(
 
     if (uiState.showAddSheet) {
         AddTransactionSheet(
+            settings = uiState.settings,
             onDismiss = { viewModel.onEvent(PortfolioEvent.HideAddSheet) },
             onConfirm = { coinId, sym, nm, img, type, qty, price, fee, note ->
                 viewModel.onEvent(PortfolioEvent.AddTransaction(
@@ -232,7 +242,6 @@ fun PortfolioScreen(
         )
     }
 }
-
 @Composable
 private fun ImportPreviewDialog(
     preview: PortfolioImportPreview,
@@ -320,9 +329,785 @@ private fun ImportPreviewRow(label: String, value: String) {
 }
 
 @Composable
+private fun PortfolioHeroSection(
+    summary: PortfolioSummary?,
+    snapshots: List<PortfolioSnapshot>,
+    settings: AppSettings,
+) {
+    var selectedRange by remember { mutableStateOf("24H") }
+    var showAllocation by remember { mutableStateOf(false) }
+    val totalValue = summary?.totalValue ?: 0.0
+    val totalPnl = summary?.totalProfitLoss ?: 0.0
+    val totalPnlPercent = summary?.totalProfitLossPercent ?: 0.0
+    val dayChange = summary?.totalChange24h ?: 0.0
+    val dayChangePercent = summary?.totalChange24hPercent ?: 0.0
+    val isProfit = totalPnl >= 0.0
+    val isDayUp = dayChange >= 0.0
+    val chartColor = if (isDayUp) GreenUp else RedDown
+    val chartValues = remember(snapshots, summary) {
+        if (snapshots.size >= 2) {
+            snapshots.map { it.totalValue }
+        } else {
+            portfolioFallbackSeries(totalValue, dayChangePercent)
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "USD",
+                style = MaterialTheme.typography.labelLarge,
+                color = TextSecondary,
+                fontWeight = FontWeight.Medium,
+            )
+            Spacer(Modifier.weight(1f))
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(SurfaceVariant.copy(alpha = 0.55f))
+                    .clickable { showAllocation = true }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Outlined.PieChart,
+                    contentDescription = null,
+                    tint = TextSecondary,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    "Allocation",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TextSecondary,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(18.dp))
+
+        Text(
+            settings.formatMoney(totalValue),
+            fontSize = 34.sp,
+            lineHeight = 38.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary,
+        )
+        Spacer(Modifier.height(6.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                settings.formatSignedMoney(totalPnl),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (isProfit) GreenUp else RedDown,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(7.dp))
+                    .background(if (isProfit) GreenUpSurface else RedDownSurface)
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            ) {
+                Text(
+                    formatSignedPercent(totalPnlPercent),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isProfit) GreenUp else RedDown,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+        }
+
+        PortfolioHeroChart(
+            values = chartValues,
+            lineColor = chartColor,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(218.dp)
+                .padding(top = 16.dp),
+        )
+
+        PortfolioRangeSelector(
+            selectedRange = selectedRange,
+            onRangeSelected = { selectedRange = it },
+            modifier = Modifier.padding(top = 2.dp),
+        )
+
+        Spacer(Modifier.height(18.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            PortfolioHeroMetric(
+                label = "Invested",
+                value = settings.formatMoney(summary?.totalInvested ?: 0.0),
+                color = TextPrimary,
+            )
+            PortfolioHeroMetric(
+                label = "Unrealized",
+                value = settings.formatSignedMoney(summary?.unrealizedProfitLoss ?: 0.0),
+                color = pnlColor(summary?.unrealizedProfitLoss ?: 0.0),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            )
+            PortfolioHeroMetric(
+                label = "Realized",
+                value = settings.formatSignedMoney(summary?.realizedProfitLoss ?: 0.0),
+                color = pnlColor(summary?.realizedProfitLoss ?: 0.0),
+                horizontalAlignment = Alignment.End,
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            PortfolioHeroMetric(
+                label = "Fees",
+                value = settings.formatMoney(summary?.totalFeesPaid ?: 0.0),
+                color = TextSecondary,
+            )
+            PortfolioHeroMetric(
+                label = "24H",
+                value = "${settings.formatSignedMoney(dayChange)} / ${formatSignedPercent(dayChangePercent)}",
+                color = if (isDayUp) GreenUp else RedDown,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            )
+            PortfolioHeroMetric(
+                label = "Assets",
+                value = "${summary?.assets?.size ?: 0}",
+                color = TextPrimary,
+                horizontalAlignment = Alignment.End,
+            )
+        }
+    }
+
+    if (showAllocation) {
+        AllocationScreenDialog(
+            summary = summary,
+            settings = settings,
+            onDismiss = { showAllocation = false },
+        )
+    }
+}
+
+@Composable
+private fun AllocationScreenDialog(
+    summary: PortfolioSummary?,
+    settings: AppSettings,
+    onDismiss: () -> Unit,
+) {
+    var selectedRange by remember { mutableStateOf("24H") }
+    val assets = remember(summary) {
+        summary?.assets
+            ?.filter { it.currentValue > 0.0 || it.quantity > 0.0 }
+            ?.sortedByDescending { it.currentValue }
+            ?: emptyList()
+    }
+    val totalValue = assets.sumOf { it.currentValue }
+    val displayAssets = assets.take(6)
+    val totalPnl = summary?.totalProfitLoss ?: 0.0
+    val totalPnlPercent = summary?.totalProfitLossPercent ?: 0.0
+    val isProfit = totalPnl >= 0.0
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+        ),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(BackgroundDark),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 34.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                AllocationScreenHeader(onDismiss = onDismiss)
+
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(SurfaceVariant.copy(alpha = 0.45f))
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Portfolio",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Icon(
+                        Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = TextTertiary,
+                        modifier = Modifier.size(17.dp),
+                    )
+                }
+
+                Spacer(Modifier.height(18.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(326.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    PortfolioAllocationDonut(
+                        assets = displayAssets,
+                        totalValue = totalValue,
+                        modifier = Modifier.size(292.dp),
+                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "Allocation",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextTertiary,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            settings.formatMoney(totalValue),
+                            fontSize = 34.sp,
+                            lineHeight = 38.sp,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                settings.formatSignedMoney(totalPnl),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isProfit) GreenUp else RedDown,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                formatSignedPercent(totalPnlPercent),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isProfit) GreenUp else RedDown,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
+                }
+
+                AllocationRangeSelector(
+                    selectedRange = selectedRange,
+                    onRangeSelected = { selectedRange = it },
+                    modifier = Modifier.padding(horizontal = 46.dp),
+                )
+
+                Spacer(Modifier.height(22.dp))
+
+                AllocationAssetsPanel(
+                    assets = displayAssets,
+                    totalValue = totalValue,
+                    settings = settings,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AllocationScreenHeader(onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .padding(horizontal = 20.dp),
+    ) {
+        IconButton(
+            onClick = onDismiss,
+            modifier = Modifier.align(Alignment.CenterStart),
+        ) {
+            Icon(
+                Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = TextPrimary,
+                modifier = Modifier.size(25.dp),
+            )
+        }
+        Text(
+            "Portfolio",
+            modifier = Modifier.align(Alignment.Center),
+            style = MaterialTheme.typography.headlineSmall,
+            color = TextPrimary,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(SurfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "P",
+                style = MaterialTheme.typography.titleSmall,
+                color = TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(GreenUp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AllocationRangeSelector(
+    selectedRange: String,
+    onRangeSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val ranges = listOf("24H", "1W", "1M", "3M", "1Y", "ALL")
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ranges.forEach { range ->
+            val selected = selectedRange == range
+            Column(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .clickable { onRangeSelected(range) }
+                    .padding(horizontal = 2.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    range,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (selected) TextPrimary else TextTertiary,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                )
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .width(32.dp)
+                        .height(2.dp)
+                        .background(if (selected) TextPrimary else Color.Transparent),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AllocationAssetsPanel(
+    assets: List<PortfolioAsset>,
+    totalValue: Double,
+    settings: AppSettings,
+    modifier: Modifier = Modifier,
+) {
+    val panelShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(panelShape)
+            .background(SurfaceDark)
+            .border(0.7.dp, DividerColor.copy(alpha = 0.36f), panelShape)
+            .padding(horizontal = 24.dp)
+            .padding(top = 18.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .size(width = 42.dp, height = 4.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(TextTertiary.copy(alpha = 0.38f)),
+        )
+        Spacer(Modifier.height(22.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Assets",
+                style = MaterialTheme.typography.headlineSmall,
+                color = TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                "By value",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextSecondary,
+                fontWeight = FontWeight.Medium,
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = TextSecondary,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Spacer(Modifier.height(18.dp))
+
+        if (assets.isEmpty()) {
+            EmptyAllocationState()
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 24.dp),
+            ) {
+                itemsIndexed(assets, key = { _, asset -> asset.id }) { index, asset ->
+                    AllocationAssetRow(
+                        asset = asset,
+                        percent = if (totalValue > 0.0) asset.currentValue / totalValue * 100.0 else asset.allocationPercent,
+                        color = allocationColor(index),
+                        settings = settings,
+                    )
+                    if (index != assets.lastIndex) {
+                        Divider(color = DividerColor.copy(alpha = 0.36f), thickness = 0.6.dp)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyAllocationState() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 36.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            Icons.Outlined.PieChart,
+            contentDescription = null,
+            tint = TextTertiary,
+            modifier = Modifier.size(42.dp),
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "No allocation yet",
+            style = MaterialTheme.typography.titleSmall,
+            color = TextPrimary,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Add assets to see portfolio distribution.",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun PortfolioAllocationDonut(
+    assets: List<PortfolioAsset>,
+    totalValue: Double,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier) {
+        val strokeWidth = 24.dp.toPx()
+        val chartPadding = strokeWidth / 2f + 3.dp.toPx()
+        val arcSize = size.width.coerceAtMost(size.height) - chartPadding * 2f
+        val topLeft = Offset((size.width - arcSize) / 2f, (size.height - arcSize) / 2f)
+        var startAngle = -92f
+
+        if (totalValue <= 0.0) {
+            drawArc(
+                color = SurfaceVariant.copy(alpha = 0.65f),
+                startAngle = 0f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = androidx.compose.ui.geometry.Size(arcSize, arcSize),
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+            )
+            return@Canvas
+        }
+
+        assets.forEachIndexed { index, asset ->
+            val rawSweep = (asset.currentValue / totalValue * 360.0).toFloat()
+            val sweep = (rawSweep - 3.5f).coerceAtLeast(if (rawSweep > 0f) 1.5f else 0f)
+            drawArc(
+                color = allocationColor(index),
+                startAngle = startAngle,
+                sweepAngle = sweep,
+                useCenter = false,
+                topLeft = topLeft,
+                size = androidx.compose.ui.geometry.Size(arcSize, arcSize),
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+            )
+            startAngle += rawSweep
+        }
+    }
+}
+
+@Composable
+private fun AllocationAssetRow(
+    asset: PortfolioAsset,
+    percent: Double,
+    color: Color,
+    settings: AppSettings,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(color),
+        )
+        Spacer(Modifier.width(12.dp))
+        AsyncImage(
+            model = asset.imageUrl,
+            contentDescription = asset.symbol,
+            modifier = Modifier
+                .size(30.dp)
+                .clip(CircleShape),
+        )
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                asset.symbol.uppercase(Locale.getDefault()),
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+            Text(
+                asset.name,
+                style = MaterialTheme.typography.labelSmall,
+                color = TextTertiary,
+                maxLines = 1,
+            )
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                "${"%.1f".format(percent)}%",
+                style = MaterialTheme.typography.bodyMedium,
+                color = TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    settings.formatMoney(asset.currentValue),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary,
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    formatSignedPercent(asset.profitLossPercent),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = pnlColor(asset.profitLossPercent),
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        }
+    }
+}
+
+private fun allocationColor(index: Int): Color = when (index % 6) {
+    0 -> Color(0xFF20C989)
+    1 -> Color(0xFF7A3DFF)
+    2 -> Color(0xFFFF5C5C)
+    3 -> Color(0xFF28C7C9)
+    4 -> Color(0xFF8D9BB0)
+    else -> Color(0xFFFFC74D)
+}
+
+@Composable
+private fun PortfolioRangeSelector(
+    selectedRange: String,
+    onRangeSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val ranges = listOf("24H", "1W", "1M", "3M", "6M", "1Y", "ALL")
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ranges.forEach { range ->
+            val selected = selectedRange == range
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(if (selected) SurfaceVariant.copy(alpha = 0.72f) else Color.Transparent)
+                    .clickable { onRangeSelected(range) }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    range,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (selected) TextPrimary else TextTertiary,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PortfolioHeroMetric(
+    label: String,
+    value: String,
+    color: Color,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+) {
+    Column(horizontalAlignment = horizontalAlignment) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = TextTertiary,
+            fontWeight = FontWeight.Medium,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            value,
+            style = MaterialTheme.typography.labelMedium,
+            color = color,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun PortfolioHeroChart(
+    values: List<Double>,
+    lineColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier) {
+        val series = values.ifEmpty { listOf(0.0, 0.0) }
+        val paddingH = 4.dp.toPx()
+        val paddingTop = 10.dp.toPx()
+        val paddingBottom = 18.dp.toPx()
+        val chartWidth = size.width - paddingH * 2
+        val chartHeight = size.height - paddingTop - paddingBottom
+        val minValue = series.minOrNull() ?: 0.0
+        val maxValue = series.maxOrNull() ?: 0.0
+        val range = (maxValue - minValue).coerceAtLeast(0.000001)
+
+        fun xFor(index: Int): Float =
+            if (series.size == 1) size.width / 2f else paddingH + index.toFloat() / series.lastIndex * chartWidth
+
+        fun yFor(value: Double): Float =
+            (paddingTop + (1.0 - (value - minValue) / range) * chartHeight).toFloat()
+
+        repeat(3) { line ->
+            val y = paddingTop + chartHeight * line / 2f
+            drawLine(
+                color = DividerColor.copy(alpha = 0.25f),
+                start = Offset(paddingH, y),
+                end = Offset(size.width - paddingH, y),
+                strokeWidth = 0.6.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 10f)),
+            )
+        }
+
+        val points = series.mapIndexed { index, value -> Offset(xFor(index), yFor(value)) }
+        val linePath = Path()
+        points.firstOrNull()?.let { first ->
+            linePath.moveTo(first.x, first.y)
+            for (index in 1 until points.size) {
+                val current = points[index]
+                linePath.lineTo(current.x, current.y)
+            }
+        }
+
+        if (points.size >= 2) {
+            val areaPath = Path().apply {
+                addPath(linePath)
+                lineTo(points.last().x, size.height - paddingBottom)
+                lineTo(points.first().x, size.height - paddingBottom)
+                close()
+            }
+            drawPath(
+                path = areaPath,
+                brush = Brush.verticalGradient(
+                    colors = listOf(lineColor.copy(alpha = 0.22f), Color.Transparent),
+                    startY = paddingTop,
+                    endY = size.height,
+                ),
+            )
+        }
+
+        drawPath(
+            path = linePath,
+            color = lineColor,
+            style = Stroke(
+                width = 2.6.dp.toPx(),
+                cap = StrokeCap.Square,
+                join = StrokeJoin.Miter,
+            ),
+        )
+
+        points.lastOrNull()?.let { last ->
+            drawCircle(
+                color = BackgroundDark,
+                radius = 5.5.dp.toPx(),
+                center = last,
+            )
+            drawCircle(
+                color = lineColor,
+                radius = 4.dp.toPx(),
+                center = last,
+            )
+        }
+    }
+}
+
+private fun portfolioFallbackSeries(totalValue: Double, dayChangePercent: Double): List<Double> {
+    val safeTotal = totalValue.coerceAtLeast(0.0)
+    if (safeTotal == 0.0) return listOf(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    val direction = if (dayChangePercent >= 0.0) 1.0 else -1.0
+    val amplitude = (kotlin.math.abs(dayChangePercent) / 100.0).coerceIn(0.012, 0.06)
+    val anchors = listOf(
+        -0.42, -0.34, -0.48, -0.18, -0.24, 0.08, -0.05, 0.16,
+        -0.14, 0.03, 0.28, -0.22, 0.36, 0.18, 0.44, 0.31, 0.52,
+    )
+    return anchors.map { safeTotal * (1.0 + it * amplitude * direction) }
+}
+
+private fun formatSignedPercent(value: Double): String =
+    "${if (value >= 0.0) "+" else "-"}${"%.2f".format(kotlin.math.abs(value))}%"
+
+@Composable
 private fun PortfolioTimelineCard(
     snapshots: List<PortfolioSnapshot>,
     currentSummary: PortfolioSummary?,
+    settings: AppSettings,
 ) {
     val latest = snapshots.lastOrNull()
     val first = snapshots.firstOrNull()
@@ -369,7 +1154,7 @@ private fun PortfolioTimelineCard(
             }
             if (snapshots.size >= 2) {
                 Text(
-                    "${if (isUp) "+" else "-"}$${kotlin.math.abs(valueChange).formatLargeNumber()}",
+                    settings.formatSignedMoney(valueChange, compact = true),
                     color = if (isUp) GreenUp else RedDown,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
@@ -462,7 +1247,7 @@ private fun PortfolioSnapshotChart(
 }
 
 @Composable
-private fun PortfolioSummaryCard(summary: PortfolioSummary) {
+private fun PortfolioSummaryCard(summary: PortfolioSummary, settings: AppSettings) {
     val isProfit = summary.isProfit
     Column(
         modifier = Modifier
@@ -475,7 +1260,7 @@ private fun PortfolioSummaryCard(summary: PortfolioSummary) {
     ) {
         Text("Total Value", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
         Spacer(Modifier.height(4.dp))
-        Text("$${"%.2f".format(summary.totalValue)}", fontSize = 34.sp,
+        Text(settings.formatMoney(summary.totalValue), fontSize = 34.sp,
             fontWeight = FontWeight.Bold, color = TextPrimary)
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
@@ -497,14 +1282,14 @@ private fun PortfolioSummaryCard(summary: PortfolioSummary) {
                 }
             }
             Spacer(Modifier.width(8.dp))
-            Text("${if (isProfit) "+" else "-"}$$${"%.2f".format(kotlin.math.abs(summary.totalProfitLoss))}",
+            Text(settings.formatSignedMoney(summary.totalProfitLoss),
                 color = if (isProfit) GreenUp else RedDown,
                 style = MaterialTheme.typography.bodyMedium)
         }
         Spacer(Modifier.height(8.dp))
         val isUp24h = summary.isUp24h
         Text(
-            "${if (isUp24h) "+" else "-"}$${"%.2f".format(kotlin.math.abs(summary.totalChange24h))} " +
+            "${settings.formatSignedMoney(summary.totalChange24h)} " +
                 "(${"%.2f".format(kotlin.math.abs(summary.totalChange24hPercent))}%) today",
             color = if (isUp24h) GreenUp else RedDown,
             style = MaterialTheme.typography.labelMedium,
@@ -514,13 +1299,13 @@ private fun PortfolioSummaryCard(summary: PortfolioSummary) {
         HorizontalDivider(color = DividerColor)
         Spacer(Modifier.height(14.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            SummaryMetric("Invested", "$${"%.2f".format(summary.totalInvested)}", TextPrimary, Modifier.weight(1f))
-            SummaryMetric("Unrealized", signedUsd(summary.unrealizedProfitLoss), pnlColor(summary.unrealizedProfitLoss), Modifier.weight(1f))
-            SummaryMetric("Realized", signedUsd(summary.realizedProfitLoss), pnlColor(summary.realizedProfitLoss), Modifier.weight(1f))
+            SummaryMetric("Invested", settings.formatMoney(summary.totalInvested), TextPrimary, Modifier.weight(1f))
+            SummaryMetric("Unrealized", settings.formatSignedMoney(summary.unrealizedProfitLoss), pnlColor(summary.unrealizedProfitLoss), Modifier.weight(1f))
+            SummaryMetric("Realized", settings.formatSignedMoney(summary.realizedProfitLoss), pnlColor(summary.realizedProfitLoss), Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            SummaryMetric("Fees", "$${"%.2f".format(summary.totalFeesPaid)}", TextSecondary, Modifier.weight(1f))
+            SummaryMetric("Fees", settings.formatMoney(summary.totalFeesPaid), TextSecondary, Modifier.weight(1f))
             SummaryMetric("Assets", "${summary.assets.size}", TextPrimary, Modifier.weight(1f))
             SummaryMetric("24h", "${if (summary.isUp24h) "+" else "-"}${"%.2f".format(kotlin.math.abs(summary.totalChange24hPercent))}%", if (summary.isUp24h) GreenUp else RedDown, Modifier.weight(1f))
         }
@@ -548,21 +1333,28 @@ private fun SummaryMetric(label: String, value: String, color: Color, modifier: 
     }
 }
 
-private fun signedUsd(value: Double): String =
-    "${if (value >= 0.0) "+" else "-"}$${"%.2f".format(kotlin.math.abs(value))}"
-
 private fun pnlColor(value: Double): Color =
     if (value >= 0.0) GreenUp else RedDown
 
 @Composable
-private fun AssetsTab(assets: List<PortfolioAsset>, onCoinClick: (String) -> Unit, onDelete: (String) -> Unit) {
+private fun AssetsTab(
+    assets: List<PortfolioAsset>,
+    settings: AppSettings,
+    onCoinClick: (String) -> Unit,
+    onDelete: (String) -> Unit,
+) {
     if (assets.isEmpty()) {
         EmptyPortfolioState(Icons.Outlined.AccountBalanceWallet, "No assets yet", "Tap + to record your first buy")
         return
     }
     LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
         items(assets, key = { it.id }) { asset ->
-            AssetItem(asset = asset, onCoinClick = { onCoinClick(asset.coinId) }, onDelete = { onDelete(asset.id) })
+            AssetItem(
+                asset = asset,
+                settings = settings,
+                onCoinClick = { onCoinClick(asset.coinId) },
+                onDelete = { onDelete(asset.id) },
+            )
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -570,7 +1362,12 @@ private fun AssetsTab(assets: List<PortfolioAsset>, onCoinClick: (String) -> Uni
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun AssetItem(asset: PortfolioAsset, onCoinClick: () -> Unit, onDelete: () -> Unit) {
+private fun AssetItem(
+    asset: PortfolioAsset,
+    settings: AppSettings,
+    onCoinClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
     var showDialog by remember { mutableStateOf(false) }
     val isProfit = asset.isProfit
     Row(
@@ -590,21 +1387,21 @@ private fun AssetItem(asset: PortfolioAsset, onCoinClick: () -> Unit, onDelete: 
                 color = TextPrimary, fontWeight = FontWeight.SemiBold)
             Text("Qty: ${"%.6f".format(asset.quantity).trimEnd('0').trimEnd('.')}",
                 style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-            Text("Avg: $${asset.averageBuyPrice.formatPrice()}",
+            Text("Avg: ${settings.formatMoney(asset.averageBuyPrice)}",
                 style = MaterialTheme.typography.labelSmall, color = TextTertiary)
             Text("${"%.1f".format(asset.allocationPercent)}% allocation",
                 style = MaterialTheme.typography.labelSmall, color = TextTertiary)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text("$${"%.2f".format(asset.currentValue)}", style = MaterialTheme.typography.titleSmall,
+            Text(settings.formatMoney(asset.currentValue), style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold, color = TextPrimary)
-            Text("${if (isProfit) "+" else ""}${"%.2f".format(asset.profitLoss)}",
+            Text(settings.formatSignedMoney(asset.profitLoss),
                 style = MaterialTheme.typography.labelSmall, color = if (isProfit) GreenUp else RedDown)
             Text("(${"%.2f".format(asset.profitLossPercent)}%)",
                 style = MaterialTheme.typography.labelSmall, color = if (isProfit) GreenUp else RedDown)
             val dayChange = asset.change24h
             Text(
-                "24h ${if (dayChange >= 0.0) "+" else "-"}$${"%.2f".format(kotlin.math.abs(dayChange))}",
+                "24h ${settings.formatSignedMoney(dayChange)}",
                 style = MaterialTheme.typography.labelSmall,
                 color = if (dayChange >= 0.0) GreenUp else RedDown,
             )
@@ -624,7 +1421,11 @@ private fun AssetItem(asset: PortfolioAsset, onCoinClick: () -> Unit, onDelete: 
 }
 
 @Composable
-private fun TransactionsTab(transactions: List<Transaction>, onDelete: (String) -> Unit) {
+private fun TransactionsTab(
+    transactions: List<Transaction>,
+    settings: AppSettings,
+    onDelete: (String) -> Unit,
+) {
     if (transactions.isEmpty()) {
         EmptyPortfolioState(Icons.Outlined.Receipt, "No transactions", "Your history will appear here")
         return
@@ -632,7 +1433,12 @@ private fun TransactionsTab(transactions: List<Transaction>, onDelete: (String) 
     val fmt = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()) }
     LazyColumn(contentPadding = PaddingValues(bottom = 80.dp)) {
         items(transactions, key = { it.id }) { tx ->
-            TransactionItem(tx = tx, fmt = fmt, onDelete = { onDelete(tx.id) })
+            TransactionItem(
+                tx = tx,
+                settings = settings,
+                fmt = fmt,
+                onDelete = { onDelete(tx.id) },
+            )
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -640,7 +1446,12 @@ private fun TransactionsTab(transactions: List<Transaction>, onDelete: (String) 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TransactionItem(tx: Transaction, fmt: SimpleDateFormat, onDelete: () -> Unit) {
+private fun TransactionItem(
+    tx: Transaction,
+    settings: AppSettings,
+    fmt: SimpleDateFormat,
+    onDelete: () -> Unit,
+) {
     var showDialog by remember { mutableStateOf(false) }
     val isBuy = tx.type == TransactionType.BUY
     Row(
@@ -673,8 +1484,8 @@ private fun TransactionItem(tx: Transaction, fmt: SimpleDateFormat, onDelete: ()
         Column(horizontalAlignment = Alignment.End) {
             Text("${"%.4f".format(tx.quantity).trimEnd('0').trimEnd('.')} ${tx.symbol}",
                 style = MaterialTheme.typography.labelMedium, color = TextPrimary)
-            Text("@ $${tx.price.formatPrice()}", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
-            Text("$${"%.2f".format(tx.total)}", style = MaterialTheme.typography.labelSmall,
+            Text("@ ${settings.formatMoney(tx.price)}", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+            Text(settings.formatMoney(tx.total), style = MaterialTheme.typography.labelSmall,
                 color = if (isBuy) GreenUp else RedDown)
         }
     }
@@ -694,6 +1505,7 @@ private fun TransactionItem(tx: Transaction, fmt: SimpleDateFormat, onDelete: ()
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddTransactionSheet(
+    settings: AppSettings,
     onDismiss: () -> Unit,
     onConfirm: (String, String, String, String, TransactionType, String, String, String, String) -> Unit,
 ) {
@@ -785,7 +1597,7 @@ private fun AddTransactionSheet(
                     .background(SurfaceVariant).padding(12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Total", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
-                    Text("$${"%.2f".format(total)}", style = MaterialTheme.typography.bodyMedium,
+                    Text(settings.formatMoney(total), style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold, color = BinanceYellow)
                 }
             }

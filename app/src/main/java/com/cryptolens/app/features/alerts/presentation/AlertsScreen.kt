@@ -71,7 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.core.domain.util.formatMoney
 import com.cryptolens.app.features.alerts.domain.model.AlertCondition
 import com.cryptolens.app.features.alerts.domain.model.AlertFrequency
 import com.cryptolens.app.features.alerts.domain.model.AlertStatus
@@ -79,6 +79,7 @@ import com.cryptolens.app.features.alerts.domain.model.AlertType
 import com.cryptolens.app.features.alerts.domain.model.AlertValueType
 import com.cryptolens.app.features.alerts.domain.model.PriceAlert
 import com.cryptolens.app.features.market.domain.model.Coin
+import com.cryptolens.app.features.settings.domain.model.AppSettings
 import com.cryptolens.app.ui.theme.BackgroundDark
 import com.cryptolens.app.ui.theme.BinanceYellow
 import com.cryptolens.app.ui.theme.BorderColor
@@ -170,6 +171,7 @@ fun AlertsScreen(
                         items(uiState.alerts, key = { it.id }) { alert ->
                             AlertCard(
                                 alert = alert,
+                                settings = uiState.settings,
                                 onToggle = { viewModel.onEvent(AlertsEvent.ToggleAlert(it)) },
                                 onDelete = { viewModel.onEvent(AlertsEvent.DeleteAlert(it)) },
                             )
@@ -299,6 +301,7 @@ private fun AlertTypeChooser(
 @Composable
 private fun AlertList(
     alerts: List<PriceAlert>,
+    settings: AppSettings,
     onToggle: (PriceAlert) -> Unit,
     onDelete: (String) -> Unit,
 ) {
@@ -308,7 +311,12 @@ private fun AlertList(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         items(alerts, key = { it.id }) { alert ->
-            AlertCard(alert = alert, onToggle = onToggle, onDelete = onDelete)
+            AlertCard(
+                alert = alert,
+                settings = settings,
+                onToggle = onToggle,
+                onDelete = onDelete,
+            )
         }
     }
 }
@@ -316,15 +324,16 @@ private fun AlertList(
 @Composable
 private fun AlertCard(
     alert: PriceAlert,
+    settings: AppSettings,
     onToggle: (PriceAlert) -> Unit,
     onDelete: (String) -> Unit,
 ) {
     val conditionColor = if (alert.condition == AlertCondition.ABOVE) GreenUp else RedDown
     val conditionSurface = if (alert.condition == AlertCondition.ABOVE) GreenUpSurface else RedDownSurface
     val conditionText = if (alert.valueType == AlertValueType.PERCENT) {
-        "${alert.condition.movementLabel} ${alert.targetPrice.formatPrice()}%"
+        "${alert.condition.movementLabel} ${"%.2f".format(alert.targetPrice)}%"
     } else {
-        "${alert.condition.label} ${formatAlertMetric(alert.type, alert.targetPrice)}"
+        "${alert.condition.label} ${formatAlertMetric(alert.type, alert.targetPrice, settings)}"
     }
 
     Surface(
@@ -381,14 +390,14 @@ private fun AlertCard(
                 HorizontalDivider(color = DividerColor, modifier = Modifier.padding(vertical = 10.dp))
                 if (alert.currentPrice > 0.0) {
                     Text(
-                        "Current ${alert.type.label.lowercase()}: ${formatAlertMetric(alert.type, alert.currentPrice)}",
+                        "Current ${alert.type.label.lowercase()}: ${formatAlertMetric(alert.type, alert.currentPrice, settings)}",
                         color = TextSecondary,
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
                 if (alert.valueType == AlertValueType.PERCENT && alert.baselineValue > 0.0) {
                     Text(
-                        "Baseline: ${formatAlertMetric(alert.type, alert.baselineValue)}",
+                        "Baseline: ${formatAlertMetric(alert.type, alert.baselineValue, settings)}",
                         color = TextTertiary,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -407,17 +416,14 @@ private fun AlertStatus.label(): String = when (this) {
     AlertStatus.TRIGGERED -> "Triggered"
 }
 
-private fun formatAlertMetric(type: AlertType, value: Double): String = when (type) {
-    AlertType.PRICE_LIMIT -> "$${value.formatPrice()}"
-    AlertType.VOLUME -> "$${value.formatCompactUsd()}"
-    AlertType.MARKET_CAP -> "$${value.formatCompactUsd()}"
-}
-
-private fun Double.formatCompactUsd(): String = when {
-    this >= 1_000_000_000 -> "%.2fB".format(this / 1_000_000_000)
-    this >= 1_000_000 -> "%.2fM".format(this / 1_000_000)
-    this >= 1_000 -> "%.2fK".format(this / 1_000)
-    else -> "%.2f".format(this)
+private fun formatAlertMetric(
+    type: AlertType,
+    value: Double,
+    settings: AppSettings,
+): String = when (type) {
+    AlertType.PRICE_LIMIT -> settings.formatMoney(value)
+    AlertType.VOLUME -> settings.formatMoney(value, compact = true)
+    AlertType.MARKET_CAP -> settings.formatMoney(value, compact = true)
 }
 
 @Composable
@@ -457,7 +463,7 @@ private fun CreateAlertSheet(
             Column {
                 Text(state.coinSymbol, color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    "Current ${state.selectedAlertType.label.lowercase()}: ${formatAlertMetric(state.selectedAlertType, state.currentMetricValue())}",
+                    "Current ${state.selectedAlertType.label.lowercase()}: ${formatAlertMetric(state.selectedAlertType, state.currentMetricValue(), state.settings)}",
                     color = TextSecondary,
                     style = MaterialTheme.typography.labelMedium,
                 )

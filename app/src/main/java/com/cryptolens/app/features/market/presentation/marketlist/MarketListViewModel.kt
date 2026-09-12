@@ -9,6 +9,8 @@ import com.cryptolens.app.features.market.domain.model.PriceTicker
 import com.cryptolens.app.features.market.domain.usecase.GetTopCoinsUseCase
 import com.cryptolens.app.features.market.domain.usecase.ObserveMultipleTickersUseCase
 import com.cryptolens.app.features.market.domain.util.CryptoSymbolMapper
+import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.features.settings.domain.usecase.ObserveSettingsUseCase
 import com.cryptolens.app.features.watchlist.domain.usecase.ObserveWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -21,6 +23,7 @@ data class MarketListUiState(
     val coins: List<Coin>                        = emptyList(),
     val realtimePrices: Map<String, PriceTicker> = emptyMap(),
     val watchlistedIds: Set<String>              = emptySet(),
+    val settings: AppSettings                    = AppSettings(),
     val error: String?                           = null,
     val searchQuery: String                      = "",
     val selectedTab: MarketTab                   = MarketTab.ALL,
@@ -39,6 +42,7 @@ class MarketListViewModel @Inject constructor(
     private val getTopCoins: GetTopCoinsUseCase,
     private val observeMultipleTickers: ObserveMultipleTickersUseCase,
     private val observeWatchlist: ObserveWatchlistUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
     private val marketCache: MarketCache,
 ) : ViewModel() {
 
@@ -73,6 +77,7 @@ class MarketListViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init {
+        observeAppSettings()
         loadMarket()
         observeWatchlistedIds()
     }
@@ -94,6 +99,14 @@ class MarketListViewModel @Inject constructor(
         viewModelScope.launch {
             observeWatchlist().collect { items ->
                 _uiState.update { it.copy(watchlistedIds = items.map { i -> i.coinId }.toSet()) }
+            }
+        }
+    }
+
+    private fun observeAppSettings() {
+        viewModelScope.launch {
+            observeSettings().collect { settings ->
+                _uiState.update { it.copy(settings = settings) }
             }
         }
     }

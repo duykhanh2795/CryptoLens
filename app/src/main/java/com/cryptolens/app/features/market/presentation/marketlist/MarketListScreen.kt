@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -30,9 +31,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.cryptolens.app.R
 import com.cryptolens.app.core.domain.util.formatLargeNumber
-import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.core.domain.util.formatMoney
+import com.cryptolens.app.core.domain.util.formatSignedMoney
 import com.cryptolens.app.features.market.domain.model.Coin
+import com.cryptolens.app.features.settings.domain.model.AppSettings
 import com.cryptolens.app.ui.theme.*
 
 @Composable
@@ -59,13 +63,13 @@ fun MarketListScreen(
         ) {
             Column {
                 Text(
-                    text = "Markets",
+                    text = stringResource(R.string.nav_markets),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
                 )
                 Text(
-                    text = "Live crypto prices",
+                    text = stringResource(R.string.home_market_pulse_subtitle),
                     style = MaterialTheme.typography.labelSmall,
                     color = TextTertiary,
                 )
@@ -74,12 +78,12 @@ fun MarketListScreen(
             IconButton(onClick = onNavigateToWatchlist) {
                 Icon(
                     Icons.Outlined.StarOutline,
-                    contentDescription = "Watchlist",
+                    contentDescription = stringResource(R.string.nav_watchlist),
                     tint = BinanceYellow,
                 )
             }
             IconButton(onClick = { viewModel.onEvent(MarketListEvent.Refresh) }) {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TextSecondary)
+                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.settings_price_refresh), tint = TextSecondary)
             }
         }
 
@@ -110,7 +114,7 @@ fun MarketListScreen(
                 decorationBox = { innerTextField ->
                     if (uiState.searchQuery.isEmpty()) {
                         Text(
-                            "Search coins...",
+                            stringResource(R.string.market_search_coins),
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextTertiary,
                         )
@@ -135,10 +139,10 @@ fun MarketListScreen(
 
         // ── Tab Row ────────────────────────────────────────────────────────
         val tabs = listOf(
-            MarketTab.ALL     to "All",
-            MarketTab.GAINERS to "Gainers",
-            MarketTab.LOSERS  to "Losers",
-            MarketTab.NEW     to "New",
+            MarketTab.ALL     to stringResource(R.string.market_tab_all),
+            MarketTab.GAINERS to stringResource(R.string.market_tab_gainers),
+            MarketTab.LOSERS  to stringResource(R.string.market_tab_losers),
+            MarketTab.NEW     to stringResource(R.string.market_tab_new),
         )
         val selectedTabIndex = tabs.indexOfFirst { it.first == uiState.selectedTab }
 
@@ -177,11 +181,11 @@ fun MarketListScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 18.dp, vertical = 10.dp),
         ) {
-            Text("Name",       style = MaterialTheme.typography.labelSmall, color = TextTertiary,
+            Text(stringResource(R.string.market_name),       style = MaterialTheme.typography.labelSmall, color = TextTertiary,
                 modifier = Modifier.weight(1f))
-            Text("Last Price", style = MaterialTheme.typography.labelSmall, color = TextTertiary,
+            Text(stringResource(R.string.market_last_price), style = MaterialTheme.typography.labelSmall, color = TextTertiary,
                 modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-            Text("24h Change", style = MaterialTheme.typography.labelSmall, color = TextTertiary,
+            Text(stringResource(R.string.market_change_24h), style = MaterialTheme.typography.labelSmall, color = TextTertiary,
                 modifier = Modifier.width(80.dp), textAlign = TextAlign.End)
         }
         Spacer(Modifier.height(2.dp))
@@ -206,6 +210,7 @@ fun MarketListScreen(
                         CoinListItem(
                             coin          = coin,
                             isWatchlisted = coin.id in uiState.watchlistedIds,
+                            settings      = uiState.settings,
                             onClick       = { onCoinClick(coin.id) },
                         )
                     }
@@ -220,6 +225,7 @@ fun MarketListScreen(
 private fun CoinListItem(
     coin: Coin,
     isWatchlisted: Boolean,
+    settings: AppSettings,
     onClick: () -> Unit,
 ) {
     val isPositive = coin.isPositive
@@ -280,16 +286,14 @@ private fun CoinListItem(
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
             ) { price ->
                 Text(
-                text  = "$${price.formatPrice()}",
+                text  = settings.formatMoney(price),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium,
                 color = TextPrimary,
             )
             }
             Text(
-                text  = "${if (coin.priceChange24h >= 0) "+" else "-"}$${
-                    kotlin.math.abs(coin.priceChange24h).formatPrice()
-                }",
+                text  = settings.formatSignedMoney(coin.priceChange24h),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (isPositive) GreenUp else RedDown,
             )
@@ -350,7 +354,7 @@ private fun MarketErrorState(message: String, onRetry: () -> Unit) {
             ),
             shape = RoundedCornerShape(8.dp),
         ) {
-            Text("Retry", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.common_retry), fontWeight = FontWeight.Bold)
         }
     }
 }

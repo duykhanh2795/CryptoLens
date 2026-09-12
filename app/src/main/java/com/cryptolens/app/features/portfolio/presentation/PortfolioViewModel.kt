@@ -6,6 +6,8 @@ import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
 import com.cryptolens.app.features.portfolio.domain.model.*
 import com.cryptolens.app.features.portfolio.domain.usecase.*
+import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.features.settings.domain.usecase.ObserveSettingsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -13,6 +15,7 @@ import javax.inject.Inject
 
 data class PortfolioUiState(
     val isLoading: Boolean               = true,
+    val settings: AppSettings            = AppSettings(),
     val summary: PortfolioSummary?       = null,
     val snapshots: List<PortfolioSnapshot> = emptyList(),
     val transactions: List<Transaction>  = emptyList(),
@@ -68,6 +71,7 @@ class PortfolioViewModel @Inject constructor(
     private val previewPortfolioCsv: PreviewPortfolioCsvUseCase,
     private val importPortfolioCsv: ImportPortfolioCsvUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PortfolioUiState())
@@ -79,12 +83,21 @@ class PortfolioViewModel @Inject constructor(
     private val userId get() = getCurrentUser()?.id ?: ""
 
     init {
+        observeAppSettings()
         if (userId.isNotBlank()) {
             observeSummary()
             observeSnapshots()
             observeTxs()
         } else {
             _uiState.update { it.copy(isLoading = false) }
+        }
+    }
+
+    private fun observeAppSettings() {
+        viewModelScope.launch {
+            observeSettings().collect { settings ->
+                _uiState.update { it.copy(settings = settings) }
+            }
         }
     }
 

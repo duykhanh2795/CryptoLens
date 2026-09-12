@@ -24,6 +24,8 @@ import com.cryptolens.app.features.news.domain.model.NewsItem
 import com.cryptolens.app.features.news.domain.usecase.GetNewsUseCase
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioAsset
 import com.cryptolens.app.features.portfolio.domain.usecase.ObservePortfolioSummaryUseCase
+import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.features.settings.domain.usecase.ObserveSettingsUseCase
 import com.cryptolens.app.features.watchlist.domain.usecase.ObserveIsWatchlistedUseCase
 import com.cryptolens.app.features.watchlist.domain.usecase.ToggleWatchlistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,6 +51,7 @@ enum class ChartDisplayType(val label: String) {
 
 data class CoinDetailUiState(
     val isLoading: Boolean              = true,
+    val settings: AppSettings           = AppSettings(),
     val coinDetail: CoinDetail?         = null,
     val klines: List<Kline>             = emptyList(),
     val markPriceKlines: List<Kline>    = emptyList(),
@@ -95,6 +98,7 @@ class CoinDetailViewModel @Inject constructor(
     private val getNews: GetNewsUseCase,
     private val observePortfolioSummary: ObservePortfolioSummaryUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
+    private val observeSettings: ObserveSettingsUseCase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -110,10 +114,19 @@ class CoinDetailViewModel @Inject constructor(
     private var chartJob: Job? = null
 
     init {
+        observeAppSettings()
         observeWatchlistState()
         observePortfolioPosition()
         // Load detail first, then klines after detail is ready
         loadDetailThenKlines(ChartInterval.ONE_DAY)
+    }
+
+    private fun observeAppSettings() {
+        viewModelScope.launch {
+            observeSettings().collect { settings ->
+                _uiState.update { it.copy(settings = settings) }
+            }
+        }
     }
 
     fun onEvent(event: CoinDetailEvent) {

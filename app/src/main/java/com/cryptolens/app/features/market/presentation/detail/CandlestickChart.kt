@@ -21,8 +21,9 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.core.domain.util.formatMoney
 import com.cryptolens.app.features.market.domain.model.Kline
+import com.cryptolens.app.features.settings.domain.model.AppSettings
 import com.cryptolens.app.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -31,6 +32,7 @@ import java.util.*
 fun CandlestickChart(
     klines: List<Kline>,
     markPriceKlines: List<Kline> = emptyList(),
+    settings: AppSettings = AppSettings(),
     modifier: Modifier = Modifier,
 ) {
     if (klines.isEmpty()) {
@@ -60,13 +62,14 @@ fun CandlestickChart(
         ) {
             if (selected != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CandleInfoChip("O", selected.open, Color(0xFF87CEEB))
-                    CandleInfoChip("H", selected.high, GreenUp)
-                    CandleInfoChip("L", selected.low,  RedDown)
+                    CandleInfoChip("O", selected.open, Color(0xFF87CEEB), settings)
+                    CandleInfoChip("H", selected.high, GreenUp, settings)
+                    CandleInfoChip("L", selected.low,  RedDown, settings)
                     CandleInfoChip("C", selected.close,
-                        if (selected.close >= selected.open) GreenUp else RedDown)
+                        if (selected.close >= selected.open) GreenUp else RedDown,
+                        settings)
                     if (selectedMarkPrice != null) {
-                        CandleInfoChip("M", selectedMarkPrice, BinanceYellow)
+                        CandleInfoChip("M", selectedMarkPrice, BinanceYellow, settings)
                     }
                     Text(
                         text  = dateFormat.format(Date(selected.openTime)),
@@ -104,6 +107,7 @@ fun CandlestickChart(
                 markPriceKlines = markPriceKlines,
                 selectedIndex = selectedIndex,
                 textMeasurer  = textMeasurer,
+                settings = settings,
             )
         }
 
@@ -122,6 +126,7 @@ fun CandlestickChart(
 fun LinePriceChart(
     klines: List<Kline>,
     markPriceKlines: List<Kline> = emptyList(),
+    settings: AppSettings = AppSettings(),
     modifier: Modifier = Modifier,
 ) {
     if (klines.isEmpty()) {
@@ -147,9 +152,9 @@ fun LinePriceChart(
         ) {
             if (selected != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CandleInfoChip("Price", selected.close, if (selected.close >= selected.open) GreenUp else RedDown)
+                    CandleInfoChip("Price", selected.close, if (selected.close >= selected.open) GreenUp else RedDown, settings)
                     if (selectedMarkPrice != null) {
-                        CandleInfoChip("Mark", selectedMarkPrice, BinanceYellow)
+                        CandleInfoChip("Mark", selectedMarkPrice, BinanceYellow, settings)
                     }
                     Text(
                         text = dateFormat.format(Date(selected.openTime)),
@@ -198,10 +203,15 @@ fun LinePriceChart(
 }
 
 @Composable
-private fun CandleInfoChip(label: String, value: Double, color: Color) {
+private fun CandleInfoChip(
+    label: String,
+    value: Double,
+    color: Color,
+    settings: AppSettings,
+) {
     Row {
         Text(label, color = TextTertiary, fontSize = 11.sp)
-        Text(" ${value.formatPrice()}", color = color, fontSize = 11.sp)
+        Text(" ${settings.formatMoney(value)}", color = color, fontSize = 11.sp)
     }
 }
 
@@ -210,6 +220,7 @@ private fun DrawScope.drawCandlesticks(
     markPriceKlines: List<Kline>,
     selectedIndex: Int?,
     textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    settings: AppSettings,
 ) {
     if (klines.isEmpty()) return
 
@@ -242,7 +253,7 @@ private fun DrawScope.drawCandlesticks(
             pathEffect  = PathEffect.dashPathEffect(floatArrayOf(6f, 6f)),
         )
         val measured = textMeasurer.measure(
-            text  = "$${price.formatPrice()}",
+            text  = settings.formatMoney(price),
             style = TextStyle(color = TextTertiary, fontSize = 10.sp),
         )
         drawText(measured, topLeft = Offset(size.width - measured.size.width - 4f, y - measured.size.height / 2))

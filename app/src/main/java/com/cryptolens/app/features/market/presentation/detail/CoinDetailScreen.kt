@@ -32,7 +32,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.cryptolens.app.core.domain.util.formatLargeNumber
-import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.core.domain.util.formatMoney
+import com.cryptolens.app.core.domain.util.formatMoneyOrUnavailable
+import com.cryptolens.app.core.domain.util.formatSignedMoney
 import com.cryptolens.app.features.alerts.domain.model.AlertType
 import com.cryptolens.app.features.market.domain.model.ChartMarketType
 import com.cryptolens.app.features.market.domain.model.Coin
@@ -46,6 +48,7 @@ import com.cryptolens.app.features.market.domain.model.PriceTicker
 import com.cryptolens.app.features.news.domain.model.NewsItem
 import com.cryptolens.app.features.news.presentation.NewsRow
 import com.cryptolens.app.features.portfolio.domain.model.PortfolioAsset
+import com.cryptolens.app.features.settings.domain.model.AppSettings
 import com.cryptolens.app.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -99,6 +102,7 @@ fun CoinDetailScreen(
                 )
                 uiState.coinDetail != null -> CoinDetailContent(
                     coinDetail        = uiState.coinDetail!!,
+                    settings          = uiState.settings,
                     liveTicker        = uiState.liveTicker,
                     klines            = uiState.klines,
                     markPriceKlines   = uiState.markPriceKlines,
@@ -134,6 +138,7 @@ fun CoinDetailScreen(
 @Composable
 private fun CoinDetailContent(
     coinDetail: CoinDetail,
+    settings: AppSettings,
     liveTicker: PriceTicker?,
     klines: List<Kline>,
     markPriceKlines: List<Kline>,
@@ -197,6 +202,7 @@ private fun CoinDetailContent(
                 displayPct   = displayPct,
                 isPositive   = isPositive,
                 isLive       = liveTicker != null,
+                settings     = settings,
                 selectedMarketType = selectedMarketType,
                 selectedChartType = selectedChartType,
                 onMarketTypeChange = onMarketTypeChange,
@@ -204,7 +210,7 @@ private fun CoinDetailContent(
             )
 
             if (futuresMarketInfo != null && selectedMarketType == ChartMarketType.FUTURES) {
-                FuturesInfoPanel(info = futuresMarketInfo)
+                FuturesInfoPanel(info = futuresMarketInfo, settings = settings)
             }
             if (futuresSentiment != null && selectedMarketType == ChartMarketType.FUTURES) {
                 FuturesSentimentPanel(sentiment = futuresSentiment)
@@ -239,11 +245,13 @@ private fun CoinDetailContent(
                         ChartDisplayType.CANDLE -> CandlestickChart(
                             klines = klines,
                             markPriceKlines = visibleMarkPrices,
+                            settings = settings,
                             modifier = Modifier.fillMaxSize(),
                         )
                         ChartDisplayType.LINE -> LinePriceChart(
                             klines = klines,
                             markPriceKlines = visibleMarkPrices,
+                            settings = settings,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -252,18 +260,19 @@ private fun CoinDetailContent(
 
             IntervalSelector(selected = selectedInterval, onSelect = onIntervalChange)
             Spacer(Modifier.height(10.dp))
-            QuickStatsRow(coin = coin)
+            QuickStatsRow(coin = coin, settings = settings)
             Spacer(Modifier.height(10.dp))
             if (portfolioAsset != null) {
                 YourHoldingsSection(
                     asset = portfolioAsset,
                     totalPortfolioValue = portfolioTotalValue,
                     currentPrice = displayPrice,
+                    settings = settings,
                     onOpenPortfolio = onOpenPortfolio,
                 )
                 Spacer(Modifier.height(10.dp))
             }
-            MarketInfoSection(coin = coin, coinDetail = coinDetail)
+            MarketInfoSection(coin = coin, coinDetail = coinDetail, settings = settings)
             Spacer(Modifier.height(10.dp))
             CoinNewsSection(
                 symbol = coin.symbol,
@@ -483,7 +492,7 @@ private fun SentimentMetric(
 }
 
 @Composable
-private fun FuturesInfoPanel(info: FuturesMarketInfo) {
+private fun FuturesInfoPanel(info: FuturesMarketInfo, settings: AppSettings) {
     val fundingPercent = info.lastFundingRate * 100.0
     Column(
         modifier = Modifier
@@ -496,12 +505,12 @@ private fun FuturesInfoPanel(info: FuturesMarketInfo) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             FuturesMetric(
                 label = "Mark",
-                value = "$${info.markPrice.formatPrice()}",
+                value = settings.formatMoney(info.markPrice),
                 modifier = Modifier.weight(1f),
             )
             FuturesMetric(
                 label = "Index",
-                value = "$${info.indexPrice.formatPrice()}",
+                value = settings.formatMoney(info.indexPrice),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -754,6 +763,7 @@ private fun PriceHeader(
     displayPct: Double,
     isPositive: Boolean,
     isLive: Boolean,
+    settings: AppSettings,
     selectedMarketType: ChartMarketType,
     selectedChartType: ChartDisplayType,
     onMarketTypeChange: (ChartMarketType) -> Unit,
@@ -816,7 +826,7 @@ private fun PriceHeader(
                     },
                 ) { price ->
                     Text(
-                        text       = "$${price.formatPrice()}",
+                        text       = settings.formatMoney(price),
                         fontSize   = 34.sp,
                         fontWeight = FontWeight.SemiBold,
                         color      = if (isPositive) GreenUp else RedDown,
@@ -890,7 +900,7 @@ private fun IntervalSelector(
 // ── Quick Stats ───────────────────────────────────────────────────────────────
 
 @Composable
-private fun QuickStatsRow(coin: Coin) {
+private fun QuickStatsRow(coin: Coin, settings: AppSettings) {
     Row(
         modifier              = Modifier
             .fillMaxWidth()
@@ -899,9 +909,9 @@ private fun QuickStatsRow(coin: Coin) {
                         .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        StatItem("24h High", "$${coin.high24h.formatPrice()}", GreenUp)
+        StatItem("24h High", settings.formatMoney(coin.high24h), GreenUp)
         VerticalDivider(modifier = Modifier.height(36.dp), color = DividerColor)
-        StatItem("24h Low",  "$${coin.low24h.formatPrice()}",  RedDown)
+        StatItem("24h Low",  settings.formatMoney(coin.low24h),  RedDown)
         VerticalDivider(modifier = Modifier.height(36.dp), color = DividerColor)
         StatItem("Volume",   coin.volume24h.formatLargeNumber(), TextPrimary)
     }
@@ -928,6 +938,7 @@ private fun YourHoldingsSection(
     asset: PortfolioAsset,
     totalPortfolioValue: Double,
     currentPrice: Double,
+    settings: AppSettings,
     onOpenPortfolio: () -> Unit,
 ) {
     val pricedAsset = asset.copy(currentPrice = currentPrice)
@@ -968,7 +979,7 @@ private fun YourHoldingsSection(
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             HoldingMetric(
                 label = "Value",
-                value = "$${pricedAsset.currentValue.formatLargeNumber()}",
+                value = settings.formatMoney(pricedAsset.currentValue, compact = true),
                 modifier = Modifier.weight(1f),
             )
             HoldingMetric(
@@ -981,12 +992,12 @@ private fun YourHoldingsSection(
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             HoldingMetric(
                 label = "Avg Buy",
-                value = "$${pricedAsset.averageBuyPrice.formatPrice()}",
+                value = settings.formatMoney(pricedAsset.averageBuyPrice),
                 modifier = Modifier.weight(1f),
             )
             HoldingMetric(
                 label = "P&L",
-                value = "${if (pricedAsset.profitLoss >= 0) "+" else "-"}$${kotlin.math.abs(pricedAsset.profitLoss).formatLargeNumber()} (${kotlin.math.abs(pricedAsset.profitLossPercent).formatPrice()}%)",
+                value = "${settings.formatSignedMoney(pricedAsset.profitLoss, compact = true)} (${ "%.2f".format(kotlin.math.abs(pricedAsset.profitLossPercent)) }%)",
                 valueColor = profitColor,
                 modifier = Modifier.weight(1f),
             )
@@ -994,7 +1005,7 @@ private fun YourHoldingsSection(
         Spacer(Modifier.height(8.dp))
         HoldingMetric(
             label = "Portfolio Allocation",
-            value = "${allocation.formatPrice()}%",
+            value = "${"%.2f".format(allocation)}%",
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -1026,7 +1037,11 @@ private fun HoldingMetric(
 }
 
 @Composable
-private fun MarketInfoSection(coin: Coin, coinDetail: CoinDetail) {
+private fun MarketInfoSection(
+    coin: Coin,
+    coinDetail: CoinDetail,
+    settings: AppSettings,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1044,12 +1059,12 @@ private fun MarketInfoSection(coin: Coin, coinDetail: CoinDetail) {
 
         val rows = buildList {
             add("Market Cap Rank" to coin.rank.formatRank())
-            add("Market Cap" to coin.marketCap.formatUsdLarge())
-            add("24h Volume" to coin.volume24h.formatUsdLarge())
-            add("24h High" to coin.high24h.formatUsdPrice())
-            add("24h Low" to coin.low24h.formatUsdPrice())
-            add("All Time High" to "${coinDetail.allTimeHigh.formatUsdPrice()}${coinDetail.allTimeHighDate.formatDateSuffix()}")
-            add("All Time Low" to "${coinDetail.allTimeLow.formatUsdPrice()}${coinDetail.allTimeLowDate.formatDateSuffix()}")
+            add("Market Cap" to settings.formatMoneyOrUnavailable(coin.marketCap, compact = true))
+            add("24h Volume" to settings.formatMoneyOrUnavailable(coin.volume24h, compact = true))
+            add("24h High" to settings.formatMoneyOrUnavailable(coin.high24h))
+            add("24h Low" to settings.formatMoneyOrUnavailable(coin.low24h))
+            add("All Time High" to "${settings.formatMoneyOrUnavailable(coinDetail.allTimeHigh)}${coinDetail.allTimeHighDate.formatDateSuffix()}")
+            add("All Time Low" to "${settings.formatMoneyOrUnavailable(coinDetail.allTimeLow)}${coinDetail.allTimeLowDate.formatDateSuffix()}")
             add("Circulating Supply" to coin.circulatingSupply.formatSupply(coin.symbol))
             add("Total Supply" to coinDetail.totalSupply.formatSupply(coin.symbol))
             if (coinDetail.maxSupply > 0.0) {
@@ -1082,10 +1097,6 @@ private fun MarketInfoSection(coin: Coin, coinDetail: CoinDetail) {
 // ── About ─────────────────────────────────────────────────────────────────────
 
 private fun Int.formatRank(): String = if (this > 0) "#$this" else "N/A"
-
-private fun Double.formatUsdPrice(): String = if (this > 0.0) "$${formatPrice()}" else "N/A"
-
-private fun Double.formatUsdLarge(): String = if (this > 0.0) "$${formatLargeNumber()}" else "N/A"
 
 private fun Double.formatSupply(symbol: String): String =
     if (this > 0.0) "${formatLargeNumber()} $symbol" else "N/A"

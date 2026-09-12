@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -75,8 +76,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cryptolens.app.R
 import com.cryptolens.app.core.domain.util.formatLargeNumber
+import com.cryptolens.app.core.domain.util.formatMoney
 import com.cryptolens.app.core.domain.util.formatPrice
+import com.cryptolens.app.features.settings.domain.model.AppSettings
 import com.cryptolens.app.features.wallet.domain.model.TrendingWallet
 import com.cryptolens.app.features.wallet.domain.model.TrendingWalletDetail
 import com.cryptolens.app.features.wallet.domain.model.WalletAsset
@@ -141,6 +145,7 @@ fun TrendingWalletsScreen(
                 items(uiState.filteredWallets, key = { "${it.chain.name}:${it.address}" }) { wallet ->
                     TrendingWalletRow(
                         wallet = wallet,
+                        settings = uiState.settings,
                         onClick = { onWalletClick(wallet.chain, wallet.address) },
                     )
                 }
@@ -171,7 +176,7 @@ private fun TrendingWalletsTopBar(
             onValueChange = onQueryChange,
             modifier = Modifier.weight(1f).height(52.dp),
             singleLine = true,
-            placeholder = { Text("Explore any address") },
+            placeholder = { Text(stringResource(R.string.wallet_explore_any_address)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             shape = RoundedCornerShape(12.dp),
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
@@ -192,6 +197,7 @@ fun TrendingWalletRow(
     wallet: TrendingWallet,
     onClick: () -> Unit,
     compact: Boolean = false,
+    settings: AppSettings = AppSettings(),
 ) {
     Row(
         modifier = Modifier
@@ -219,7 +225,7 @@ fun TrendingWalletRow(
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                wallet.valueUsd?.let { "$${it.formatLargeNumber()}" } ?: "Syncing",
+                wallet.valueUsd?.let { settings.formatMoney(it, compact = true) } ?: "Syncing",
                 color = if (wallet.isPositive) GreenUp else RedDown,
                 style = if (compact) MaterialTheme.typography.labelLarge else MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
@@ -339,6 +345,7 @@ fun TrendingWalletDetailScreen(
             })
             uiState.detail != null -> TrendingWalletDetailContent(
                 detail = uiState.detail!!,
+                settings = uiState.settings,
                 selectedTab = uiState.selectedTab,
                 isAdding = uiState.isAddingToWatchlist,
                 onBack = onNavigateBack,
@@ -353,6 +360,7 @@ fun TrendingWalletDetailScreen(
 @Composable
 private fun TrendingWalletDetailContent(
     detail: TrendingWalletDetail,
+    settings: AppSettings,
     selectedTab: WalletDetailTab,
     isAdding: Boolean,
     onBack: () -> Unit,
@@ -368,6 +376,7 @@ private fun TrendingWalletDetailContent(
     Column(modifier.fillMaxSize().background(BackgroundDark)) {
         WalletDetailHero(
             detail = detail,
+            settings = settings,
             isAdding = isAdding,
             onBack = onBack,
             onAddToWatchlist = onAddToWatchlist,
@@ -376,9 +385,10 @@ private fun TrendingWalletDetailContent(
         )
 
         when (selectedTab) {
-            WalletDetailTab.ASSETS -> AssetsTab(assets = detail.assets, note = detail.historyNote)
+            WalletDetailTab.ASSETS -> AssetsTab(assets = detail.assets, settings = settings, note = detail.historyNote)
             WalletDetailTab.HISTORY -> HistoryTab(
                 history = detail.history,
+                settings = settings,
                 note = detail.historyNote,
                 filter = historyFilter,
                 query = historyQuery,
@@ -392,6 +402,7 @@ private fun TrendingWalletDetailContent(
     selectedTransaction?.let { tx ->
         TransactionDetailSheet(
             transaction = tx,
+            settings = settings,
             onDismiss = { selectedTransaction = null },
         )
     }
@@ -400,6 +411,7 @@ private fun TrendingWalletDetailContent(
 @Composable
 private fun WalletDetailHero(
     detail: TrendingWalletDetail,
+    settings: AppSettings,
     isAdding: Boolean,
     onBack: () -> Unit,
     onAddToWatchlist: () -> Unit,
@@ -420,7 +432,7 @@ private fun WalletDetailHero(
             IconButton(onClick = onBack) {
                 Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back", tint = TextPrimary)
             }
-            Text("USD", color = TextSecondary, style = MaterialTheme.typography.titleLarge)
+            Text(settings.currency.code, color = TextSecondary, style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.weight(1f))
             Box(
                 modifier = Modifier
@@ -441,8 +453,8 @@ private fun WalletDetailHero(
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            detail.totalValueUsd?.let { "$${it.formatLargeNumber()}" }
-                ?: wallet.valueUsd?.let { "$${it.formatLargeNumber()}" }
+            detail.totalValueUsd?.let { settings.formatMoney(it, compact = true) }
+                ?: wallet.valueUsd?.let { settings.formatMoney(it, compact = true) }
                 ?: "Value unavailable",
             color = TextPrimary,
             style = MaterialTheme.typography.displaySmall,
@@ -477,7 +489,7 @@ private fun WalletDetailHero(
             ) {
                 Icon(Icons.Outlined.StarBorder, contentDescription = null, tint = TextPrimary)
                 Spacer(Modifier.width(8.dp))
-                Text("Add to Watchlist", color = TextPrimary, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.wallet_add_to_watchlist), color = TextPrimary, fontWeight = FontWeight.Bold)
             }
             Surface(
                 modifier = Modifier.height(48.dp),
@@ -556,6 +568,7 @@ private fun WalletTabs(
 @Composable
 private fun AssetsTab(
     assets: List<WalletAsset>,
+    settings: AppSettings,
     note: String?,
 ) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
@@ -572,20 +585,20 @@ private fun AssetsTab(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Qty. Total", color = TextSecondary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.wallet_qty_total), color = TextSecondary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
                 Text("24h", color = TextSecondary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                Text("Price", color = TextSecondary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                Text(stringResource(R.string.wallet_price), color = TextSecondary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
             }
         }
         items(assets, key = { it.symbol }) { asset ->
-            AssetRow(asset)
+            AssetRow(asset, settings)
             HorizontalDivider(color = DividerColor, modifier = Modifier.padding(start = 76.dp))
         }
     }
 }
 
 @Composable
-private fun AssetRow(asset: WalletAsset) {
+private fun AssetRow(asset: WalletAsset, settings: AppSettings) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -602,7 +615,7 @@ private fun AssetRow(asset: WalletAsset) {
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                "${asset.networkLabel}  •  ${asset.valueUsd?.let { "$${it.formatLargeNumber()}" } ?: "Value unavailable"}",
+                "${asset.networkLabel}  •  ${asset.valueUsd?.let { settings.formatMoney(it, compact = true) } ?: "Value unavailable"}",
                 color = TextSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -616,7 +629,7 @@ private fun AssetRow(asset: WalletAsset) {
             )
         }
         Text(
-            asset.priceUsd?.let { "$${it.formatPrice()}" } ?: "-",
+            asset.priceUsd?.let { settings.formatMoney(it) } ?: "-",
             color = TextPrimary,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
@@ -629,6 +642,7 @@ private fun AssetRow(asset: WalletAsset) {
 @Composable
 private fun HistoryTab(
     history: List<WalletTransaction>,
+    settings: AppSettings,
     note: String?,
     filter: WalletHistoryFilter,
     query: String,
@@ -701,6 +715,7 @@ private fun HistoryTab(
                             transactions.forEachIndexed { index, tx ->
                                 TransactionRow(
                                     tx = tx,
+                                    settings = settings,
                                     onClick = { onTransactionClick(tx) },
                                 )
                                 if (index < transactions.lastIndex) {
@@ -728,7 +743,7 @@ private fun HistoryControls(
             onValueChange = onQueryChange,
             modifier = Modifier.fillMaxWidth().height(52.dp),
             singleLine = true,
-            placeholder = { Text("Search token, hash, address") },
+            placeholder = { Text(stringResource(R.string.wallet_search_history)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             shape = RoundedCornerShape(12.dp),
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
@@ -772,6 +787,7 @@ private fun WalletInfoNotice(
 @Composable
 private fun TransactionRow(
     tx: WalletTransaction,
+    settings: AppSettings,
     onClick: () -> Unit,
 ) {
     val positive = tx.type == WalletTransactionType.RECEIVED
@@ -816,7 +832,7 @@ private fun TransactionRow(
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleSmall,
             )
-            Text(tx.valueUsd?.let { "$${it.formatPrice()}" } ?: "", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+            Text(tx.valueUsd?.let { settings.formatMoney(it) } ?: "", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
         }
     }
 }
@@ -825,6 +841,7 @@ private fun TransactionRow(
 @Composable
 private fun TransactionDetailSheet(
     transaction: WalletTransaction,
+    settings: AppSettings,
     onDismiss: () -> Unit,
 ) {
     val clipboard = LocalClipboardManager.current
@@ -872,7 +889,7 @@ private fun TransactionDetailSheet(
             }
 
             DetailRow("Amount", "${transaction.signedPrefix()}${transaction.amount.formatNative()} ${transaction.symbol}")
-            DetailRow("Value", transaction.valueUsd?.let { "$${it.formatPrice()}" } ?: "Unavailable")
+            DetailRow("Value", transaction.valueUsd?.let { settings.formatMoney(it) } ?: "Unavailable")
             DetailRow("Time", transaction.timestamp.fullDateTime())
             DetailRow("Tx hash", transaction.id.shortWalletAddress())
             DetailRow("Counterparty", transaction.counterparty?.shortWalletAddress() ?: "Unavailable")

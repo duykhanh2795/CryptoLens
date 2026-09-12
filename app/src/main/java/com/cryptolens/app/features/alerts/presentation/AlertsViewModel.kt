@@ -15,6 +15,8 @@ import com.cryptolens.app.features.alerts.domain.usecase.ObserveAlertsUseCase
 import com.cryptolens.app.features.alerts.domain.usecase.ToggleAlertUseCase
 import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.features.market.domain.usecase.GetTopCoinsUseCase
+import com.cryptolens.app.features.settings.domain.model.AppSettings
+import com.cryptolens.app.features.settings.domain.usecase.ObserveSettingsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +32,7 @@ import javax.inject.Inject
 data class AlertsUiState(
     val alerts: List<PriceAlert> = emptyList(),
     val marketCoins: List<Coin> = emptyList(),
+    val settings: AppSettings = AppSettings(),
     val isLoading: Boolean = true,
     val showCreateSheet: Boolean = false,
     val coinId: String = "",
@@ -86,6 +89,7 @@ class AlertsViewModel @Inject constructor(
     private val toggleAlert: ToggleAlertUseCase,
     private val getTopCoins: GetTopCoinsUseCase,
     private val alertScheduler: AlertScheduler,
+    private val observeSettings: ObserveSettingsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AlertsUiState())
@@ -97,9 +101,18 @@ class AlertsViewModel @Inject constructor(
     private val marketCoins = MutableStateFlow<List<Coin>>(emptyList())
 
     init {
+        observeAppSettings()
         observeMarketPrices()
         observeAlertList()
         alertScheduler.schedulePeriodicCheck()
+    }
+
+    private fun observeAppSettings() {
+        viewModelScope.launch {
+            observeSettings().collect { settings ->
+                _uiState.update { it.copy(settings = settings) }
+            }
+        }
     }
 
     fun onEvent(event: AlertsEvent) {

@@ -19,6 +19,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextAlign
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cryptolens.app.R
 import com.cryptolens.app.ui.theme.*
 
 @Composable
@@ -85,9 +87,9 @@ fun LoginScreen(
                     Text("CL", color = Color(0xFF1A1400), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
                 }
                 Spacer(Modifier.height(16.dp))
-                Text("Welcome back", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                Text(stringResource(R.string.auth_welcome_back), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                 Spacer(Modifier.height(6.dp))
-                Text("Log in to your CryptoLens account", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                Text(stringResource(R.string.auth_login_subtitle), style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             }
 
             Spacer(Modifier.height(40.dp))
@@ -96,7 +98,7 @@ fun LoginScreen(
             CryptoTextField(
                 value         = uiState.email,
                 onValueChange = { viewModel.onEvent(LoginEvent.EmailChanged(it)) },
-                label         = "Email",
+                label         = stringResource(R.string.auth_email),
                 leadingIcon   = Icons.Outlined.Email,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
@@ -114,7 +116,7 @@ fun LoginScreen(
             CryptoTextField(
                 value         = uiState.password,
                 onValueChange = { viewModel.onEvent(LoginEvent.PasswordChanged(it)) },
-                label         = "Password",
+                label         = stringResource(R.string.auth_password),
                 leadingIcon   = Icons.Outlined.Lock,
                 isPassword    = true,
                 isPasswordVisible = uiState.isPasswordVisible,
@@ -158,14 +160,14 @@ fun LoginScreen(
                         ),
                     )
                     Text(
-                        "Remember me",
+                        stringResource(R.string.auth_remember_me),
                         color = TextSecondary,
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
 
                 TextButton(onClick = { showForgotPassword = true }) {
-                    Text("Forgot password?", color = BinanceYellow, style = MaterialTheme.typography.labelLarge)
+                    Text(stringResource(R.string.auth_forgot_password), color = BinanceYellow, style = MaterialTheme.typography.labelLarge)
                 }
             }
 
@@ -193,7 +195,7 @@ fun LoginScreen(
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text("Log In", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.auth_login), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -202,7 +204,7 @@ fun LoginScreen(
             // Divider
             Row(verticalAlignment = Alignment.CenterVertically) {
                 HorizontalDivider(modifier = Modifier.weight(1f), color = DividerColor)
-                Text("  or  ", color = TextTertiary, style = MaterialTheme.typography.labelSmall)
+                Text("  ${stringResource(R.string.auth_or)}  ", color = TextTertiary, style = MaterialTheme.typography.labelSmall)
                 HorizontalDivider(modifier = Modifier.weight(1f), color = DividerColor)
             }
 
@@ -214,13 +216,13 @@ fun LoginScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment   = Alignment.CenterVertically,
             ) {
-                Text("Don't have an account? ", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+                Text("${stringResource(R.string.auth_no_account)} ", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
                 TextButton(
                     onClick      = onNavigateToRegister,
                     contentPadding = PaddingValues(0.dp),
                 ) {
                     Text(
-                        "Register Now",
+                        stringResource(R.string.auth_register_now),
                         color      = BinanceYellow,
                         fontWeight = FontWeight.SemiBold,
                         style      = MaterialTheme.typography.bodyMedium,
@@ -256,15 +258,15 @@ fun ForgotPasswordDialog(
         containerColor    = SurfaceDark,
         titleContentColor = TextPrimary,
         textContentColor  = TextSecondary,
-        title = { Text("Reset Password", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.auth_reset_password), fontWeight = FontWeight.Bold) },
         text  = {
             Column {
-                Text("Enter your email and we'll send you a link to reset your password.", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.auth_reset_password_message), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(16.dp))
                 CryptoTextField(
                     value         = email,
                     onValueChange = { email = it },
-                    label         = "Email",
+                    label         = stringResource(R.string.auth_email),
                     leadingIcon   = Icons.Outlined.Email,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 )
@@ -272,12 +274,12 @@ fun ForgotPasswordDialog(
         },
         confirmButton = {
             TextButton(onClick = { onSubmit(email) }) {
-                Text("Send", color = BinanceYellow, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.auth_send), color = BinanceYellow, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = TextSecondary)
+                Text(stringResource(R.string.action_cancel), color = TextSecondary)
             }
         },
     )
@@ -311,7 +313,7 @@ fun CryptoTextField(
                 IconButton(onClick = { onTogglePassword?.invoke() }) {
                     Icon(
                         imageVector       = if (isPasswordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                        contentDescription = if (isPasswordVisible) "Hide password" else "Show password",
+                        contentDescription = if (isPasswordVisible) stringResource(R.string.auth_hide_password) else stringResource(R.string.auth_show_password),
                         tint              = TextSecondary,
                     )
                 }
