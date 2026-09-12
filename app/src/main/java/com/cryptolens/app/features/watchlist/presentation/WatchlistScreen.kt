@@ -71,6 +71,7 @@ fun WatchlistScreen(
                 .fillMaxSize()
                 .background(BackgroundDark)
                 .padding(padding)
+                .navigationBarsPadding()
         ) {
             // ── Top Bar ────────────────────────────────────────────────────
             BinanceWatchlistTopBar(
@@ -116,7 +117,7 @@ fun WatchlistScreen(
 
                 else -> {
                     LazyColumn(
-                        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 6.dp),
+                        contentPadding = PaddingValues(start = 0.dp, top = 6.dp, end = 0.dp, bottom = 24.dp),
                     ) {
                         items(
                             items = uiState.items,
@@ -412,7 +413,7 @@ private fun BinanceWatchlistTabsAndFilters(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(42.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(SurfaceDark)
                     .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1062,7 +1063,7 @@ private fun WatchlistGroupEditSheet(
                 Text("Sort", color = TextTertiary, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.width(40.dp))
             }
 
-            LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(bottom = 18.dp)) {
+            LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(bottom = 28.dp)) {
                 items(state.items, key = { it.coinId }) { item ->
                     WatchlistEditCoinRow(
                         item = item,
@@ -1079,6 +1080,7 @@ private fun WatchlistGroupEditSheet(
                 Column(
                     Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                 ) {
                     Row(
@@ -1215,7 +1217,11 @@ private fun CreateWatchlistGroupSheet(
             )
         },
     ) {
-        Column(Modifier.padding(horizontal = 18.dp, vertical = 18.dp)) {
+        Column(
+            Modifier
+                .navigationBarsPadding()
+                .padding(horizontal = 18.dp, vertical = 18.dp)
+        ) {
             Text(title, color = TextPrimary, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(18.dp))
             OutlinedTextField(
@@ -1234,14 +1240,14 @@ private fun CreateWatchlistGroupSheet(
                     unfocusedContainerColor = SurfaceDark,
                     cursorColor = BinanceYellow,
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(8.dp),
             )
             Spacer(Modifier.height(22.dp))
             Button(
                 onClick = onSave,
                 enabled = name.trim().isNotEmpty(),
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow, contentColor = BackgroundDark),
             ) {
                 Text(actionLabel, fontWeight = FontWeight.SemiBold)
@@ -1264,7 +1270,11 @@ private fun AddToWatchlistGroupSheet(
         containerColor = BackgroundDark,
         contentColor = TextPrimary,
     ) {
-        Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
+        Column(
+            Modifier
+                .navigationBarsPadding()
+                .padding(horizontal = 18.dp, vertical = 12.dp)
+        ) {
             Text("Add to group", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(10.dp))
             groups.filterNot { it.id == selectedGroupId }.forEach { group ->

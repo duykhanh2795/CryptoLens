@@ -57,7 +57,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -76,9 +75,10 @@ import com.cryptolens.app.features.wallet.domain.model.TrendingWalletDetail
 import com.cryptolens.app.features.wallet.domain.model.WalletAsset
 import com.cryptolens.app.features.wallet.domain.model.WalletChain
 import com.cryptolens.app.features.wallet.domain.model.WalletWatchListItem
+import com.cryptolens.app.ui.theme.AppAccent
+import com.cryptolens.app.ui.theme.AppAccentContainer
 import com.cryptolens.app.ui.theme.BackgroundDark
 import com.cryptolens.app.ui.theme.BinanceYellow
-import com.cryptolens.app.ui.theme.BorderColor
 import com.cryptolens.app.ui.theme.DividerColor
 import com.cryptolens.app.ui.theme.GreenUp
 import com.cryptolens.app.ui.theme.GreenUpSurface
@@ -128,8 +128,8 @@ fun WalletWatchlistScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { viewModel.onEvent(WalletWatchlistEvent.ShowAddSheet) },
-                containerColor = BinanceYellow,
-                contentColor = Color(0xFF1A1400),
+                containerColor = AppAccent,
+                contentColor = BackgroundDark,
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add wallet")
             }
@@ -139,6 +139,7 @@ fun WalletWatchlistScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .navigationBarsPadding()
                 .background(BackgroundDark),
         ) {
             WalletTopBar(
@@ -261,7 +262,7 @@ private fun WalletList(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
@@ -681,7 +682,7 @@ private fun AddWalletSheet(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = SurfaceVariant,
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(8.dp),
         ) {
             Column(Modifier.padding(14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -713,15 +714,17 @@ private fun AddWalletSheet(
                     modifier = Modifier.fillMaxWidth().height(46.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = BinanceYellow,
-                        contentColor = Color(0xFF1A1400),
+                        containerColor = AppAccent,
+                        contentColor = BackgroundDark,
+                        disabledContainerColor = AppAccentContainer,
+                        disabledContentColor = TextTertiary,
                     ),
                 ) {
                     if (state.isConnectingWallet) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp,
-                            color = Color(0xFF1A1400),
+                            color = BackgroundDark,
                         )
                     } else {
                         Text(stringResource(R.string.wallet_connect_metamask), fontWeight = FontWeight.Bold)
@@ -806,15 +809,17 @@ private fun AddWalletSheet(
                     .height(48.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = BinanceYellow,
-                    contentColor = Color(0xFF1A1400),
+                    containerColor = AppAccent,
+                    contentColor = BackgroundDark,
+                    disabledContainerColor = AppAccentContainer,
+                    disabledContentColor = TextTertiary,
                 ),
             ) {
                 if (state.isSaving) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp,
-                        color = Color(0xFF1A1400),
+                        color = BackgroundDark,
                     )
                 } else {
                     Text(stringResource(R.string.common_add), fontWeight = FontWeight.Bold)

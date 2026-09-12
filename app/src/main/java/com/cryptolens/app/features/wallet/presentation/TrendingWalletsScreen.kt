@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -88,9 +89,10 @@ import com.cryptolens.app.features.wallet.domain.model.WalletChain
 import com.cryptolens.app.features.wallet.domain.model.WalletTransaction
 import com.cryptolens.app.features.wallet.domain.model.WalletTransactionType
 import com.cryptolens.app.features.wallet.domain.model.shortWalletAddress
+import com.cryptolens.app.ui.theme.AppAccent
+import com.cryptolens.app.ui.theme.AppAccentContainer
 import com.cryptolens.app.ui.theme.BackgroundDark
 import com.cryptolens.app.ui.theme.BinanceYellow
-import com.cryptolens.app.ui.theme.BorderColor
 import com.cryptolens.app.ui.theme.DividerColor
 import com.cryptolens.app.ui.theme.GreenUp
 import com.cryptolens.app.ui.theme.GreenUpSurface
@@ -115,7 +117,12 @@ fun TrendingWalletsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Column(Modifier.fillMaxSize().background(BackgroundDark)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(BackgroundDark)
+            .navigationBarsPadding()
+    ) {
         TrendingWalletsTopBar(
             query = uiState.query,
             onQueryChange = { viewModel.onEvent(TrendingWalletsEvent.QueryChanged(it)) },
@@ -140,7 +147,7 @@ fun TrendingWalletsScreen(
             })
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 24.dp),
+                contentPadding = PaddingValues(bottom = 32.dp),
             ) {
                 items(uiState.filteredWallets, key = { "${it.chain.name}:${it.address}" }) { wallet ->
                     TrendingWalletRow(
@@ -178,7 +185,7 @@ private fun TrendingWalletsTopBar(
             singleLine = true,
             placeholder = { Text(stringResource(R.string.wallet_explore_any_address)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(8.dp),
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
             focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
             unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -373,7 +380,12 @@ private fun TrendingWalletDetailContent(
     var historyQuery by remember { mutableStateOf("") }
     var selectedTransaction by remember { mutableStateOf<WalletTransaction?>(null) }
 
-    Column(modifier.fillMaxSize().background(BackgroundDark)) {
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(BackgroundDark)
+            .navigationBarsPadding()
+    ) {
         WalletDetailHero(
             detail = detail,
             settings = settings,
@@ -571,7 +583,10 @@ private fun AssetsTab(
     settings: AppSettings,
     note: String?,
 ) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 0.dp, top = 8.dp, end = 0.dp, bottom = 32.dp),
+    ) {
         if (note != null) {
             item {
                 WalletInfoNotice(
@@ -672,7 +687,7 @@ private fun HistoryTab(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp),
+        contentPadding = PaddingValues(start = 20.dp, top = 18.dp, end = 20.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         if (note != null) {
@@ -709,7 +724,7 @@ private fun HistoryTab(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         color = SurfaceDark,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(8.dp),
                     ) {
                         Column {
                             transactions.forEachIndexed { index, tx ->
@@ -745,7 +760,7 @@ private fun HistoryControls(
             singleLine = true,
             placeholder = { Text(stringResource(R.string.wallet_search_history)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(8.dp),
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
             focusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
             unfocusedBorderColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -857,6 +872,7 @@ private fun TransactionDetailSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -920,8 +936,10 @@ private fun TransactionDetailSheet(
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = BinanceYellow,
-                    contentColor = Color(0xFF1A1400),
+                    containerColor = AppAccent,
+                    contentColor = BackgroundDark,
+                    disabledContainerColor = AppAccentContainer,
+                    disabledContentColor = TextTertiary,
                 ),
             ) {
                 Text("Open Explorer", fontWeight = FontWeight.Bold)
@@ -970,7 +988,7 @@ private fun WalletError(message: String, onRetry: () -> Unit) {
         Spacer(Modifier.height(14.dp))
         Button(
             onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(containerColor = BinanceYellow, contentColor = Color(0xFF1A1400)),
+            colors = ButtonDefaults.buttonColors(containerColor = AppAccent, contentColor = BackgroundDark),
             shape = RoundedCornerShape(8.dp),
         ) {
             Text("Retry", fontWeight = FontWeight.Bold)
