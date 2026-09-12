@@ -1,5 +1,0 @@
--keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.ai.presentation.AiAssistantViewModel
--keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.ai.presentation.AiAssistantViewModel
--keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.alerts.presentation.AlertsViewModel
--keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.alerts.presentation.AlertsViewModel
--keep,allowobfuscation,allowshrinking class com.cryptolens.app.features.auth.presentation.login.LoginViewModel
