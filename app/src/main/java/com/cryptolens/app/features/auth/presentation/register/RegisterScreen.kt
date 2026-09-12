@@ -69,6 +69,8 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
         ) {
             // Top bar
@@ -90,7 +92,7 @@ fun RegisterScreen(
             }
 
             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
 
                 // Header
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -98,13 +100,18 @@ fun RegisterScreen(
                         modifier = Modifier
                             .size(56.dp)
                             .clip(CircleShape)
-                            .background(BinanceYellow),
+                            .background(AppAccent),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("CL", color = Color(0xFF1A1400), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+                        Text("CL", color = BackgroundDark, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
                     }
                     Spacer(Modifier.height(12.dp))
-                    Text(stringResource(R.string.auth_join_title), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text(
+                        stringResource(R.string.auth_join_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = TextPrimary,
+                        textAlign = TextAlign.Center,
+                    )
                     Spacer(Modifier.height(4.dp))
                     Text(stringResource(R.string.auth_join_subtitle), style = MaterialTheme.typography.bodyMedium, color = TextSecondary, textAlign = TextAlign.Center)
                 }
@@ -196,7 +203,7 @@ fun RegisterScreen(
                     modifier          = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .background(SurfaceVariant)
+                        .background(SurfaceVariant, RoundedCornerShape(8.dp))
                         .clickable { viewModel.onEvent(RegisterEvent.ToggleTerms) }
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                 ) {
@@ -225,23 +232,24 @@ fun RegisterScreen(
                         keyboardController?.hide()
                         viewModel.onEvent(RegisterEvent.Submit)
                     },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
                     enabled  = !uiState.isLoading,
                     shape    = RoundedCornerShape(8.dp),
                     colors   = ButtonDefaults.buttonColors(
-                        containerColor         = BinanceYellow,
-                        contentColor           = Color(0xFF1A1400),
-                        disabledContainerColor = BinanceYellow.copy(alpha = 0.5f),
+                        containerColor         = AppAccent,
+                        contentColor           = BackgroundDark,
+                        disabledContainerColor = AppAccentContainer,
+                        disabledContentColor   = TextTertiary,
                     ),
                 ) {
                     if (uiState.isLoading) {
                         CircularProgressIndicator(
                             modifier    = Modifier.size(20.dp),
-                            color       = Color(0xFF1A1400),
+                            color       = BackgroundDark,
                             strokeWidth = 2.dp,
                         )
                     } else {
-                        Text(stringResource(R.string.auth_create_account), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.auth_create_account), style = MaterialTheme.typography.labelLarge)
                     }
                 }
 

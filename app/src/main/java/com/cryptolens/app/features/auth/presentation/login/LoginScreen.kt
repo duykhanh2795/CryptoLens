@@ -70,10 +70,13 @@ fun LoginScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(60.dp))
+            Spacer(Modifier.height(52.dp))
 
             // Logo & title
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -81,18 +84,27 @@ fun LoginScreen(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape)
-                        .background(BinanceYellow),
+                        .background(AppAccent),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("CL", color = Color(0xFF1A1400), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("CL", color = BackgroundDark, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
                 }
                 Spacer(Modifier.height(16.dp))
-                Text(stringResource(R.string.auth_welcome_back), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                Text(
+                    stringResource(R.string.auth_welcome_back),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = TextPrimary,
+                )
                 Spacer(Modifier.height(6.dp))
-                Text(stringResource(R.string.auth_login_subtitle), style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                Text(
+                    stringResource(R.string.auth_login_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                )
             }
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(36.dp))
 
             // Email field
             CryptoTextField(
@@ -179,23 +191,24 @@ fun LoginScreen(
                     keyboardController?.hide()
                     viewModel.onEvent(LoginEvent.Submit)
                 },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(54.dp),
                 enabled  = !uiState.isLoading,
                 shape    = RoundedCornerShape(8.dp),
                 colors   = ButtonDefaults.buttonColors(
-                    containerColor = BinanceYellow,
-                    contentColor   = Color(0xFF1A1400),
-                    disabledContainerColor = BinanceYellow.copy(alpha = 0.5f),
+                    containerColor = AppAccent,
+                    contentColor   = BackgroundDark,
+                    disabledContainerColor = AppAccentContainer,
+                    disabledContentColor = TextTertiary,
                 ),
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
                         modifier  = Modifier.size(20.dp),
-                        color     = Color(0xFF1A1400),
+                        color     = BackgroundDark,
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text(stringResource(R.string.auth_login), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.auth_login), style = MaterialTheme.typography.labelLarge)
                 }
             }
 
@@ -324,7 +337,9 @@ fun CryptoTextField(
             keyboardActions = keyboardActions,
             isError         = error != null,
             singleLine      = true,
-            modifier        = Modifier.fillMaxWidth(),
+            modifier        = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 58.dp),
             shape           = RoundedCornerShape(8.dp),
             colors          = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor   = Color.Transparent,
@@ -335,12 +350,16 @@ fun CryptoTextField(
                 errorLabelColor      = RedDown,
                 focusedTextColor     = TextPrimary,
                 unfocusedTextColor   = TextPrimary,
+                disabledTextColor    = TextTertiary,
                 cursorColor          = BinanceYellow,
                 focusedContainerColor   = SurfaceVariant,
                 unfocusedContainerColor = SurfaceVariant,
+                disabledContainerColor  = SurfaceVariant,
                 errorContainerColor     = RedDownSurface,
                 focusedLeadingIconColor  = BinanceYellow,
                 unfocusedLeadingIconColor = TextSecondary,
+                focusedTrailingIconColor = TextSecondary,
+                unfocusedTrailingIconColor = TextSecondary,
             ),
         )
         AnimatedVisibility(visible = error != null) {
