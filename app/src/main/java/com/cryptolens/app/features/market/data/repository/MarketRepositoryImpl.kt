@@ -2,7 +2,6 @@ package com.cryptolens.app.features.market.data.repository
 
 import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.market.data.remote.BinanceApiService
-import com.cryptolens.app.features.market.data.remote.BinanceFuturesDataApiService
 import com.cryptolens.app.features.market.data.remote.BinanceFuturesApiService
 import com.cryptolens.app.features.market.data.remote.BinanceWebSocketManager
 import com.cryptolens.app.features.market.data.remote.CoinGeckoApiService
@@ -10,7 +9,6 @@ import com.cryptolens.app.features.market.data.remote.MarketCache
 import com.cryptolens.app.features.market.domain.model.ChartMarketType
 import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.features.market.domain.model.CoinDetail
-import com.cryptolens.app.features.market.domain.model.FuturesMarketInfo
 import com.cryptolens.app.features.market.domain.model.Kline
 import com.cryptolens.app.features.market.domain.model.PriceTicker
 import com.cryptolens.app.features.market.domain.repository.MarketRepository
@@ -25,7 +23,6 @@ class MarketRepositoryImpl @Inject constructor(
     private val coinGeckoApi: CoinGeckoApiService,
     private val binanceApi: BinanceApiService,
     private val binanceFuturesApi: BinanceFuturesApiService,
-    private val binanceFuturesDataApi: BinanceFuturesDataApiService,
     private val binanceWs: BinanceWebSocketManager,
     private val cache: MarketCache,
 ) : MarketRepository {
@@ -193,28 +190,6 @@ class MarketRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getFuturesMarketInfo(symbol: String): Resource<FuturesMarketInfo> {
-        return try {
-            val premium = binanceFuturesApi.getPremiumIndex(symbol)
-            val openInterest = binanceFuturesApi.getOpenInterest(symbol)
-            val openInterestChangePercent = fetchOpenInterestChangePercent(symbol)
-            Resource.Success(
-                FuturesMarketInfo(
-                    symbol = premium.symbol.ifBlank { symbol },
-                    markPrice = premium.markPrice.toDoubleOrNull() ?: 0.0,
-                    indexPrice = premium.indexPrice.toDoubleOrNull() ?: 0.0,
-                    lastFundingRate = premium.lastFundingRate.toDoubleOrNull() ?: 0.0,
-                    nextFundingTime = premium.nextFundingTime,
-                    openInterest = openInterest.openInterest.toDoubleOrNull() ?: 0.0,
-                    openInterestChangePercent = openInterestChangePercent,
-                    time = maxOf(premium.time, openInterest.time),
-                )
-            )
-        } catch (e: Exception) {
-            Resource.Error("Failed to load futures data: ${e.message}", e)
-        }
-    }
-
     override fun observePriceTicker(symbol: String): Flow<Resource<PriceTicker>> =
         binanceWs.observeTicker(symbol)
 
@@ -250,23 +225,4 @@ class MarketRepositoryImpl @Inject constructor(
     private fun JsonElement.asLongOrNull(): Long? =
         toString().trim('"').toLongOrNull()
 
-    private suspend fun fetchOpenInterestChangePercent(symbol: String): Double {
-        val history = runCatching {
-            binanceFuturesDataApi.getOpenInterestHistory(
-                symbol = symbol,
-                period = "1h",
-                limit = 24,
-            )
-        }.getOrDefault(emptyList())
-
-        val first = history.firstOrNull()?.sumOpenInterestValue?.toDoubleOrNull()
-            ?: history.firstOrNull()?.sumOpenInterest?.toDoubleOrNull()
-            ?: return 0.0
-        val last = history.lastOrNull()?.sumOpenInterestValue?.toDoubleOrNull()
-            ?: history.lastOrNull()?.sumOpenInterest?.toDoubleOrNull()
-            ?: return 0.0
-
-        if (first <= 0.0) return 0.0
-        return ((last - first) / first) * 100.0
-    }
 }

@@ -34,7 +34,6 @@ import com.cryptolens.app.ui.theme.*
 @Composable
 fun ProfileScreen(
     onNavigateToLogin: () -> Unit,
-    onNavigateToExchanges: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     onNavigateToWalletWatchlist: () -> Unit,
@@ -69,8 +68,6 @@ fun ProfileScreen(
             onEditProfile = { viewModel.onEvent(ProfileEvent.ComingSoon("Edit profile")) },
             onVerify = { viewModel.onEvent(ProfileEvent.ComingSoon("Identity verification")) },
             onSecurity = { viewModel.onEvent(ProfileEvent.ShowChangePasswordDialog) },
-            onTwitter = { viewModel.onEvent(ProfileEvent.ComingSoon("Twitter link")) },
-            onNavigateToExchanges = onNavigateToExchanges,
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToAlerts = onNavigateToAlerts,
             onNavigateToWalletWatchlist = onNavigateToWalletWatchlist,
@@ -182,8 +179,6 @@ private fun BinanceProfileContent(
     onEditProfile: () -> Unit,
     onVerify: () -> Unit,
     onSecurity: () -> Unit,
-    onTwitter: () -> Unit,
-    onNavigateToExchanges: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToAlerts: () -> Unit,
     onNavigateToWalletWatchlist: () -> Unit,
@@ -208,13 +203,10 @@ private fun BinanceProfileContent(
 
         BinanceProfileRow(Icons.Outlined.Person, stringResource(R.string.profile_verification), stringResource(R.string.profile_not_verified), onVerify)
         BinanceProfileRow(Icons.Outlined.Security, stringResource(R.string.profile_security), onClick = onSecurity)
-        BinanceProfileRow(Icons.Outlined.AccountBalance, stringResource(R.string.profile_connected_exchanges), stringResource(R.string.profile_binance), onNavigateToExchanges)
         BinanceProfileRow(Icons.Outlined.AccountBalanceWallet, stringResource(R.string.profile_wallet_watchlist), stringResource(R.string.profile_on_chain), onNavigateToWalletWatchlist)
         BinanceProfileRow(Icons.Outlined.NotificationsNone, stringResource(R.string.profile_alerts), stringResource(R.string.profile_price_rules), onNavigateToAlerts)
         BinanceProfileRow(Icons.Outlined.SwapHoriz, stringResource(R.string.profile_converter), stringResource(R.string.profile_live_rates), onNavigateToConverter)
         BinanceProfileRow(Icons.Outlined.Settings, stringResource(R.string.profile_settings), stringResource(R.string.profile_theme_currency), onNavigateToSettings)
-        BinanceProfileRow(Icons.Default.Close, stringResource(R.string.profile_twitter), stringResource(R.string.profile_unlinked), onTwitter)
-
         Spacer(Modifier.height(18.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -378,57 +370,6 @@ private fun AccountInfoCard(
                 trailingIcon = Icons.Outlined.Visibility,
             )
 
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 20.dp),
-                color = DividerColor,
-            )
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = "Upgrade to Pro 1",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = "Sync exchanges and wallet activity to level up",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
-                    )
-                    Spacer(Modifier.height(14.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(0.72f)
-                            .height(7.dp)
-                            .clip(RoundedCornerShape(99.dp))
-                            .background(SurfaceVariant),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.08f)
-                                .fillMaxHeight()
-                                .clip(RoundedCornerShape(99.dp))
-                                .background(BinanceYellow),
-                        )
-                    }
-                }
-                TextButton(onClick = onEditProfile, contentPadding = PaddingValues(0.dp)) {
-                    Text(
-                        text = "Benefits",
-                        color = BinanceYellow,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = BinanceYellow,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
         }
     }
 }

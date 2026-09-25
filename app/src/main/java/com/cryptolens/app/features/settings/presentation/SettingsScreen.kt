@@ -26,7 +26,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cryptolens.app.R
 import com.cryptolens.app.features.settings.domain.model.AppCurrency
-import com.cryptolens.app.features.settings.domain.model.AppLanguage
 import com.cryptolens.app.features.settings.domain.model.AppSettings
 import com.cryptolens.app.features.settings.domain.model.AppTheme
 import com.cryptolens.app.features.settings.domain.model.PriceDisplayFormat
@@ -131,34 +130,9 @@ private fun SettingsContent(
             onSelect = { onEvent(SettingsEvent.ThemeChanged(it)) },
         )
 
-        LanguageSettingItem(
-            current  = settings.language,
-            onSelect = { onEvent(SettingsEvent.LanguageChanged(it)) },
-        )
-
         PriceFormatSettingItem(
             current  = settings.priceFormat,
             onSelect = { onEvent(SettingsEvent.PriceFormatChanged(it)) },
-        )
-
-        // ── Privacy ────────────────────────────────────────────────────────
-        SettingsDivider()
-        SettingsSectionHeader(stringResource(R.string.settings_privacy))
-
-        ToggleSettingItem(
-            icon    = Icons.Default.Visibility,
-            title   = stringResource(R.string.settings_show_portfolio_value),
-            subtitle = "Hide/show balance on Home screen",
-            checked  = settings.showPortfolioValue,
-            onCheckedChange = { onEvent(SettingsEvent.ShowPortfolioValueChanged(it)) },
-        )
-
-        ToggleSettingItem(
-            icon    = Icons.Default.Fingerprint,
-            title   = stringResource(R.string.settings_biometric_lock),
-            subtitle = "Require fingerprint to open app",
-            checked  = settings.biometricLock,
-            onCheckedChange = { onEvent(SettingsEvent.BiometricLockChanged(it)) },
         )
 
         // ── Notifications ──────────────────────────────────────────────────
@@ -310,45 +284,6 @@ private fun ThemeSettingItem(
         SelectionDialog(
             title     = stringResource(R.string.settings_select_theme),
             items     = AppTheme.entries.map { it to it.localizedDisplayName() },
-            selected  = current,
-            onSelect  = { onSelect(it); showDialog = false },
-            onDismiss = { showDialog = false },
-        )
-    }
-}
-
-// ── Language Setting ──────────────────────────────────────────────────────────
-
-@Composable
-private fun LanguageSettingItem(
-    current: AppLanguage,
-    onSelect: (AppLanguage) -> Unit,
-) {
-    var showDialog by remember { mutableStateOf(false) }
-
-    SettingsRow(
-        icon     = Icons.Default.Language,
-        title    = stringResource(R.string.settings_language),
-        subtitle = current.localizedDisplayName(),
-        trailing = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text  = current.localizedDisplayName(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TextSecondary,
-                )
-                Spacer(Modifier.width(4.dp))
-                Icon(Icons.Default.ChevronRight, contentDescription = null,
-                    tint = TextTertiary, modifier = Modifier.size(18.dp))
-            }
-        },
-        onClick  = { showDialog = true },
-    )
-
-    if (showDialog) {
-        SelectionDialog(
-            title     = stringResource(R.string.settings_select_language),
-            items     = AppLanguage.entries.map { it to it.localizedDisplayName() },
             selected  = current,
             onSelect  = { onSelect(it); showDialog = false },
             onDismiss = { showDialog = false },
@@ -562,12 +497,6 @@ private fun AppTheme.localizedDisplayName(): String = when (this) {
     AppTheme.DARK -> stringResource(R.string.theme_dark)
     AppTheme.LIGHT -> stringResource(R.string.theme_light)
     AppTheme.SYSTEM -> stringResource(R.string.theme_system)
-}
-
-@Composable
-private fun AppLanguage.localizedDisplayName(): String = when (this) {
-    AppLanguage.ENGLISH -> stringResource(R.string.language_english)
-    AppLanguage.VIETNAMESE -> stringResource(R.string.language_vietnamese)
 }
 
 @Composable

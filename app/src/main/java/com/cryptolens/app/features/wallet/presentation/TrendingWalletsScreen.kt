@@ -375,7 +375,6 @@ private fun TrendingWalletDetailContent(
     onAddToWatchlist: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val wallet = detail.wallet
     var historyFilter by remember { mutableStateOf(WalletHistoryFilter.ALL) }
     var historyQuery by remember { mutableStateOf("") }
     var selectedTransaction by remember { mutableStateOf<WalletTransaction?>(null) }
@@ -514,7 +513,11 @@ private fun WalletDetailHero(
                 ) {
                     Icon(Icons.Outlined.AccountBalanceWallet, contentDescription = null, tint = TextSecondary)
                     Spacer(Modifier.width(6.dp))
-                    Text("${wallet.txCount} tx", color = TextSecondary, style = MaterialTheme.typography.labelMedium)
+                    Text(
+                        "${detail.history.size} recent tx",
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
                 }
             }
         }

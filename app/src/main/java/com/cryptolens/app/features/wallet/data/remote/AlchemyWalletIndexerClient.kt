@@ -7,6 +7,8 @@ import com.cryptolens.app.features.wallet.domain.model.WalletChain
 import com.cryptolens.app.features.wallet.domain.model.WalletTransaction
 import com.cryptolens.app.features.wallet.domain.model.WalletTransactionType
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -16,56 +18,29 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AlchemyWalletIndexerClient @Inject constructor(
-    private val client: OkHttpClient,
+    client: OkHttpClient,
 ) {
+    private val client = client.newBuilder()
+        .callTimeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .build()
     private val apiKey: String get() = BuildConfig.ALCHEMY_API_KEY.trim()
     val isConfigured: Boolean get() = apiKey.isNotBlank()
 
     suspend fun fetchTokenAssets(
         address: String,
-        nativePricesBySymbol: Map<String, Double>,
         nativeChangesBySymbol: Map<String, Double>,
     ): Resource<List<WalletAsset>> = withContext(Dispatchers.IO) {
         if (!isConfigured) return@withContext Resource.Error(MISSING_KEY_MESSAGE)
 
         try {
             val portfolioAssets = fetchPortfolioTokenAssets(address, nativeChangesBySymbol)
-            if (portfolioAssets.isNotEmpty()) {
-                return@withContext Resource.Success(portfolioAssets)
-            }
-
-            val assets = buildList {
-                ALCHEMY_NETWORKS.forEach { network ->
-                    val balances = fetchNonZeroTokenBalances(network, address)
-                    balances.take(MAX_TOKENS_PER_NETWORK).forEach { balance ->
-                        val metadata = fetchTokenMetadata(network, balance.contractAddress) ?: return@forEach
-                        val quantity = balance.rawBalance.toDecimal(metadata.decimals)
-                        if (quantity <= 0.0) return@forEach
-                        val symbol = metadata.symbol.ifBlank { "TOKEN" }
-                        val price = nativePricesBySymbol[symbol.uppercase()]
-                        add(
-                            WalletAsset(
-                                symbol = symbol,
-                                name = metadata.name.ifBlank { symbol },
-                                quantity = quantity,
-                                priceUsd = price,
-                                valueUsd = price?.let { quantity * it },
-                                changePercent24h = nativeChangesBySymbol[symbol.uppercase()] ?: 0.0,
-                                chain = network.chain,
-                                networkLabel = network.label,
-                                contractAddress = balance.contractAddress,
-                            ),
-                        )
-                    }
-                }
-            }.sortedWith(compareByDescending<WalletAsset> { it.valueUsd ?: 0.0 }.thenBy { it.symbol })
-
-            Resource.Success(assets)
+            Resource.Success(portfolioAssets.take(MAX_ASSETS))
         } catch (e: Exception) {
             Resource.Error("Alchemy token indexer failed: ${e.message}", e)
         }
@@ -148,8 +123,15 @@ class AlchemyWalletIndexerClient @Inject constructor(
                 ?: return@withContext Resource.Error("Alchemy history is not configured for ${chain.label}")
 
             try {
-                val incoming = fetchTransfers(network, address, incoming = true)
-                val outgoing = fetchTransfers(network, address, incoming = false)
+                val (incoming, outgoing) = coroutineScope {
+                    val incomingRequest = async(Dispatchers.IO) {
+                        fetchTransfers(network, address, incoming = true)
+                    }
+                    val outgoingRequest = async(Dispatchers.IO) {
+                        fetchTransfers(network, address, incoming = false)
+                    }
+                    incomingRequest.await() to outgoingRequest.await()
+                }
                 Resource.Success(
                     (incoming + outgoing)
                         .distinctBy { it.id + it.type.name + it.amount + it.counterparty }
@@ -160,38 +142,6 @@ class AlchemyWalletIndexerClient @Inject constructor(
                 Resource.Error("Alchemy transfer history failed: ${e.message}", e)
             }
         }
-
-    private fun fetchNonZeroTokenBalances(network: AlchemyNetwork, address: String): List<TokenBalanceRow> {
-        val result = callJsonRpc(
-            endpoint = network.endpoint,
-            method = "alchemy_getTokenBalances",
-            params = JSONArray().put(address).put("erc20"),
-        )
-        val balances = result.optJSONArray("tokenBalances") ?: JSONArray()
-        return buildList {
-            for (index in 0 until balances.length()) {
-                val item = balances.getJSONObject(index)
-                val tokenBalance = item.optString("tokenBalance")
-                if (tokenBalance.isBlank() || tokenBalance == "0x0") continue
-                val raw = tokenBalance.hexToBigInteger()
-                if (raw == BigInteger.ZERO) continue
-                add(TokenBalanceRow(item.getString("contractAddress"), raw))
-            }
-        }
-    }
-
-    private fun fetchTokenMetadata(network: AlchemyNetwork, contractAddress: String): TokenMetadata? {
-        val result = callJsonRpc(
-            endpoint = network.endpoint,
-            method = "alchemy_getTokenMetadata",
-            params = JSONArray().put(contractAddress),
-        )
-        return TokenMetadata(
-            name = result.optString("name"),
-            symbol = result.optString("symbol"),
-            decimals = result.optInt("decimals", 18),
-        )
-    }
 
     private fun fetchTransfers(
         network: AlchemyNetwork,
@@ -204,6 +154,7 @@ class AlchemyWalletIndexerClient @Inject constructor(
             .put("withMetadata", true)
             .put("excludeZeroValue", true)
             .put("maxCount", "0x32")
+            .put("order", "desc")
             .put("category", JSONArray().put("external").put("erc20"))
 
         if (incoming) {
@@ -223,12 +174,16 @@ class AlchemyWalletIndexerClient @Inject constructor(
                 val transfer = transfers.getJSONObject(index)
                 val rawValue = transfer.optDouble("value", 0.0)
                 if (rawValue <= 0.0) continue
+                val symbol = transfer.optString("asset")
+                    .trim()
+                    .ifBlank { network.chain.nativeSymbol }
+                if (symbol.none { it.isLetterOrDigit() }) continue
                 val metadata = transfer.optJSONObject("metadata")
                 add(
                     WalletTransaction(
                         id = transfer.optString("hash").ifBlank { "${network.id}:$index" },
                         type = if (incoming) WalletTransactionType.RECEIVED else WalletTransactionType.SENT,
-                        symbol = transfer.optString("asset").ifBlank { network.chain.nativeSymbol },
+                        symbol = symbol,
                         amount = rawValue,
                         valueUsd = null,
                         counterparty = if (incoming) transfer.optString("from") else transfer.optString("to"),
@@ -329,17 +284,6 @@ class AlchemyWalletIndexerClient @Inject constructor(
         return normalized.ifBlank { code?.let { "Alchemy HTTP $it" } ?: "Alchemy API error" }
     }
 
-    private data class TokenBalanceRow(
-        val contractAddress: String,
-        val rawBalance: BigInteger,
-    )
-
-    private data class TokenMetadata(
-        val name: String,
-        val symbol: String,
-        val decimals: Int,
-    )
-
     private data class AlchemyNetwork(
         val id: String,
         val label: String,
@@ -349,8 +293,9 @@ class AlchemyWalletIndexerClient @Inject constructor(
 
     private companion object {
         const val MISSING_KEY_MESSAGE = "Missing Alchemy API key. Add ALCHEMY_API_KEY to local.properties."
-        const val MAX_TOKENS_PER_NETWORK = 25
-        const val MAX_PORTFOLIO_PAGES = 4
+        const val REQUEST_TIMEOUT_SECONDS = 12L
+        const val MAX_PORTFOLIO_PAGES = 1
+        const val MAX_ASSETS = 100
         val JSON_MEDIA_TYPE = "application/json".toMediaType()
         val PORTFOLIO_NETWORKS = listOf(
             AlchemyNetwork("eth-mainnet", "Ethereum", WalletChain.ETHEREUM, ""),

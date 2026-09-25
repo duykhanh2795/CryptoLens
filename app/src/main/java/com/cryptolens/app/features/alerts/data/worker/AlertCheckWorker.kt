@@ -53,6 +53,9 @@ class AlertCheckWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
+            val settings = settingsRepository.observeSettings().first()
+            if (!settings.enableNotifications) return@withContext Result.success()
+
             val activeAlerts = getActiveAlerts()
             if (activeAlerts.isEmpty()) return@withContext Result.success()
 
@@ -62,8 +65,9 @@ class AlertCheckWorker @AssistedInject constructor(
             activeAlerts.forEach { alert ->
                 val currentValue = valuesByAlertId[alert.id] ?: return@forEach
                 if (alert.isTriggered(currentValue)) {
-                    markAlertTriggered(alert, currentValue)
-                    sendNotification(alert, currentValue, settingsRepository.observeSettings().first())
+                    if (sendNotification(alert, currentValue, settings)) {
+                        markAlertTriggered(alert, currentValue)
+                    }
                 }
             }
 

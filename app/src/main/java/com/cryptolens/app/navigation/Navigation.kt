@@ -28,13 +28,10 @@ import androidx.navigation.navArgument
 import com.cryptolens.app.features.alerts.presentation.AlertCoinPrefill
 import com.cryptolens.app.features.alerts.presentation.AlertsScreen
 import com.cryptolens.app.features.alerts.domain.model.AlertType
-import com.cryptolens.app.features.ai.presentation.AiAssistantOverlay
 import com.cryptolens.app.features.auth.presentation.login.LoginScreen
 import com.cryptolens.app.features.auth.presentation.register.RegisterScreen
 import com.cryptolens.app.features.auth.presentation.splash.SplashScreen
 import com.cryptolens.app.features.converter.presentation.ConverterScreen
-import com.cryptolens.app.features.exchange.presentation.connect.ConnectExchangeScreen
-import com.cryptolens.app.features.exchange.presentation.manage.ManageExchangeScreen
 import com.cryptolens.app.features.home.presentation.HomeScreen
 import com.cryptolens.app.features.market.presentation.detail.CoinDetailScreen
 import com.cryptolens.app.features.market.presentation.marketlist.MarketListScreen
@@ -61,8 +58,6 @@ sealed class Screen(val route: String) {
     data object Watchlist       : Screen("watchlist")
     data object Portfolio       : Screen("portfolio")
     data object Profile         : Screen("profile")
-    data object ManageExchanges : Screen("manage_exchanges")
-    data object ConnectExchange : Screen("connect_exchange")
     data object Settings        : Screen("settings")
     data object Converter       : Screen("converter")
     data object Alerts          : Screen("alerts")
@@ -128,12 +123,6 @@ private val bottomNavItems = listOf(
     BottomNavItem(Screen.Watchlist, "Watchlist", Icons.Filled.Star,                 Icons.Outlined.StarOutline),
     BottomNavItem(Screen.Portfolio, "Portfolio", Icons.Filled.AccountBalanceWallet, Icons.Outlined.AccountBalanceWallet),
     BottomNavItem(Screen.Profile,   "Profile",   Icons.Filled.Person,               Icons.Outlined.Person),
-)
-
-private val aiHiddenRoutes = setOf(
-    Screen.Splash.route,
-    Screen.Login.route,
-    Screen.Register.route,
 )
 
 @Composable
@@ -263,8 +252,7 @@ fun CryptoLensNavHost(
 
             composable(Screen.Portfolio.route) {
                 PortfolioScreen(
-                    onCoinClick       = { navController.navigate(Screen.CoinDetail.createRoute(it)) },
-                    onConnectExchange = { navController.navigate(Screen.ManageExchanges.route) },
+                    onCoinClick = { navController.navigate(Screen.CoinDetail.createRoute(it)) },
                 )
             }
 
@@ -275,7 +263,6 @@ fun CryptoLensNavHost(
                             popUpTo(0) { inclusive = true }
                         }
                     },
-                    onNavigateToExchanges = { navController.navigate(Screen.ManageExchanges.route) },
                     onNavigateToSettings  = { navController.navigate(Screen.Settings.route) },
                     onNavigateToAlerts    = { navController.navigate(Screen.Alerts.route) },
                     onNavigateToWalletWatchlist = { navController.navigate(Screen.WalletWatchlist.route) },
@@ -395,19 +382,6 @@ fun CryptoLensNavHost(
                 )
             }
 
-            composable(Screen.ManageExchanges.route) {
-                ManageExchangeScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onConnectNew   = { navController.navigate(Screen.ConnectExchange.route) },
-                )
-            }
-
-            composable(Screen.ConnectExchange.route) {
-                ConnectExchangeScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                )
-            }
-
             composable(
                 route     = Screen.CoinDetail.route,
                 arguments = listOf(navArgument("coinId") { type = NavType.StringType }),
@@ -445,9 +419,5 @@ fun CryptoLensNavHost(
             }
         }
 
-        AiAssistantOverlay(
-            visible = currentRoute != null && currentRoute !in aiHiddenRoutes,
-            modifier = Modifier.fillMaxSize(),
-        )
     }
 }

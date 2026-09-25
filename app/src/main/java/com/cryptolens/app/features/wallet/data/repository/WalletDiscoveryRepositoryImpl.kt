@@ -13,6 +13,7 @@ import com.cryptolens.app.features.wallet.domain.repository.WalletDiscoveryRepos
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
@@ -70,45 +71,20 @@ class WalletDiscoveryRepositoryImpl @Inject constructor(
                 coinId = chain.priceCoinIds.firstOrNull(),
             )
 
-            val indexerErrors = mutableListOf<String>()
-            val indexedAssets = if (wallet.address.startsWith("0x", ignoreCase = true)) {
-                val alchemyAssets = when (
-                    val result = alchemyIndexer.fetchTokenAssets(
-                        address = wallet.address,
-                        nativePricesBySymbol = pricesBySymbolUsd,
-                        nativeChangesBySymbol = changesBySymbol24h,
+            val (assetLoad, historyResult) = coroutineScope {
+                val assetsRequest = async {
+                    loadIndexedAssets(
+                        wallet = wallet,
+                        changesBySymbol24h = changesBySymbol24h,
                     )
-                ) {
-                    is Resource.Success -> result.data
-                    is Resource.Error -> {
-                        indexerErrors += result.message
-                        emptyList()
-                    }
-                    else -> emptyList()
                 }
-                val moralisAssets = when (val result = moralisIndexer.fetchTokenAssets(wallet.address)) {
-                    is Resource.Success -> result.data
-                    is Resource.Error -> {
-                        indexerErrors += result.message
-                        emptyList()
-                    }
-                    Resource.Loading -> emptyList()
+                val historyRequest = async {
+                    loadHistory(chain = chain, address = wallet.address)
                 }
-                mergeAssets(alchemyAssets + moralisAssets)
-            } else {
-                emptyList()
+                assetsRequest.await() to historyRequest.await()
             }
-
-            val historyResult = if (chain == WalletChain.BITCOIN) {
-                balanceClient.fetchHistory(chain, wallet.address)
-            } else {
-                val moralisHistory = moralisIndexer.fetchHistory(wallet.address, chain)
-                if (moralisHistory is Resource.Success && moralisHistory.data.isNotEmpty()) {
-                    moralisHistory
-                } else {
-                    alchemyIndexer.fetchTransferHistory(wallet.address, chain)
-                }
-            }
+            val indexedAssets = assetLoad.assets
+            val indexerErrors = assetLoad.errors
             val history = when (historyResult) {
                 is Resource.Success -> historyResult.data.withUsdValues(pricesBySymbolUsd)
                 else -> emptyList()
@@ -136,6 +112,73 @@ class WalletDiscoveryRepositoryImpl @Inject constructor(
             Resource.Error("Could not load wallet detail: ${e.message}", e)
         }
     }
+
+    private suspend fun loadIndexedAssets(
+        wallet: TrendingWallet,
+        changesBySymbol24h: Map<String, Double>,
+    ): IndexedAssetLoad {
+        if (!wallet.address.startsWith("0x", ignoreCase = true)) return IndexedAssetLoad()
+
+        val errors = mutableListOf<String>()
+        val alchemyAssets = when (
+            val result = withTimeoutOrNull(INDEXER_TIMEOUT_MS) {
+                alchemyIndexer.fetchTokenAssets(
+                    address = wallet.address,
+                    nativeChangesBySymbol = changesBySymbol24h,
+                )
+            } ?: Resource.Error("Alchemy token request timed out.")
+        ) {
+            is Resource.Success -> result.data
+            is Resource.Error -> {
+                errors += result.message
+                emptyList()
+            }
+            Resource.Loading -> emptyList()
+        }
+
+        val moralisAssets = if (moralisIndexer.isConfigured) {
+            when (
+                val result = withTimeoutOrNull(INDEXER_TIMEOUT_MS) {
+                    moralisIndexer.fetchTokenAssets(wallet.address)
+                } ?: Resource.Error("Moralis token request timed out.")
+            ) {
+                is Resource.Success -> result.data
+                is Resource.Error -> {
+                    errors += result.message
+                    emptyList()
+                }
+                Resource.Loading -> emptyList()
+            }
+        } else {
+            emptyList()
+        }
+
+        return IndexedAssetLoad(
+            assets = mergeAssets(alchemyAssets + moralisAssets),
+            errors = errors,
+        )
+    }
+
+    private suspend fun loadHistory(
+        chain: WalletChain,
+        address: String,
+    ): Resource<List<WalletTransaction>> =
+        withTimeoutOrNull(INDEXER_TIMEOUT_MS) {
+            if (chain == WalletChain.BITCOIN) {
+                balanceClient.fetchHistory(chain, address)
+            } else {
+                val moralisHistory = if (moralisIndexer.isConfigured) {
+                    moralisIndexer.fetchHistory(address, chain)
+                } else {
+                    Resource.Error("Moralis is not configured.")
+                }
+                if (moralisHistory is Resource.Success && moralisHistory.data.isNotEmpty()) {
+                    moralisHistory
+                } else {
+                    alchemyIndexer.fetchTransferHistory(address, chain)
+                }
+            }
+        } ?: Resource.Error("Wallet history request timed out.")
 
     private suspend fun TrendingWalletSeed.toTrendingWallet(
         index: Int,
@@ -190,7 +233,14 @@ class WalletDiscoveryRepositoryImpl @Inject constructor(
         val avatarSeed: Int,
     )
 
+    private data class IndexedAssetLoad(
+        val assets: List<WalletAsset> = emptyList(),
+        val errors: List<String> = emptyList(),
+    )
+
     private companion object {
+        const val INDEXER_TIMEOUT_MS = 15_000L
+
         val TRENDING_WALLETS = listOf(
             TrendingWalletSeed(
                 label = "Binance BTC Cold",

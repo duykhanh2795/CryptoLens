@@ -53,7 +53,6 @@ import java.util.*
 @Composable
 fun PortfolioScreen(
     onCoinClick: (String) -> Unit,
-    onConnectExchange: () -> Unit = {},
     viewModel: PortfolioViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -145,10 +144,6 @@ fun PortfolioScreen(
                     enabled = !uiState.isImportExportBusy,
                 ) {
                     Icon(Icons.Outlined.FileDownload, contentDescription = "Export CSV",
-                        tint = TextSecondary)
-                }
-                IconButton(onClick = onConnectExchange) {
-                    Icon(Icons.Outlined.AccountBalance, contentDescription = "Connect Exchange",
                         tint = TextSecondary)
                 }
                 IconButton(onClick = { viewModel.onEvent(PortfolioEvent.ShowAddSheet) }) {

@@ -39,10 +39,6 @@ import com.cryptolens.app.features.alerts.domain.model.AlertType
 import com.cryptolens.app.features.market.domain.model.ChartMarketType
 import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.features.market.domain.model.CoinDetail
-import com.cryptolens.app.features.market.domain.model.FuturesMarketInfo
-import com.cryptolens.app.features.market.domain.model.FuturesRiskLevel
-import com.cryptolens.app.features.market.domain.model.FuturesSentiment
-import com.cryptolens.app.features.market.domain.model.FuturesSentimentBias
 import com.cryptolens.app.features.market.domain.model.Kline
 import com.cryptolens.app.features.market.domain.model.PriceTicker
 import com.cryptolens.app.features.news.domain.model.NewsItem
@@ -51,7 +47,6 @@ import com.cryptolens.app.features.portfolio.domain.model.PortfolioAsset
 import com.cryptolens.app.features.settings.domain.model.AppSettings
 import com.cryptolens.app.ui.theme.*
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 private val coinDetailBackground: Color get() = SurfaceElevated
@@ -106,8 +101,6 @@ fun CoinDetailScreen(
                     liveTicker        = uiState.liveTicker,
                     klines            = uiState.klines,
                     markPriceKlines   = uiState.markPriceKlines,
-                    futuresMarketInfo = uiState.futuresMarketInfo,
-                    futuresSentiment  = uiState.futuresSentiment,
                     selectedInterval  = uiState.selectedInterval,
                     selectedMarketType = uiState.selectedMarketType,
                     selectedChartType = uiState.selectedChartType,
@@ -142,8 +135,6 @@ private fun CoinDetailContent(
     liveTicker: PriceTicker?,
     klines: List<Kline>,
     markPriceKlines: List<Kline>,
-    futuresMarketInfo: FuturesMarketInfo?,
-    futuresSentiment: FuturesSentiment?,
     selectedInterval: ChartInterval,
     selectedMarketType: ChartMarketType,
     selectedChartType: ChartDisplayType,
@@ -208,13 +199,6 @@ private fun CoinDetailContent(
                 onMarketTypeChange = onMarketTypeChange,
                 onChartTypeChange = onChartTypeChange,
             )
-
-            if (futuresMarketInfo != null && selectedMarketType == ChartMarketType.FUTURES) {
-                FuturesInfoPanel(info = futuresMarketInfo, settings = settings)
-            }
-            if (futuresSentiment != null && selectedMarketType == ChartMarketType.FUTURES) {
-                FuturesSentimentPanel(sentiment = futuresSentiment)
-            }
 
             if (chartError != null) {
                 ChartNotice(message = chartError)
@@ -380,187 +364,6 @@ private fun CompactSegmentedIconToggle(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun FuturesSentimentPanel(sentiment: FuturesSentiment) {
-    val accent = when (sentiment.bias) {
-        FuturesSentimentBias.BULLISH -> GreenUp
-        FuturesSentimentBias.BEARISH -> RedDown
-        FuturesSentimentBias.LONG_CROWDED -> BinanceYellow
-        FuturesSentimentBias.SHORT_CROWDED -> BinanceYellow
-        FuturesSentimentBias.NEUTRAL -> TextSecondary
-        FuturesSentimentBias.UNAVAILABLE -> TextTertiary
-    }
-    val riskText = when (sentiment.riskLevel) {
-        FuturesRiskLevel.LOW -> "Low risk"
-        FuturesRiskLevel.MEDIUM -> "Medium risk"
-        FuturesRiskLevel.HIGH -> "High risk"
-        FuturesRiskLevel.UNKNOWN -> "Unknown risk"
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(coinDetailPanel)
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = sentiment.title,
-                    color = accent,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = sentiment.summary,
-                    color = TextSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(99.dp))
-                    .background(accent.copy(alpha = 0.14f))
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
-            ) {
-                Text(
-                    text = riskText,
-                    color = accent,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SentimentMetric(
-                label = "Funding",
-                value = "${"%.4f".format(sentiment.fundingRatePercent)}%",
-                modifier = Modifier.weight(1f),
-            )
-            SentimentMetric(
-                label = "Premium",
-                value = "${"%.3f".format(sentiment.premiumPercent)}%",
-                modifier = Modifier.weight(1f),
-            )
-            SentimentMetric(
-                label = "OI 24h",
-                value = "${"%.2f".format(sentiment.openInterestChangePercent)}%",
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        Spacer(Modifier.height(8.dp))
-        sentiment.signals.take(3).forEach { signal ->
-            Text(
-                text = "- $signal",
-                color = TextTertiary,
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun SentimentMetric(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(SurfaceVariant)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-    ) {
-        Text(label, color = TextTertiary, style = MaterialTheme.typography.labelSmall)
-        Spacer(Modifier.height(3.dp))
-        Text(
-            value,
-            color = TextPrimary,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.SemiBold,
-        )
-    }
-}
-
-@Composable
-private fun FuturesInfoPanel(info: FuturesMarketInfo, settings: AppSettings) {
-    val fundingPercent = info.lastFundingRate * 100.0
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(coinDetailPanel)
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            FuturesMetric(
-                label = "Mark",
-                value = settings.formatMoney(info.markPrice),
-                modifier = Modifier.weight(1f),
-            )
-            FuturesMetric(
-                label = "Index",
-                value = settings.formatMoney(info.indexPrice),
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            FuturesMetric(
-                label = "Funding",
-                value = "${"%.4f".format(fundingPercent)}%",
-                valueColor = if (fundingPercent >= 0) GreenUp else RedDown,
-                modifier = Modifier.weight(1f),
-            )
-            FuturesMetric(
-                label = "Open Interest",
-                value = info.openInterest.formatLargeNumber(),
-                modifier = Modifier.weight(1f),
-            )
-        }
-        if (info.nextFundingTime > 0L) {
-            Spacer(Modifier.height(8.dp))
-            val formatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
-            Text(
-                text = "Next funding: ${formatter.format(Date(info.nextFundingTime))}",
-                color = TextTertiary,
-                style = MaterialTheme.typography.labelSmall,
-            )
-        }
-    }
-}
-
-@Composable
-private fun FuturesMetric(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    valueColor: Color = TextPrimary,
-) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(SurfaceVariant)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-    ) {
-        Text(label, color = TextTertiary, style = MaterialTheme.typography.labelSmall)
-        Spacer(Modifier.height(3.dp))
-        Text(
-            value,
-            color = valueColor,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-        )
     }
 }
 

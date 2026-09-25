@@ -7,14 +7,10 @@ import com.cryptolens.app.core.domain.util.Resource
 import com.cryptolens.app.features.auth.domain.usecase.GetCurrentUserUseCase
 import com.cryptolens.app.features.market.domain.model.ChartMarketType
 import com.cryptolens.app.features.market.domain.model.CoinDetail
-import com.cryptolens.app.features.market.domain.model.FuturesMarketInfo
-import com.cryptolens.app.features.market.domain.model.FuturesSentiment
 import com.cryptolens.app.features.market.domain.model.Kline
 import com.cryptolens.app.features.market.domain.model.PriceTicker
-import com.cryptolens.app.features.market.domain.usecase.BuildFuturesSentimentUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetCoinDetailUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetCoinMarketChartUseCase
-import com.cryptolens.app.features.market.domain.usecase.GetFuturesMarketInfoUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetKlinesUseCase
 import com.cryptolens.app.features.market.domain.usecase.GetMarkPriceKlinesUseCase
 import com.cryptolens.app.features.market.domain.usecase.ObservePriceTickerUseCase
@@ -55,8 +51,6 @@ data class CoinDetailUiState(
     val coinDetail: CoinDetail?         = null,
     val klines: List<Kline>             = emptyList(),
     val markPriceKlines: List<Kline>    = emptyList(),
-    val futuresMarketInfo: FuturesMarketInfo? = null,
-    val futuresSentiment: FuturesSentiment? = null,
     val liveTicker: PriceTicker?        = null,
     val selectedInterval: ChartInterval = ChartInterval.ONE_DAY,
     val selectedMarketType: ChartMarketType = ChartMarketType.SPOT,
@@ -90,8 +84,6 @@ class CoinDetailViewModel @Inject constructor(
     private val getKlines: GetKlinesUseCase,
     private val getCoinMarketChart: GetCoinMarketChartUseCase,
     private val getMarkPriceKlines: GetMarkPriceKlinesUseCase,
-    private val getFuturesMarketInfo: GetFuturesMarketInfoUseCase,
-    private val buildFuturesSentiment: BuildFuturesSentimentUseCase,
     private val observePriceTicker: ObservePriceTickerUseCase,
     private val observeIsWatchlisted: ObserveIsWatchlistedUseCase,
     private val toggleWatchlist: ToggleWatchlistUseCase,
@@ -201,8 +193,6 @@ class CoinDetailViewModel @Inject constructor(
                     selectedMarketType = marketType,
                     chartError = null,
                     markPriceKlines = if (marketType == ChartMarketType.SPOT) emptyList() else it.markPriceKlines,
-                    futuresMarketInfo = if (marketType == ChartMarketType.SPOT) null else it.futuresMarketInfo,
-                    futuresSentiment = if (marketType == ChartMarketType.SPOT) null else it.futuresSentiment,
                 )
             }
 
@@ -225,15 +215,8 @@ class CoinDetailViewModel @Inject constructor(
             } else {
                 null
             }
-            val futuresInfoDeferred = if (marketType == ChartMarketType.FUTURES) {
-                async { getFuturesMarketInfo(symbol) }
-            } else {
-                null
-            }
-
             val candles = candlesDeferred.await()
             val markPrices = markDeferred?.await()
-            val futuresInfo = futuresInfoDeferred?.await()
 
             when (candles) {
                 is Resource.Success -> {
@@ -245,16 +228,9 @@ class CoinDetailViewModel @Inject constructor(
                         is Resource.Success -> markPrices.data
                         else -> emptyList()
                     }
-                    val futuresMarketInfo = when (futuresInfo) {
-                        is Resource.Success -> futuresInfo.data
-                        else -> null
-                    }
-                    val sentiment = futuresMarketInfo?.let { buildFuturesSentiment(it) }
                     val chartError = when {
                         marketType == ChartMarketType.FUTURES && markPrices is Resource.Error ->
                             "Futures candles loaded, but mark price overlay is unavailable."
-                        marketType == ChartMarketType.FUTURES && futuresInfo is Resource.Error ->
-                            "Futures candles loaded, but futures metrics are unavailable."
                         else -> null
                     }
                     _uiState.update {
@@ -262,8 +238,6 @@ class CoinDetailViewModel @Inject constructor(
                             isKlinesLoading = false,
                             klines = candles.data,
                             markPriceKlines = markPriceKlines,
-                            futuresMarketInfo = futuresMarketInfo,
-                            futuresSentiment = sentiment,
                             chartError = chartError,
                         )
                     }
@@ -277,8 +251,6 @@ class CoinDetailViewModel @Inject constructor(
                                 isKlinesLoading = false,
                                 klines = emptyList(),
                                 markPriceKlines = emptyList(),
-                                futuresMarketInfo = null,
-                                futuresSentiment = null,
                                 chartError = "Futures market data is not available for this symbol.",
                             )
                         }
@@ -296,8 +268,6 @@ class CoinDetailViewModel @Inject constructor(
                     isKlinesLoading = false,
                     klines = fallback.data,
                     markPriceKlines = emptyList(),
-                    futuresMarketInfo = null,
-                    futuresSentiment = null,
                     selectedChartType = ChartDisplayType.LINE,
                     chartError = if (fallback.data.isEmpty()) {
                         "Chart history is unavailable for this coin."
@@ -311,8 +281,6 @@ class CoinDetailViewModel @Inject constructor(
                     isKlinesLoading = false,
                     klines = emptyList(),
                     markPriceKlines = emptyList(),
-                    futuresMarketInfo = null,
-                    futuresSentiment = null,
                     chartError = "Chart history is unavailable for this coin.",
                 )
             }

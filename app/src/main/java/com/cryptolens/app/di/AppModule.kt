@@ -17,7 +17,6 @@ import com.cryptolens.app.features.exchange.data.remote.BinanceApiClient
 import com.cryptolens.app.features.exchange.data.repository.ExchangeRepositoryImpl
 import com.cryptolens.app.features.exchange.domain.repository.ExchangeRepository
 import com.cryptolens.app.features.market.data.remote.BinanceApiService
-import com.cryptolens.app.features.market.data.remote.BinanceFuturesDataApiService
 import com.cryptolens.app.features.market.data.remote.BinanceFuturesApiService
 import com.cryptolens.app.features.market.data.remote.BinanceWebSocketManager
 import com.cryptolens.app.features.market.data.remote.CoinGeckoApiService
@@ -36,10 +35,8 @@ import com.cryptolens.app.features.watchlist.data.local.dao.WatchlistDao
 import com.cryptolens.app.features.watchlist.data.repository.WatchlistRepositoryImpl
 import com.cryptolens.app.features.watchlist.domain.repository.WatchlistRepository
 import com.cryptolens.app.features.wallet.data.local.dao.WalletWatchDao
-import com.cryptolens.app.features.wallet.data.walletconnect.WalletConnectRepositoryImpl
 import com.cryptolens.app.features.wallet.data.repository.WalletDiscoveryRepositoryImpl
 import com.cryptolens.app.features.wallet.data.repository.WalletWatchRepositoryImpl
-import com.cryptolens.app.features.wallet.domain.repository.WalletConnectionRepository
 import com.cryptolens.app.features.wallet.domain.repository.WalletDiscoveryRepository
 import com.cryptolens.app.features.wallet.domain.repository.WalletWatchRepository
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -114,14 +111,6 @@ object NetworkModule {
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
 
-    @Provides @Singleton @Named("binanceFuturesData")
-    fun provideBinanceFuturesDataRetrofit(client: OkHttpClient, json: Json): Retrofit =
-        Retrofit.Builder()
-            .baseUrl("https://fapi.binance.com/futures/data/")
-            .client(client)
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .build()
-
     @Provides @Singleton
     fun provideCoinGeckoApiService(@Named("coingecko") r: Retrofit): CoinGeckoApiService =
         r.create(CoinGeckoApiService::class.java)
@@ -133,12 +122,6 @@ object NetworkModule {
     @Provides @Singleton
     fun provideBinanceFuturesApiService(@Named("binanceFutures") r: Retrofit): BinanceFuturesApiService =
         r.create(BinanceFuturesApiService::class.java)
-
-    @Provides @Singleton
-    fun provideBinanceFuturesDataApiService(
-        @Named("binanceFuturesData") r: Retrofit,
-    ): BinanceFuturesDataApiService =
-        r.create(BinanceFuturesDataApiService::class.java)
 
     @Provides @Singleton
     fun provideBinanceWsManager(client: OkHttpClient, json: Json): BinanceWebSocketManager =
@@ -230,9 +213,6 @@ abstract class RepositoryModule {
 
     @Binds @Singleton
     abstract fun bindWalletWatchRepository(impl: WalletWatchRepositoryImpl): WalletWatchRepository
-
-    @Binds @Singleton
-    abstract fun bindWalletConnectionRepository(impl: WalletConnectRepositoryImpl): WalletConnectionRepository
 
     @Binds @Singleton
     abstract fun bindWalletDiscoveryRepository(impl: WalletDiscoveryRepositoryImpl): WalletDiscoveryRepository

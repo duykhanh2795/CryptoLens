@@ -21,7 +21,10 @@ class CryptoPanicClient @Inject constructor(
     private val client: OkHttpClient,
 ) {
     private val apiKey: String get() = BuildConfig.CRYPTOPANIC_API_KEY.trim()
-    val isConfigured: Boolean get() = apiKey.isNotBlank()
+    @Volatile
+    private var unavailableForSession = false
+
+    val isConfigured: Boolean get() = apiKey.isNotBlank() && !unavailableForSession
 
     suspend fun fetchPosts(
         filter: NewsFilter,
@@ -54,6 +57,7 @@ class CryptoPanicClient @Inject constructor(
             client.newCall(request).execute().use { response ->
                 val body = response.body?.string().orEmpty()
                 if (!response.isSuccessful) {
+                    if (response.code in setOf(401, 403, 404)) unavailableForSession = true
                     return@withContext Resource.Error(body.toCryptoPanicError(response.code))
                 }
 
@@ -125,6 +129,9 @@ class CryptoPanicClient @Inject constructor(
 
     private fun String.toCryptoPanicError(code: Int): String {
         val text = trim()
+        if (code == 404) {
+            return "CryptoPanic Developer API is unavailable. Switching to backup news providers."
+        }
         if (code == 401 || code == 403 || text.contains("auth", ignoreCase = true)) {
             return "CryptoPanic token is not accepted for the current API endpoint. Check CRYPTOPANIC_API_KEY and rebuild the app."
         }

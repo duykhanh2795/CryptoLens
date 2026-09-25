@@ -58,7 +58,6 @@ android {
         buildConfigField("String", "ALCHEMY_API_KEY", configValue("ALCHEMY_API_KEY").asBuildConfigString())
         buildConfigField("String", "MORALIS_API_KEY", configValue("MORALIS_API_KEY").asBuildConfigString())
         buildConfigField("String", "CRYPTOPANIC_API_KEY", configValue("CRYPTOPANIC_API_KEY").asBuildConfigString())
-        buildConfigField("String", "WALLETCONNECT_PROJECT_ID", configValue("WALLETCONNECT_PROJECT_ID").asBuildConfigString())
     }
 
     buildTypes {
@@ -163,10 +162,6 @@ dependencies {
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
-
-    // WalletConnect / MetaMask
-    implementation(libs.reown.core)
-    implementation(libs.reown.sign)
 
     // Firebase
     implementation(platform(libs.firebase.bom))

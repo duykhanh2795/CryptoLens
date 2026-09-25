@@ -3,7 +3,6 @@ package com.cryptolens.app.features.market.domain.repository
 import com.cryptolens.app.features.market.domain.model.Coin
 import com.cryptolens.app.features.market.domain.model.ChartMarketType
 import com.cryptolens.app.features.market.domain.model.CoinDetail
-import com.cryptolens.app.features.market.domain.model.FuturesMarketInfo
 import com.cryptolens.app.features.market.domain.model.Kline
 import com.cryptolens.app.features.market.domain.model.PriceTicker
 import com.cryptolens.app.core.domain.util.Resource
@@ -41,9 +40,6 @@ interface MarketRepository {
         interval: String = "1h",
         limit: Int = 100,
     ): Resource<List<Kline>>
-
-    // Binance USD-M Futures REST - mark price, funding, open interest
-    suspend fun getFuturesMarketInfo(symbol: String): Resource<FuturesMarketInfo>
 
     // Binance WebSocket — realtime price ticker
     fun observePriceTicker(symbol: String): Flow<Resource<PriceTicker>>

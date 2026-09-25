@@ -42,7 +42,6 @@
     <string name="profile_verification">Xác minh</string>
     <string name="profile_not_verified">Chưa xác minh</string>
     <string name="profile_security">Bảo mật</string>
-    <string name="profile_connected_exchanges">Sàn đã kết nối</string>
     <string name="profile_binance">Binance</string>
     <string name="profile_wallet_watchlist">Ví đang theo dõi</string>
     <string name="profile_on_chain">On-chain</string>
@@ -52,7 +51,6 @@
     <string name="profile_live_rates">Tỷ giá live</string>
     <string name="profile_settings">Cài đặt</string>
     <string name="profile_theme_currency">Giao diện, tiền tệ</string>
-    <string name="profile_twitter">Twitter</string>
     <string name="profile_unlinked">Chưa liên kết</string>
     <string name="profile_export">Xuất dữ liệu</string>
     <string name="profile_clear_portfolio">Xóa danh mục</string>
@@ -158,7 +156,6 @@
     <string name="wallet_price">Giá</string>
     <string name="wallet_search_history">Tìm token, hash, địa chỉ</string>
     <string name="wallet_open_details">Mở chi tiết</string>
-    <string name="wallet_connect_metamask">Kết nối MetaMask</string>
     <string name="wallet_chain">Chain</string>
     <string name="wallet_label">Nhãn</string>
     <string name="wallet_default_label">Ví %1$s</string>
